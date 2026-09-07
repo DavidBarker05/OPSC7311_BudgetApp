@@ -1,4 +1,4 @@
-package com.example.opsc7311_budgetapp
+package com.example.mybudgettree
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -19,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.example.opsc7311_budgetapp", appContext.packageName)
+        assertEquals("com.example.mybudgettree", appContext.packageName)
     }
 }

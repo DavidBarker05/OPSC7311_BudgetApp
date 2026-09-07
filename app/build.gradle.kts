@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.opsc7311_budgetapp"
+    namespace = "com.example.mybudgettree"
     compileSdk {
         version = release(37) {
             minorApiLevel = 1
@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.opsc7311_budgetapp"
+        applicationId = "com.example.mybudgettree"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

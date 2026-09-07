@@ -1,4 +1,4 @@
-package com.example.opsc7311_budgetapp
+package com.example.mybudgettree
 
 import org.junit.Test
 
