@@ -1,4 +1,4 @@
-package com.example.mybudgettree.database
+package com.example.mybudgettree.database.entries
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

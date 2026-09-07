@@ -1,9 +1,8 @@
 package com.example.mybudgettree.database.daos
 
-import com.example.mybudgettree.database.User
+import com.example.mybudgettree.database.entries.User
 import androidx.room.Dao
 import androidx.room.Insert
-import androidx.room.Update
 import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.OnConflictStrategy

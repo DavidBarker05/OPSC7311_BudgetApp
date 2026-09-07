@@ -1,7 +1,8 @@
-package com.example.mybudgettree.database
+package com.example.mybudgettree.database.managers
 
-import com.example.mybudgettree.database.daos.UserDao
 import androidx.lifecycle.ViewModel
+import com.example.mybudgettree.database.daos.UserDao
+import com.example.mybudgettree.database.entries.User
 
 /**
  * A Jetpack [ViewModel] architecture component that orchestrates user account operations
