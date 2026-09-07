@@ -10,17 +10,17 @@ import androidx.room.OnConflictStrategy
 @Dao
 interface UserDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insertUser(user: User): Long?
+    suspend fun insertUser(user: User): Long?
 
     @Query("UPDATE users SET username = :newUsername WHERE username = :oldUsername")
-    fun updateUsername(oldUsername: String, newUsername: String)
+    suspend fun updateUsername(oldUsername: String, newUsername: String)
 
     @Query("UPDATE users SET password = :newPassword WHERE username = :username")
-    fun updatePassword(username: String, newPassword: String)
+    suspend fun updatePassword(username: String, newPassword: String)
 
     @Delete
-    fun deleteUser(user: User): Int
+    suspend fun deleteUser(user: User): Int
 
     @Query("SELECT * FROM users WHERE username = :username")
-    fun findUser(username: String): User?
+    suspend fun findUser(username: String): User?
 }

@@ -91,7 +91,7 @@ class UserDatabaseSystem(private val userDao: UserDao): ViewModel() {
      * @param password The intended password string (Must not be blank)
      * @return A [CreateUserReturnInfo] indicating what happened with the creation
      */
-    fun createUser(username: String, password: String): CreateUserReturnInfo {
+    suspend fun createUser(username: String, password: String): CreateUserReturnInfo {
         if (username.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Username is empty")
         if (password.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Password is empty")
         // TODO: Regex for invalid characters
@@ -106,7 +106,7 @@ class UserDatabaseSystem(private val userDao: UserDao): ViewModel() {
      * @param username The username to search for
      * @return A [FindUserReturnInfo] indicating what happened with the search
      */
-    fun findUser(username: String): FindUserReturnInfo {
+    suspend fun findUser(username: String): FindUserReturnInfo {
         val foundUser = userDao.findUser(username)
         return if (foundUser != null) FindUserReturnInfo(wasSuccessful = true, user = foundUser)
         else FindUserReturnInfo(wasSuccessful = false, errMsg = "No user with username = \"$username\" found")
@@ -118,7 +118,7 @@ class UserDatabaseSystem(private val userDao: UserDao): ViewModel() {
      * @param username The username to search for
      * @return True if the profile exists, false otherwise
      */
-    fun doesUserExist(username: String): Boolean = findUser(username).wasSuccessful
+    suspend fun doesUserExist(username: String): Boolean = findUser(username).wasSuccessful
 
     /**
      * Modifies the username for the user
@@ -127,7 +127,7 @@ class UserDatabaseSystem(private val userDao: UserDao): ViewModel() {
      * @param newUsername The new username
      * @return An [UpdateUserReturnInfo] indicating what happened with the update
      */
-    fun updateUsername(user: User, newUsername: String): UpdateUserReturnInfo {
+    suspend fun updateUsername(user: User, newUsername: String): UpdateUserReturnInfo {
         if (user.username == newUsername) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
         if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
         if (doesUserExist(newUsername)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Username is already in use")
@@ -143,7 +143,7 @@ class UserDatabaseSystem(private val userDao: UserDao): ViewModel() {
      * @param newPassword The new password
      * @return An [UpdateUserReturnInfo] indicating what happened with the update
      */
-    fun updatePassword(user: User, newPassword: String): UpdateUserReturnInfo {
+    suspend fun updatePassword(user: User, newPassword: String): UpdateUserReturnInfo {
         if (user.password == newPassword) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
         if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
         val userNewPassword = user.copy(password = newPassword)
@@ -157,5 +157,5 @@ class UserDatabaseSystem(private val userDao: UserDao): ViewModel() {
      * @param user The [User] to delete
      * @return A status reflection from [UserDeleteReturnStatus]
      */
-    fun deleteUser(user: User): UserDeleteReturnStatus = if (userDao.deleteUser(user) == 1) UserDeleteReturnStatus.Deleted else UserDeleteReturnStatus.DoesNotExist
+    suspend fun deleteUser(user: User): UserDeleteReturnStatus = if (userDao.deleteUser(user) == 1) UserDeleteReturnStatus.Deleted else UserDeleteReturnStatus.DoesNotExist
 }
