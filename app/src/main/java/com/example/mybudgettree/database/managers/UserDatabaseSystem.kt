@@ -104,6 +104,7 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @return A [FindUserReturnInfo] indicating what happened with the search
      */
     suspend fun findUser(username: String): FindUserReturnInfo {
+        if (username.isBlank()) return FindUserReturnInfo(wasSuccessful = false, errMsg = "Username is empty")
         val foundUser = userDao.findUser(username)
         return if (foundUser != null) FindUserReturnInfo(wasSuccessful = true, user = foundUser)
         else FindUserReturnInfo(wasSuccessful = false, errMsg = "No user with username = \"$username\" found")
@@ -125,6 +126,7 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @return An [UpdateUserReturnInfo] indicating what happened with the update
      */
     suspend fun updateUsername(user: User, newUsername: String): UpdateUserReturnInfo {
+        if (newUsername.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New username is empty")
         if (user.username == newUsername) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
         if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
         if (doesUserExist(newUsername)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Username is already in use")
@@ -141,6 +143,7 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @return An [UpdateUserReturnInfo] indicating what happened with the update
      */
     suspend fun updatePassword(user: User, newPassword: String): UpdateUserReturnInfo {
+        if (newPassword.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New password is empty")
         if (user.password == newPassword) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
         if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
         val userNewPassword = user.copy(password = newPassword)
