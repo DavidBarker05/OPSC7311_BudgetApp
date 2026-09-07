@@ -130,9 +130,8 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         if (user.username == newUsername) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
         if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
         if (doesUserExist(newUsername)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Username is already in use")
-        val userNewUsername = user.copy(username = newUsername)
         userDao.updateUsername(user.username, newUsername)
-        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = userNewUsername)
+        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(username = newUsername))
     }
 
     /**
@@ -146,9 +145,8 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         if (newPassword.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New password is empty")
         if (user.password == newPassword) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
         if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
-        val userNewPassword = user.copy(password = newPassword)
         userDao.updatePassword(user.username, newPassword)
-        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = userNewPassword)
+        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(password = newPassword))
     }
 
     /**

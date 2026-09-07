@@ -50,8 +50,7 @@ class CategoryDatabaseSystem(
         if (!userStatus.wasSuccessful) return CreateCategoryReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
         val category = Category(username = user.username, categoryName = categoryName)
         val id = categoryDao.insertCategory(category) ?: return CreateCategoryReturnInfo(wasSuccessful = false, errMsg = "User already has a category with name \"$categoryName\"")
-        val categoryWithId = category.copy(id = id)
-        return CreateCategoryReturnInfo(wasSuccessful = true, category = categoryWithId)
+        return CreateCategoryReturnInfo(wasSuccessful = true, category = category.copy(id = id))
     }
 
     suspend fun findCategory(user: User, categoryName: String): FindCategoryReturnInfo {
@@ -79,8 +78,7 @@ class CategoryDatabaseSystem(
         categoryDao.findCategory(category.username, category.categoryName) ?: return UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Failed, errMsg = "Category does not exist")
         if (categoryDao.findCategory(category.username, newCategoryName) != null) return UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Failed, errMsg = "Category name already in use")
         categoryDao.updateCategoryName(category.id, newCategoryName)
-        val categoryNewName = category.copy(categoryName = newCategoryName)
-        return UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Succeeded, category = categoryNewName)
+        return UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Succeeded, category = category.copy(categoryName = newCategoryName))
     }
 
     suspend fun deleteCategory(category: Category): CategoryDeleteReturnStatus = if (categoryDao.deleteCategory(category) == 1) CategoryDeleteReturnStatus.Deleted else CategoryDeleteReturnStatus.DoesNotExist
