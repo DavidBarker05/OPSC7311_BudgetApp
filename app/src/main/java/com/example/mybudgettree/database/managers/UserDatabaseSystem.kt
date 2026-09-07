@@ -1,17 +1,14 @@
 package com.example.mybudgettree.database.managers
 
-import androidx.lifecycle.ViewModel
 import com.example.mybudgettree.database.daos.UserDao
 import com.example.mybudgettree.database.entries.User
 
 /**
- * A Jetpack [ViewModel] architecture component that orchestrates user account operations
- *
  * This system manages user state, credentials validation, account discovery, updates, and removals
  *
  * @property userDao The underlying Data Access Object managing RoomDB operations
  */
-class UserDatabaseSystem(private val userDao: UserDao): ViewModel() {
+class UserDatabaseSystem(private val userDao: UserDao) {
 
     /**
      * Wraps the update creation return in a detailed form
