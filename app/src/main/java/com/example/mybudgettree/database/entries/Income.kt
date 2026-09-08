@@ -4,9 +4,23 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.ForeignKey
 import androidx.room.ColumnInfo
+import androidx.room.Index
 import java.time.LocalDate
 import java.time.LocalTime
 
+/**
+ * A single income record belonging to a category
+ *
+ * @property id The auto-generated primary key for the income
+ * @property categoryId The id of the [Category] the income belongs to
+ * @property description The income's name
+ * @property currencyAtTime The currency the amount was denominated in at the time of the income
+ * @property amount The income amount
+ * @property date The date the income occurred on
+ * @property startTime The time the income started
+ * @property endTime The time the income ended
+ * @property imagePath The path to the income's proof image, or null if none is set
+ */
 @Entity(
     tableName = "incomes",
     foreignKeys = [
@@ -17,14 +31,14 @@ import java.time.LocalTime
             onUpdate = ForeignKey.CASCADE,
             onDelete = ForeignKey.CASCADE
         )
+    ],
+    indices = [
+        Index(value = ["category_id"])
     ]
 )
 data class Income(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "category_id") val categoryId: Long,
-    /**
-     * Income's name
-     */
     val description: String,
     @ColumnInfo(name = "currency_at_time") val currencyAtTime: String,
     val amount: Double,

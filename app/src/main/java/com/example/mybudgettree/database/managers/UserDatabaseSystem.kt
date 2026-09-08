@@ -82,6 +82,19 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         Deleted
     }
 
+    /**
+     * Creates a new user profile after validating the fields and confirming none of the unique fields are already in use
+     *
+     * @param username The desired username, must be unique
+     * @param password The account password
+     * @param email The account email address, must be unique
+     * @param phoneNumber The account phone number, must be unique
+     * @param displayName The name shown for the user
+     * @param dateOfBirth The user's date of birth
+     * @param currency The user's preferred currency
+     * @param profilePhotoPath The path to the user's profile photo, or null if none is set
+     * @return A [CreateUserReturnInfo] indicating what happened with the creation
+     */
     suspend fun createUser(
         username: String,
         password: String,
@@ -130,6 +143,12 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         else FindUserReturnInfo(wasSuccessful = false, errMsg = "No user with username = \"$username\" found")
     }
 
+    /**
+     * Find the user in the database by their email
+     *
+     * @param email The email to search for
+     * @return A [FindUserReturnInfo] indicating what happened with the search
+     */
     suspend fun findUserByEmail(email: String): FindUserReturnInfo {
         if (email.isBlank()) return FindUserReturnInfo(wasSuccessful = false, errMsg = "Email is empty")
         val foundUser = userDao.findUserByEmail(email)
@@ -137,6 +156,12 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         else FindUserReturnInfo(wasSuccessful = false, errMsg = "No user with email = \"$email\" found")
     }
 
+    /**
+     * Find the user in the database by their phone number
+     *
+     * @param phoneNumber The phone number to search for
+     * @return A [FindUserReturnInfo] indicating what happened with the search
+     */
     suspend fun findUserByPhoneNumber(phoneNumber: String): FindUserReturnInfo {
         if (phoneNumber.isBlank()) return FindUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is empty")
         val foundUser = userDao.findUserByPhoneNumber(phoneNumber)
@@ -152,10 +177,28 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      */
     suspend fun doesUserExist(username: String): Boolean = findUser(username).wasSuccessful
 
+    /**
+     * Check if the email is already in use by a user
+     *
+     * @param email The email to search for
+     * @return True if the email is in use, false otherwise
+     */
     suspend fun isEmailInUse(email: String): Boolean = findUserByEmail(email).wasSuccessful
 
+    /**
+     * Check if the phone number is already in use by a user
+     *
+     * @param phoneNumber The phone number to search for
+     * @return True if the phone number is in use, false otherwise
+     */
     suspend fun isPhoneNumberInUse(phoneNumber: String): Boolean = findUserByPhoneNumber(phoneNumber).wasSuccessful
 
+    /**
+     * Check if the user still exists in the database
+     *
+     * @param user The [User] to validate
+     * @return True if the user still exists, false otherwise
+     */
     suspend fun isUserValid(user: User): Boolean = findUser(user.username).wasSuccessful
 
     /**
@@ -189,6 +232,13 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(password = newPassword))
     }
 
+    /**
+     * Updates the email for the user
+     *
+     * @param user The [User] being updated
+     * @param newEmail The new email
+     * @return An [UpdateUserReturnInfo] indicating what happened with the update
+     */
     suspend fun updateEmail(user: User, newEmail: String): UpdateUserReturnInfo {
         if (newEmail.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New email is empty")
         if (user.email == newEmail) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
@@ -198,6 +248,13 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(email = newEmail))
     }
 
+    /**
+     * Updates the phone number for the user
+     *
+     * @param user The [User] being updated
+     * @param newPhoneNumber The new phone number
+     * @return An [UpdateUserReturnInfo] indicating what happened with the update
+     */
     suspend fun updatePhoneNumber(user: User, newPhoneNumber: String): UpdateUserReturnInfo {
         if (newPhoneNumber.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New phone number is empty")
         if (user.phoneNumber == newPhoneNumber) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
@@ -207,6 +264,13 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(phoneNumber = newPhoneNumber))
     }
 
+    /**
+     * Updates the display name for the user
+     *
+     * @param user The [User] being updated
+     * @param newDisplayName The new display name
+     * @return An [UpdateUserReturnInfo] indicating what happened with the update
+     */
     suspend fun updateDisplayName(user: User, newDisplayName: String): UpdateUserReturnInfo {
         if (newDisplayName.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New display name is empty")
         if (user.password == newDisplayName) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
@@ -215,6 +279,13 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(displayName = newDisplayName))
     }
 
+    /**
+     * Updates the date of birth for the user
+     *
+     * @param user The [User] being updated
+     * @param newDateOfBirth The new date of birth
+     * @return An [UpdateUserReturnInfo] indicating what happened with the update
+     */
     suspend fun updateDateOfBirth(user: User, newDateOfBirth: LocalDate): UpdateUserReturnInfo {
         if (user.dateOfBirth == newDateOfBirth) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
         if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
@@ -222,6 +293,13 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(dateOfBirth = newDateOfBirth))
     }
 
+    /**
+     * Updates the preferred currency for the user
+     *
+     * @param user The [User] being updated
+     * @param newCurrency The new currency
+     * @return An [UpdateUserReturnInfo] indicating what happened with the update
+     */
     suspend fun updateCurrency(user: User, newCurrency: String): UpdateUserReturnInfo {
         if (newCurrency.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New display name is empty")
         if (user.currency == newCurrency) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
@@ -230,6 +308,13 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(currency = newCurrency))
     }
 
+    /**
+     * Updates the profile photo path for the user
+     *
+     * @param user The [User] being updated
+     * @param newProfilePhotoPath The new profile photo path, or null to remove it
+     * @return An [UpdateUserReturnInfo] indicating what happened with the update
+     */
     suspend fun updateProfilePhoto(user: User, newProfilePhotoPath: String?): UpdateUserReturnInfo {
         if (newProfilePhotoPath?.isBlank() ?: false) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New profile photo path is empty")
         if (user.profilePhotoPath == newProfilePhotoPath) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
