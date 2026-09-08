@@ -1,5 +1,6 @@
 package com.example.mybudgettree.database.managers
 
+import android.util.Patterns
 import com.example.mybudgettree.database.daos.UserDao
 import com.example.mybudgettree.database.entries.User
 import java.time.LocalDate
@@ -10,6 +11,17 @@ import java.time.LocalDate
  * @property userDao The underlying Data Access Object managing RoomDB operations
  */
 class UserDatabaseSystem(private val userDao: UserDao) {
+
+    companion object {
+        private val USERNAME_REGEX = Regex("^[A-Za-z0-9]+$")
+        private val PHONE_NUMBER_REGEX = Regex("^\\+?[0-9]{7,15}$")
+
+        private fun normalizePhoneNumber(phoneNumber: String): String {
+            val hasLeadingPlus = phoneNumber.trim().startsWith("+")
+            val digitsOnly = phoneNumber.filter { it.isDigit() }
+            return if (hasLeadingPlus) "+$digitsOnly" else digitsOnly
+        }
+    }
 
     /**
      * Wraps the update creation return in a detailed form
@@ -112,15 +124,18 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         if (displayName.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Display name is empty")
         if (currency.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Currency is empty")
         if (profilePhotoPath?.isBlank() ?: false) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Profile photo path is empty")
-        // TODO: Regex for invalid characters
+        if (!USERNAME_REGEX.matches(username)) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Username may only contain English letters and numbers")
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Email is not a valid email address")
+        val normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
+        if (!PHONE_NUMBER_REGEX.matches(normalizedPhoneNumber)) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is not a valid phone number")
         if (userDao.findUser(username) != null) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Username is already in use")
         if (userDao.findUserByEmail(email) != null) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Email is already in use")
-        if (userDao.findUserByPhoneNumber(phoneNumber) != null) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is already in use")
+        if (userDao.findUserByPhoneNumber(normalizedPhoneNumber) != null) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is already in use")
         val user = User(
             username = username,
             password = password,
             email = email,
-            phoneNumber = phoneNumber,
+            phoneNumber = normalizedPhoneNumber,
             displayName = displayName,
             dateOfBirth = dateOfBirth,
             currency = currency,
@@ -164,9 +179,10 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      */
     suspend fun findUserByPhoneNumber(phoneNumber: String): FindUserReturnInfo {
         if (phoneNumber.isBlank()) return FindUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is empty")
-        val foundUser = userDao.findUserByPhoneNumber(phoneNumber)
+        val normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
+        val foundUser = userDao.findUserByPhoneNumber(normalizedPhoneNumber)
         return if (foundUser != null) FindUserReturnInfo(wasSuccessful = true, user = foundUser)
-        else FindUserReturnInfo(wasSuccessful = false, errMsg = "No user with phone number = \"$phoneNumber\" found")
+        else FindUserReturnInfo(wasSuccessful = false, errMsg = "No user with phone number = \"$normalizedPhoneNumber\" found")
     }
 
     /**
@@ -211,6 +227,7 @@ class UserDatabaseSystem(private val userDao: UserDao) {
     suspend fun updateUsername(user: User, newUsername: String): UpdateUserReturnInfo {
         if (newUsername.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New username is empty")
         if (user.username == newUsername) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+        if (!USERNAME_REGEX.matches(newUsername)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Username may only contain English letters and numbers")
         if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
         if (doesUserExist(newUsername)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Username is already in use")
         userDao.updateUsername(user.username, newUsername)
@@ -242,6 +259,7 @@ class UserDatabaseSystem(private val userDao: UserDao) {
     suspend fun updateEmail(user: User, newEmail: String): UpdateUserReturnInfo {
         if (newEmail.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New email is empty")
         if (user.email == newEmail) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+        if (!Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Email is not a valid email address")
         if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
         if (isEmailInUse(newEmail)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Email is already in use")
         userDao.updateEmail(user.username, newEmail)
@@ -257,11 +275,13 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      */
     suspend fun updatePhoneNumber(user: User, newPhoneNumber: String): UpdateUserReturnInfo {
         if (newPhoneNumber.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New phone number is empty")
-        if (user.phoneNumber == newPhoneNumber) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+        val normalizedNewPhoneNumber = normalizePhoneNumber(newPhoneNumber)
+        if (user.phoneNumber == normalizedNewPhoneNumber) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+        if (!PHONE_NUMBER_REGEX.matches(normalizedNewPhoneNumber)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Phone number is not a valid phone number")
         if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
-        if (isPhoneNumberInUse(newPhoneNumber)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Phone number is already in use")
-        userDao.updatePhoneNumber(user.username, newPhoneNumber)
-        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(phoneNumber = newPhoneNumber))
+        if (isPhoneNumberInUse(normalizedNewPhoneNumber)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Phone number is already in use")
+        userDao.updatePhoneNumber(user.username, normalizedNewPhoneNumber)
+        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(phoneNumber = normalizedNewPhoneNumber))
     }
 
     /**
