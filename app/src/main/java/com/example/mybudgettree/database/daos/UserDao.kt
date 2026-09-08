@@ -12,15 +12,27 @@ interface UserDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertUser(user: User): Long?
 
-    @Query("UPDATE users SET username = :newUsername WHERE username = :oldUsername")
+    @Query("""
+        UPDATE users
+        SET username = :newUsername
+        WHERE username = :oldUsername
+    """)
     suspend fun updateUsername(oldUsername: String, newUsername: String)
 
-    @Query("UPDATE users SET password = :newPassword WHERE username = :username")
+    @Query("""
+        UPDATE users
+        SET password = :newPassword
+        WHERE username = :username
+    """)
     suspend fun updatePassword(username: String, newPassword: String)
 
     @Delete
     suspend fun deleteUser(user: User): Int
 
-    @Query("SELECT * FROM users WHERE username = :username")
+    @Query("""
+        SELECT *
+        FROM users
+        WHERE username = :username
+    """)
     suspend fun findUser(username: String): User?
 }

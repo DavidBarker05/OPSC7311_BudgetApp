@@ -12,15 +12,34 @@ interface CategoryDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertCategory(category: Category): Long?
 
-    @Query("UPDATE categories SET category_name = :newName WHERE id = :id")
+    @Query("""
+        UPDATE categories
+        SET category_name = :newName
+        WHERE id = :id
+    """)
     suspend fun updateCategoryName(id: Long, newName: String)
 
     @Delete
     suspend fun deleteCategory(category: Category): Int
 
-    @Query("SELECT * FROM categories WHERE username = :username AND category_name = :categoryName")
+    @Query("""
+        SELECT *
+        FROM categories
+        WHERE id = :id
+    """)
+    suspend fun findCategory(id: Long): Category?
+
+    @Query("""
+        SELECT *
+        FROM categories
+        WHERE username = :username AND category_name = :categoryName
+    """)
     suspend fun findCategory(username: String, categoryName: String): Category?
 
-    @Query("SELECT * FROM categories WHERE username = :username")
+    @Query("""
+        SELECT *
+        FROM categories
+        WHERE username = :username
+    """)
     suspend fun retrieveAllCategories(username: String): List<Category>
 }

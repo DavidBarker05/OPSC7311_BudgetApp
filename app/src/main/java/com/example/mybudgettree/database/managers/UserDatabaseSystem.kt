@@ -118,6 +118,8 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      */
     suspend fun doesUserExist(username: String): Boolean = findUser(username).wasSuccessful
 
+    suspend fun isUserValid(user: User): Boolean = findUser(user.username).wasSuccessful
+
     /**
      * Modifies the username for the user
      *

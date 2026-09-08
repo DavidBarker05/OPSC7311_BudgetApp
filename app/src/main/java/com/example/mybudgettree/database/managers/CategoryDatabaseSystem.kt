@@ -53,6 +53,11 @@ class CategoryDatabaseSystem(
         return CreateCategoryReturnInfo(wasSuccessful = true, category = category.copy(id = id))
     }
 
+    suspend fun findCategory(categoryId: Long): FindCategoryReturnInfo {
+        val category = categoryDao.findCategory(categoryId) ?: return FindCategoryReturnInfo(wasSuccessful = false, errMsg = "Category does not exist")
+        return FindCategoryReturnInfo(wasSuccessful = true, category = category)
+    }
+
     suspend fun findCategory(user: User, categoryName: String): FindCategoryReturnInfo {
         if (categoryName.isBlank()) return FindCategoryReturnInfo(wasSuccessful = false, errMsg = "Category name is empty")
         val userStatus = userDatabaseSystem.findUser(user.username)
@@ -63,6 +68,8 @@ class CategoryDatabaseSystem(
     }
 
     suspend fun doesCategoryExist(user: User, categoryName: String): Boolean = findCategory(user, categoryName).wasSuccessful
+
+    suspend fun isCategoryStillValid(category: Category): Boolean = findCategory(category.id).wasSuccessful
 
     suspend fun getAllCategoriesForUser(user: User): FindAllCategoriesReturnInfo {
         val userStatus = userDatabaseSystem.findUser(user.username)
