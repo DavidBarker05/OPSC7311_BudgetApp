@@ -1,0 +1,35 @@
+package com.example.mybudgettree.database.entries
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import androidx.room.ForeignKey
+import androidx.room.ColumnInfo
+import java.time.LocalDate
+import java.time.LocalTime
+
+@Entity(
+    tableName = "incomes",
+    foreignKeys = [
+        ForeignKey(
+            entity = Category::class,
+            parentColumns = ["id"],
+            childColumns = ["category_id"],
+            onUpdate = ForeignKey.CASCADE,
+            onDelete = ForeignKey.CASCADE
+        )
+    ]
+)
+data class Income(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "category_id") val categoryId: Long,
+    /**
+     * Income's name
+     */
+    val description: String,
+    @ColumnInfo(name = "currency_at_time") val currencyAtTime: String,
+    val amount: Double,
+    val date: LocalDate,
+    @ColumnInfo(name = "start_time") val startTime: LocalTime,
+    @ColumnInfo(name = "end_time") val endTime: LocalTime,
+    @ColumnInfo(name = "image_path") val imagePath: String? = null
+)
