@@ -26,6 +26,7 @@ data class Expense(
      * Expense's name
      */
     val description: String,
+    @ColumnInfo(name = "currency_at_time") val currencyAtTime: String,
     val amount: Double,
     val date: LocalDate,
     @ColumnInfo(name = "start_time") val startTime: LocalTime,

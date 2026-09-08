@@ -51,6 +51,7 @@ class ExpenseDatabaseSystem(
     suspend fun createExpense(
         category: Category,
         description: String,
+        currencyAtTime: String,
         amount: Double,
         date: LocalDate,
         startTime: LocalTime,
@@ -59,12 +60,15 @@ class ExpenseDatabaseSystem(
     ): CreateExpenseReturnInfo {
         val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
         if (!categoryStatus.wasSuccessful) return CreateExpenseReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
+        if (description.isBlank()) return CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Description is blank")
+        if (currencyAtTime.isBlank()) return CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Currency type is blank")
         if (amount < 0.0) return CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Amount cannot be negative")
         if (endTime < startTime) return CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Start time is after end time")
         if (imagePath?.isBlank() ?: false) return CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Image path is empty")
         val expense = Expense(
             categoryId = category.id,
             description = description,
+            currencyAtTime = currencyAtTime,
             amount = amount,
             date = date,
             startTime = startTime,

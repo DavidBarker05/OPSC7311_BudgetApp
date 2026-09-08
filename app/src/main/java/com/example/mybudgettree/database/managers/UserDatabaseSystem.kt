@@ -2,6 +2,7 @@ package com.example.mybudgettree.database.managers
 
 import com.example.mybudgettree.database.daos.UserDao
 import com.example.mybudgettree.database.entries.User
+import java.time.LocalDate
 
 /**
  * This system manages user state, credentials validation, account discovery, updates, and removals
@@ -81,19 +82,38 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         Deleted
     }
 
-    /**
-     * Creates a new user
-     *
-     * @param username The intended username string (Must not be blank)
-     * @param password The intended password string (Must not be blank)
-     * @return A [CreateUserReturnInfo] indicating what happened with the creation
-     */
-    suspend fun createUser(username: String, password: String): CreateUserReturnInfo {
+    suspend fun createUser(
+        username: String,
+        password: String,
+        email: String,
+        phoneNumber: String,
+        displayName: String,
+        dateOfBirth: LocalDate,
+        currency: String,
+        profilePhotoPath: String?
+    ): CreateUserReturnInfo {
         if (username.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Username is empty")
         if (password.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Password is empty")
+        if (email.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Email is empty")
+        if (phoneNumber.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is empty")
+        if (displayName.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Display name is empty")
+        if (currency.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Currency is empty")
+        if (profilePhotoPath?.isBlank() ?: false) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Profile photo path is empty")
         // TODO: Regex for invalid characters
-        val user = User(username = username, password = password)
-        userDao.insertUser(user) ?: return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Username is already in use")
+        if (userDao.findUser(username) != null) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Username is already in use")
+        if (userDao.findUserByEmail(email) != null) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Email is already in use")
+        if (userDao.findUserByPhoneNumber(phoneNumber) != null) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is already in use")
+        val user = User(
+            username = username,
+            password = password,
+            email = email,
+            phoneNumber = phoneNumber,
+            displayName = displayName,
+            dateOfBirth = dateOfBirth,
+            currency = currency,
+            profilePhotoPath = profilePhotoPath
+        )
+        userDao.insertUser(user) // Already checked all details not in use so safe to not check after insert
         return CreateUserReturnInfo(wasSuccessful = true, user = user)
     }
 
@@ -110,6 +130,20 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         else FindUserReturnInfo(wasSuccessful = false, errMsg = "No user with username = \"$username\" found")
     }
 
+    suspend fun findUserByEmail(email: String): FindUserReturnInfo {
+        if (email.isBlank()) return FindUserReturnInfo(wasSuccessful = false, errMsg = "Email is empty")
+        val foundUser = userDao.findUserByEmail(email)
+        return if (foundUser != null) FindUserReturnInfo(wasSuccessful = true, user = foundUser)
+        else FindUserReturnInfo(wasSuccessful = false, errMsg = "No user with email = \"$email\" found")
+    }
+
+    suspend fun findUserByPhoneNumber(phoneNumber: String): FindUserReturnInfo {
+        if (phoneNumber.isBlank()) return FindUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is empty")
+        val foundUser = userDao.findUserByPhoneNumber(phoneNumber)
+        return if (foundUser != null) FindUserReturnInfo(wasSuccessful = true, user = foundUser)
+        else FindUserReturnInfo(wasSuccessful = false, errMsg = "No user with phone number = \"$phoneNumber\" found")
+    }
+
     /**
      * Check if the user is in the database
      *
@@ -117,6 +151,10 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @return True if the profile exists, false otherwise
      */
     suspend fun doesUserExist(username: String): Boolean = findUser(username).wasSuccessful
+
+    suspend fun isEmailInUse(email: String): Boolean = findUserByEmail(email).wasSuccessful
+
+    suspend fun isPhoneNumberInUse(phoneNumber: String): Boolean = findUserByPhoneNumber(phoneNumber).wasSuccessful
 
     suspend fun isUserValid(user: User): Boolean = findUser(user.username).wasSuccessful
 
@@ -149,6 +187,55 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
         userDao.updatePassword(user.username, newPassword)
         return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(password = newPassword))
+    }
+
+    suspend fun updateEmail(user: User, newEmail: String): UpdateUserReturnInfo {
+        if (newEmail.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New email is empty")
+        if (user.email == newEmail) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+        if (isEmailInUse(newEmail)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Email is already in use")
+        userDao.updateEmail(user.username, newEmail)
+        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(email = newEmail))
+    }
+
+    suspend fun updatePhoneNumber(user: User, newPhoneNumber: String): UpdateUserReturnInfo {
+        if (newPhoneNumber.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New phone number is empty")
+        if (user.phoneNumber == newPhoneNumber) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+        if (isPhoneNumberInUse(newPhoneNumber)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Phone number is already in use")
+        userDao.updatePhoneNumber(user.username, newPhoneNumber)
+        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(phoneNumber = newPhoneNumber))
+    }
+
+    suspend fun updateDisplayName(user: User, newDisplayName: String): UpdateUserReturnInfo {
+        if (newDisplayName.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New display name is empty")
+        if (user.password == newDisplayName) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+        userDao.updateDisplayName(user.username, newDisplayName)
+        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(displayName = newDisplayName))
+    }
+
+    suspend fun updateDateOfBirth(user: User, newDateOfBirth: LocalDate): UpdateUserReturnInfo {
+        if (user.dateOfBirth == newDateOfBirth) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+        userDao.updateDateOfBirth(user.username, newDateOfBirth)
+        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(dateOfBirth = newDateOfBirth))
+    }
+
+    suspend fun updateCurrency(user: User, newCurrency: String): UpdateUserReturnInfo {
+        if (newCurrency.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New display name is empty")
+        if (user.currency == newCurrency) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+        userDao.updateCurrency(user.username, newCurrency)
+        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(currency = newCurrency))
+    }
+
+    suspend fun updateProfilePhoto(user: User, newProfilePhotoPath: String?): UpdateUserReturnInfo {
+        if (newProfilePhotoPath?.isBlank() ?: false) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New profile photo path is empty")
+        if (user.profilePhotoPath == newProfilePhotoPath) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+        userDao.updateProfilePhoto(user.username, newProfilePhotoPath)
+        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(profilePhotoPath = newProfilePhotoPath))
     }
 
     /**
