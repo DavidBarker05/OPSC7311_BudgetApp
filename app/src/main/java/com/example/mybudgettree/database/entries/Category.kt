@@ -6,6 +6,13 @@ import androidx.room.ForeignKey
 import androidx.room.ColumnInfo
 import androidx.room.Index
 
+/**
+ * A spending/income category belonging to a user
+ *
+ * @property id The auto-generated primary key for the category
+ * @property username The username of the [User] the category belongs to
+ * @property categoryName The category's name, must be unique per user
+ */
 @Entity(
     tableName = "categories",
     foreignKeys = [

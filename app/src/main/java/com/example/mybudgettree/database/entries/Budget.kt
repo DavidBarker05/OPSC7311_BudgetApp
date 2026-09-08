@@ -6,6 +6,14 @@ import androidx.room.ForeignKey
 import androidx.room.ColumnInfo
 import androidx.room.Index
 
+/**
+ * A budget for a category, at most one per category
+ *
+ * @property id The auto-generated primary key for the budget
+ * @property categoryId The id of the [Category] the budget belongs to, must be unique
+ * @property currency The currency the budgeted amount is denominated in
+ * @property amount The budgeted amount
+ */
 @Entity(
     tableName = "budgets",
     foreignKeys = [

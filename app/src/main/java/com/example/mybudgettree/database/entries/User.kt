@@ -6,6 +6,18 @@ import androidx.room.ColumnInfo
 import androidx.room.Index
 import java.time.LocalDate
 
+/**
+ * A user account
+ *
+ * @property username The user's unique username, used as the primary key
+ * @property password The account password
+ * @property email The account email address, must be unique
+ * @property phoneNumber The account phone number, must be unique
+ * @property displayName The name shown for the user
+ * @property dateOfBirth The user's date of birth
+ * @property currency The user's preferred currency
+ * @property profilePhotoPath The path to the user's profile photo, or null if none is set
+ */
 @Entity(
     tableName = "users",
     indices = [
