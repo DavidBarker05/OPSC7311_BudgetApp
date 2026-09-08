@@ -9,6 +9,8 @@ import com.example.mybudgettree.database.managers.CategoryDatabaseSystem
 import com.example.mybudgettree.database.managers.ExpenseDatabaseSystem
 import com.example.mybudgettree.database.managers.IncomeDatabaseSystem
 import com.example.mybudgettree.database.managers.UserDatabaseSystem
+import com.example.mybudgettree.imagestorage.ImageStorageSystem
+import com.example.mybudgettree.imagestorage.LocalImageStorageSystem
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -21,6 +23,7 @@ abstract class DatabaseTestBase {
     protected lateinit var budgetDatabaseSystem: BudgetDatabaseSystem
     protected lateinit var expenseDatabaseSystem: ExpenseDatabaseSystem
     protected lateinit var incomeDatabaseSystem: IncomeDatabaseSystem
+    protected lateinit var imageStorageSystem: ImageStorageSystem
 
     @Before
     fun setUpDatabase() {
@@ -33,6 +36,7 @@ abstract class DatabaseTestBase {
         budgetDatabaseSystem = BudgetDatabaseSystem(db.budgetDao(), categoryDatabaseSystem)
         expenseDatabaseSystem = ExpenseDatabaseSystem(db.expenseDao(), userDatabaseSystem, categoryDatabaseSystem)
         incomeDatabaseSystem = IncomeDatabaseSystem(db.incomeDao(), userDatabaseSystem, categoryDatabaseSystem)
+        imageStorageSystem = LocalImageStorageSystem(ApplicationProvider.getApplicationContext())
     }
 
     @After
