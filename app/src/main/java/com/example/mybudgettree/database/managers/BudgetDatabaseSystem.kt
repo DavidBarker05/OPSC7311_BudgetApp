@@ -44,7 +44,8 @@ class BudgetDatabaseSystem(
         if (currency.isBlank()) return CreateBudgetReturnInfo(wasSuccessful = false, errMsg = "Currency type is blank")
         if (amount < 0.0) return CreateBudgetReturnInfo(wasSuccessful = false, errMsg = "Amount cannot be negative")
         val budget = Budget(categoryId = category.id, currency = currency, amount = amount)
-        val id = budgetDao.insertBudget(budget) ?: return CreateBudgetReturnInfo(wasSuccessful = false, errMsg = "Category already has a budget")
+        val id = budgetDao.insertBudget(budget)
+        if (id == -1L) return CreateBudgetReturnInfo(wasSuccessful = false, errMsg = "Category already has a budget")
         return CreateBudgetReturnInfo(wasSuccessful = true, budget = budget.copy(id = id))
     }
 

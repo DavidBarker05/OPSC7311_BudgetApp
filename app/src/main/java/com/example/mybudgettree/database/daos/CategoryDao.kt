@@ -10,7 +10,7 @@ import androidx.room.OnConflictStrategy
 @Dao
 interface CategoryDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertCategory(category: Category): Long?
+    suspend fun insertCategory(category: Category): Long
 
     @Query("""
         UPDATE categories

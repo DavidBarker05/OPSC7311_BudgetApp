@@ -49,7 +49,8 @@ class CategoryDatabaseSystem(
         val userStatus = userDatabaseSystem.findUser(user.username)
         if (!userStatus.wasSuccessful) return CreateCategoryReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
         val category = Category(username = user.username, categoryName = categoryName)
-        val id = categoryDao.insertCategory(category) ?: return CreateCategoryReturnInfo(wasSuccessful = false, errMsg = "User already has a category with name \"$categoryName\"")
+        val id = categoryDao.insertCategory(category)
+        if (id == -1L) return CreateCategoryReturnInfo(wasSuccessful = false, errMsg = "User already has a category with name \"$categoryName\"")
         return CreateCategoryReturnInfo(wasSuccessful = true, category = category.copy(id = id))
     }
 

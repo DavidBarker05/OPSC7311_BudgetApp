@@ -11,7 +11,7 @@ import java.time.LocalDate
 @Dao
 interface UserDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertUser(user: User): Long?
+    suspend fun insertUser(user: User): Long
 
     @Query("""
         UPDATE users
