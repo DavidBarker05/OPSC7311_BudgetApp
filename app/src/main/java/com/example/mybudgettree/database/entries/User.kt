@@ -32,6 +32,6 @@ data class User(
     @ColumnInfo(name = "phone_number") val phoneNumber: String,
     @ColumnInfo(name = "display_name") val displayName: String,
     @ColumnInfo(name = "date_of_birth") val dateOfBirth: LocalDate,
-    @ColumnInfo(name = "currency") val currency: String,
+    val currency: String,
     @ColumnInfo(name = "profile_photo_path") val profilePhotoPath: String? = null
 )

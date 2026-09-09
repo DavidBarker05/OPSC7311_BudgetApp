@@ -21,7 +21,6 @@ class ExpenseDatabaseSystemTest : DatabaseTestBase() {
         val result = expenseDatabaseSystem.createExpense(
             category = category,
             description = "Milk",
-            currencyAtTime = "ZAR",
             amount = 25.50,
             date = LocalDate.of(2026, 1, 1),
             startTime = LocalTime.of(9, 0),
@@ -38,7 +37,6 @@ class ExpenseDatabaseSystemTest : DatabaseTestBase() {
         val result = expenseDatabaseSystem.createExpense(
             category = category,
             description = "Milk",
-            currencyAtTime = "ZAR",
             amount = -25.50,
             date = LocalDate.of(2026, 1, 1),
             startTime = LocalTime.of(9, 0),
@@ -54,7 +52,6 @@ class ExpenseDatabaseSystemTest : DatabaseTestBase() {
         val result = expenseDatabaseSystem.createExpense(
             category = category,
             description = "Milk",
-            currencyAtTime = "ZAR",
             amount = 25.50,
             date = LocalDate.of(2026, 1, 1),
             startTime = LocalTime.of(9, 5),
@@ -70,7 +67,6 @@ class ExpenseDatabaseSystemTest : DatabaseTestBase() {
         expenseDatabaseSystem.createExpense(
             category = category,
             description = "Milk",
-            currencyAtTime = "ZAR",
             amount = 25.50,
             date = LocalDate.of(2026, 1, 1),
             startTime = LocalTime.of(9, 0),

@@ -120,7 +120,6 @@ class IncomeDatabaseSystem(
     suspend fun createIncome(
         category: Category,
         description: String,
-        currencyAtTime: String,
         amount: Double,
         date: LocalDate,
         startTime: LocalTime,
@@ -130,14 +129,12 @@ class IncomeDatabaseSystem(
         val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
         if (!categoryStatus.wasSuccessful) return CreateIncomeReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
         if (description.isBlank()) return CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Description is blank")
-        if (currencyAtTime.isBlank()) return CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Currency type is blank")
         if (amount < 0.0) return CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Amount cannot be negative")
         if (endTime < startTime) return CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Start time is after end time")
         if (imagePath?.isBlank() ?: false) return CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Image path is empty")
         val income = Income(
             categoryId = category.id,
             description = description,
-            currencyAtTime = currencyAtTime,
             amount = amount,
             date = date,
             startTime = startTime,
