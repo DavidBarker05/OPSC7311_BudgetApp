@@ -191,6 +191,21 @@ class CategoryDatabaseSystem(
     }
 
     /**
+     * Modifies the budget for the category
+     *
+     * @param category The [Category] being updated
+     * @param newBudgetAmount The new budgeted amount, or null to remove the budget, cannot be negative
+     * @return An [UpdateCategoryReturnInfo] indicating what happened with the update
+     */
+    suspend fun updateCategoryBudget(category: Category, newBudgetAmount: Double?): UpdateCategoryReturnInfo {
+        if (category.budgetAmount == newBudgetAmount) return UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.NoChange, category = category)
+        if (newBudgetAmount != null && newBudgetAmount < 0.0) return UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Failed, errMsg = "Budget amount cannot be negative")
+        if (!isCategoryStillValid(category)) return UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Failed, errMsg = "Category does not exist")
+        categoryDao.updateCategoryBudget(category.id, newBudgetAmount)
+        return UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Succeeded, category = category.copy(budgetAmount = newBudgetAmount))
+    }
+
+    /**
      * Deletes the category from the database
      *
      * @param category The [Category] to delete

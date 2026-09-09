@@ -4,7 +4,6 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.example.mybudgettree.database.entries.Category
 import com.example.mybudgettree.database.entries.User
-import com.example.mybudgettree.database.managers.BudgetDatabaseSystem
 import com.example.mybudgettree.database.managers.CategoryDatabaseSystem
 import com.example.mybudgettree.database.managers.ExpenseDatabaseSystem
 import com.example.mybudgettree.database.managers.IncomeDatabaseSystem
@@ -20,7 +19,6 @@ abstract class DatabaseTestBase {
     protected lateinit var db: AppDatabase
     protected lateinit var userDatabaseSystem: UserDatabaseSystem
     protected lateinit var categoryDatabaseSystem: CategoryDatabaseSystem
-    protected lateinit var budgetDatabaseSystem: BudgetDatabaseSystem
     protected lateinit var expenseDatabaseSystem: ExpenseDatabaseSystem
     protected lateinit var incomeDatabaseSystem: IncomeDatabaseSystem
     protected lateinit var imageStorageSystem: ImageStorageSystem
@@ -33,7 +31,6 @@ abstract class DatabaseTestBase {
         ).build()
         userDatabaseSystem = UserDatabaseSystem(db.userDao())
         categoryDatabaseSystem = CategoryDatabaseSystem(db.categoryDao(), userDatabaseSystem)
-        budgetDatabaseSystem = BudgetDatabaseSystem(db.budgetDao(), categoryDatabaseSystem)
         expenseDatabaseSystem = ExpenseDatabaseSystem(db.expenseDao(), userDatabaseSystem, categoryDatabaseSystem)
         incomeDatabaseSystem = IncomeDatabaseSystem(db.incomeDao(), userDatabaseSystem, categoryDatabaseSystem)
         imageStorageSystem = LocalImageStorageSystem(ApplicationProvider.getApplicationContext())
