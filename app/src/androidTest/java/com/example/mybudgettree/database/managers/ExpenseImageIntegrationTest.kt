@@ -36,7 +36,6 @@ class ExpenseImageIntegrationTest : DatabaseTestBase() {
         val result = expenseDatabaseSystem.createExpense(
             category = category,
             description = "Receipt",
-            currencyAtTime = "ZAR",
             amount = 100.0,
             date = LocalDate.of(2026, 1, 1),
             startTime = LocalTime.of(9, 0),
@@ -58,7 +57,6 @@ class ExpenseImageIntegrationTest : DatabaseTestBase() {
         val result = expenseDatabaseSystem.createExpense(
             category = category,
             description = "Receipt",
-            currencyAtTime = "ZAR",
             amount = 100.0,
             date = LocalDate.of(2026, 1, 1),
             startTime = LocalTime.of(9, 0),
@@ -79,7 +77,6 @@ class ExpenseImageIntegrationTest : DatabaseTestBase() {
         val created = expenseDatabaseSystem.createExpense(
             category = category,
             description = "Receipt",
-            currencyAtTime = "ZAR",
             amount = 100.0,
             date = LocalDate.of(2026, 1, 1),
             startTime = LocalTime.of(9, 0),
@@ -106,7 +103,6 @@ class ExpenseImageIntegrationTest : DatabaseTestBase() {
         val expense = expenseDatabaseSystem.createExpense(
             category = category,
             description = "Receipt",
-            currencyAtTime = "ZAR",
             amount = 100.0,
             date = LocalDate.of(2026, 1, 1),
             startTime = LocalTime.of(9, 0),

@@ -21,7 +21,6 @@ class IncomeDatabaseSystemTest : DatabaseTestBase() {
         val result = incomeDatabaseSystem.createIncome(
             category = category,
             description = "Monthly salary",
-            currencyAtTime = "ZAR",
             amount = 15000.0,
             date = LocalDate.of(2026, 1, 1),
             startTime = LocalTime.of(9, 0),
@@ -38,7 +37,6 @@ class IncomeDatabaseSystemTest : DatabaseTestBase() {
         val result = incomeDatabaseSystem.createIncome(
             category = category,
             description = "Monthly salary",
-            currencyAtTime = "ZAR",
             amount = -15000.0,
             date = LocalDate.of(2026, 1, 1),
             startTime = LocalTime.of(9, 0),
@@ -54,7 +52,6 @@ class IncomeDatabaseSystemTest : DatabaseTestBase() {
         incomeDatabaseSystem.createIncome(
             category = category,
             description = "Monthly salary",
-            currencyAtTime = "ZAR",
             amount = 15000.0,
             date = LocalDate.of(2026, 1, 1),
             startTime = LocalTime.of(9, 0),

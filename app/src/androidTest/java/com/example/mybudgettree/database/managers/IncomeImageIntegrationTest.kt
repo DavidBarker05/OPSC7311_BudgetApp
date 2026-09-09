@@ -36,7 +36,6 @@ class IncomeImageIntegrationTest : DatabaseTestBase() {
         val result = incomeDatabaseSystem.createIncome(
             category = category,
             description = "Payslip",
-            currencyAtTime = "ZAR",
             amount = 15000.0,
             date = LocalDate.of(2026, 1, 1),
             startTime = LocalTime.of(9, 0),
@@ -58,7 +57,6 @@ class IncomeImageIntegrationTest : DatabaseTestBase() {
         val result = incomeDatabaseSystem.createIncome(
             category = category,
             description = "Payslip",
-            currencyAtTime = "ZAR",
             amount = 15000.0,
             date = LocalDate.of(2026, 1, 1),
             startTime = LocalTime.of(9, 0),
@@ -79,7 +77,6 @@ class IncomeImageIntegrationTest : DatabaseTestBase() {
         val created = incomeDatabaseSystem.createIncome(
             category = category,
             description = "Payslip",
-            currencyAtTime = "ZAR",
             amount = 15000.0,
             date = LocalDate.of(2026, 1, 1),
             startTime = LocalTime.of(9, 0),
@@ -106,7 +103,6 @@ class IncomeImageIntegrationTest : DatabaseTestBase() {
         val income = incomeDatabaseSystem.createIncome(
             category = category,
             description = "Payslip",
-            currencyAtTime = "ZAR",
             amount = 15000.0,
             date = LocalDate.of(2026, 1, 1),
             startTime = LocalTime.of(9, 0),

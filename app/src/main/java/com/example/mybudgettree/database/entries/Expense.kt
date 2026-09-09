@@ -40,7 +40,6 @@ data class Expense(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "category_id") val categoryId: Long,
     val description: String,
-    @ColumnInfo(name = "currency_at_time") val currencyAtTime: String,
     val amount: Double,
     val date: LocalDate,
     @ColumnInfo(name = "start_time") val startTime: LocalTime,
