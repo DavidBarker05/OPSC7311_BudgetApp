@@ -69,6 +69,13 @@ interface UserDao {
     """)
     suspend fun updateProfilePhoto(username: String, newProfilePhotoPath: String?)
 
+    @Query("""
+        UPDATE users
+        SET tree_level = :newTreeLevel
+        WHERE username = :username
+    """)
+    suspend fun updateTreeLevel(username: String, newTreeLevel: Int)
+
     @Delete
     suspend fun deleteUser(user: User): Int
 

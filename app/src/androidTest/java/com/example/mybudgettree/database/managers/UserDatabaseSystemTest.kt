@@ -252,4 +252,40 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
         assertEquals(UserDatabaseSystem.UpdateUserReturnStatus.Succeeded, result.status)
         assertEquals("0832222222", result.user?.phoneNumber)
     }
+
+    @Test
+    fun createUser_startsAtTreeLevelOne() = runBlocking {
+        val user = createTestUser("david")
+        assertEquals(1, user.treeLevel)
+    }
+
+    @Test
+    fun updateTreeLevel_succeeds() = runBlocking {
+        val user = createTestUser("david")
+        val result = userDatabaseSystem.updateTreeLevel(user, 2)
+        assertEquals(UserDatabaseSystem.UpdateUserReturnStatus.Succeeded, result.status)
+        assertEquals(2, result.user?.treeLevel)
+    }
+
+    @Test
+    fun updateTreeLevel_sameLevel_noChange() = runBlocking {
+        val user = createTestUser("david")
+        val result = userDatabaseSystem.updateTreeLevel(user, 1)
+        assertEquals(UserDatabaseSystem.UpdateUserReturnStatus.NoChange, result.status)
+    }
+
+    @Test
+    fun updateTreeLevel_belowOne_fails() = runBlocking {
+        val user = createTestUser("david")
+        val result = userDatabaseSystem.updateTreeLevel(user, 0)
+        assertEquals(UserDatabaseSystem.UpdateUserReturnStatus.Failed, result.status)
+    }
+
+    @Test
+    fun updateTreeLevel_userDoesNotExist_fails() = runBlocking {
+        val user = createTestUser("david")
+        userDatabaseSystem.deleteUser(user)
+        val result = userDatabaseSystem.updateTreeLevel(user, 2)
+        assertEquals(UserDatabaseSystem.UpdateUserReturnStatus.Failed, result.status)
+    }
 }

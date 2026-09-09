@@ -344,6 +344,21 @@ class UserDatabaseSystem(private val userDao: UserDao) {
     }
 
     /**
+     * Modifies the money tree's growth level for the user
+     *
+     * @param user The [User] being updated
+     * @param newTreeLevel The new tree level, cannot be less than 1
+     * @return An [UpdateUserReturnInfo] indicating what happened with the update
+     */
+    suspend fun updateTreeLevel(user: User, newTreeLevel: Int): UpdateUserReturnInfo {
+        if (user.treeLevel == newTreeLevel) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+        if (newTreeLevel < 1) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Tree level cannot be less than 1")
+        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+        userDao.updateTreeLevel(user.username, newTreeLevel)
+        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(treeLevel = newTreeLevel))
+    }
+
+    /**
      * Deletes the user from the database
      *
      * @param user The [User] to delete

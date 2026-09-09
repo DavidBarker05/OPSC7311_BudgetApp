@@ -17,6 +17,7 @@ import java.time.LocalDate
  * @property dateOfBirth The user's date of birth
  * @property currency The user's preferred currency
  * @property profilePhotoPath The path to the user's profile photo, or null if none is set
+ * @property treeLevel The current growth level of the user's money tree
  */
 @Entity(
     tableName = "users",
@@ -33,5 +34,6 @@ data class User(
     @ColumnInfo(name = "display_name") val displayName: String,
     @ColumnInfo(name = "date_of_birth") val dateOfBirth: LocalDate,
     val currency: String,
-    @ColumnInfo(name = "profile_photo_path") val profilePhotoPath: String? = null
+    @ColumnInfo(name = "profile_photo_path") val profilePhotoPath: String? = null,
+    @ColumnInfo(name = "tree_level") val treeLevel: Int = 1
 )
