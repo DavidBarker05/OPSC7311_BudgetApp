@@ -14,6 +14,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import java.time.LocalDate
+import java.time.YearMonth
 
 abstract class DatabaseTestBase {
     protected lateinit var db: AppDatabase
@@ -50,7 +51,7 @@ abstract class DatabaseTestBase {
             displayName = "Test User",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR",
-            profilePhotoPath = null
+            treeLevelPeriod = YearMonth.of(2026, 1)
         ).user!!
     }
 

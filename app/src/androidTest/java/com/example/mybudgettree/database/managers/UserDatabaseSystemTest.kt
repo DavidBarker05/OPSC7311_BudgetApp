@@ -9,6 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.LocalDate
+import java.time.YearMonth
 
 @RunWith(AndroidJUnit4::class)
 class UserDatabaseSystemTest : DatabaseTestBase() {
@@ -23,7 +24,7 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
             displayName = "David",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR",
-            profilePhotoPath = null
+            treeLevelPeriod = YearMonth.of(2026, 1)
         )
         assertTrue(result.wasSuccessful)
         assertEquals("david", result.user?.username)
@@ -40,7 +41,7 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
             displayName = "David",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR",
-            profilePhotoPath = null
+            treeLevelPeriod = YearMonth.of(2026, 1)
         )
         assertFalse(result.wasSuccessful)
     }
@@ -56,7 +57,7 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
             displayName = "Someone Else",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR",
-            profilePhotoPath = null
+            treeLevelPeriod = YearMonth.of(2026, 1)
         )
         assertFalse(result.wasSuccessful)
     }
@@ -85,7 +86,7 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
             displayName = "David",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR",
-            profilePhotoPath = null
+            treeLevelPeriod = YearMonth.of(2026, 1)
         )
         assertFalse(result.wasSuccessful)
     }
@@ -100,7 +101,7 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
             displayName = "David",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR",
-            profilePhotoPath = null
+            treeLevelPeriod = YearMonth.of(2026, 1)
         )
         assertFalse(result.wasSuccessful)
     }
@@ -115,7 +116,7 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
             displayName = "David",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR",
-            profilePhotoPath = null
+            treeLevelPeriod = YearMonth.of(2026, 1)
         )
         assertFalse(result.wasSuccessful)
     }
@@ -130,7 +131,7 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
             displayName = "David",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR",
-            profilePhotoPath = null
+            treeLevelPeriod = YearMonth.of(2026, 1)
         )
         assertTrue(result.wasSuccessful)
     }
@@ -160,7 +161,7 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
             displayName = "David",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR",
-            profilePhotoPath = null
+            treeLevelPeriod = YearMonth.of(2026, 1)
         )
         assertTrue(result.wasSuccessful)
         assertEquals("0821111111", result.user?.phoneNumber)
@@ -176,7 +177,7 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
             displayName = "David",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR",
-            profilePhotoPath = null
+            treeLevelPeriod = YearMonth.of(2026, 1)
         )
         assertTrue(result.wasSuccessful)
         assertEquals("0821111111", result.user?.phoneNumber)
@@ -192,7 +193,7 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
             displayName = "David",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR",
-            profilePhotoPath = null
+            treeLevelPeriod = YearMonth.of(2026, 1)
         )
         assertTrue(result.wasSuccessful)
         assertEquals("+27821111111", result.user?.phoneNumber)
@@ -208,7 +209,7 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
             displayName = "David",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR",
-            profilePhotoPath = null
+            treeLevelPeriod = YearMonth.of(2026, 1)
         )
         assertFalse(result.wasSuccessful)
     }
@@ -223,7 +224,7 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
             displayName = "David",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR",
-            profilePhotoPath = null
+            treeLevelPeriod = YearMonth.of(2026, 1)
         )
         assertFalse(result.wasSuccessful)
     }
@@ -238,7 +239,7 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
             displayName = "David",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR",
-            profilePhotoPath = null
+            treeLevelPeriod = YearMonth.of(2026, 1)
         )
         val result = userDatabaseSystem.findUserByPhoneNumber("082 111-1111")
         assertTrue(result.wasSuccessful)
@@ -286,6 +287,42 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
         val user = createTestUser("david")
         userDatabaseSystem.deleteUser(user)
         val result = userDatabaseSystem.updateTreeLevel(user, 2)
+        assertEquals(UserDatabaseSystem.UpdateUserReturnStatus.Failed, result.status)
+    }
+
+    @Test
+    fun createUser_startsAtGivenTreeLevelPeriod() = runBlocking {
+        val user = createTestUser("david")
+        assertEquals(YearMonth.of(2026, 1), user.treeLevelPeriod)
+    }
+
+    @Test
+    fun updateTreeLevelPeriod_toLaterMonth_succeeds() = runBlocking {
+        val user = createTestUser("david")
+        val result = userDatabaseSystem.updateTreeLevelPeriod(user, YearMonth.of(2026, 2))
+        assertEquals(UserDatabaseSystem.UpdateUserReturnStatus.Succeeded, result.status)
+        assertEquals(YearMonth.of(2026, 2), result.user?.treeLevelPeriod)
+    }
+
+    @Test
+    fun updateTreeLevelPeriod_samePeriod_noChange() = runBlocking {
+        val user = createTestUser("david")
+        val result = userDatabaseSystem.updateTreeLevelPeriod(user, YearMonth.of(2026, 1))
+        assertEquals(UserDatabaseSystem.UpdateUserReturnStatus.NoChange, result.status)
+    }
+
+    @Test
+    fun updateTreeLevelPeriod_toEarlierMonth_fails() = runBlocking {
+        val user = createTestUser("david")
+        val result = userDatabaseSystem.updateTreeLevelPeriod(user, YearMonth.of(2025, 12))
+        assertEquals(UserDatabaseSystem.UpdateUserReturnStatus.Failed, result.status)
+    }
+
+    @Test
+    fun updateTreeLevelPeriod_userDoesNotExist_fails() = runBlocking {
+        val user = createTestUser("david")
+        userDatabaseSystem.deleteUser(user)
+        val result = userDatabaseSystem.updateTreeLevelPeriod(user, YearMonth.of(2026, 2))
         assertEquals(UserDatabaseSystem.UpdateUserReturnStatus.Failed, result.status)
     }
 }
