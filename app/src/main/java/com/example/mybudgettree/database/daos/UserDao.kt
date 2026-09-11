@@ -7,6 +7,7 @@ import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.OnConflictStrategy
 import java.time.LocalDate
+import java.time.YearMonth
 
 @Dao
 interface UserDao {
@@ -75,6 +76,13 @@ interface UserDao {
         WHERE username = :username
     """)
     suspend fun updateTreeLevel(username: String, newTreeLevel: Int)
+
+    @Query("""
+        UPDATE users
+        SET tree_level_period = :newTreeLevelPeriod
+        WHERE username = :username
+    """)
+    suspend fun updateTreeLevelPeriod(username: String, newTreeLevelPeriod: YearMonth)
 
     @Delete
     suspend fun deleteUser(user: User): Int

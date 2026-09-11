@@ -4,6 +4,7 @@ import android.util.Patterns
 import com.example.mybudgettree.database.daos.UserDao
 import com.example.mybudgettree.database.entries.User
 import java.time.LocalDate
+import java.time.YearMonth
 
 /**
  * This system manages user state, credentials validation, account discovery, updates, and removals
@@ -104,7 +105,7 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @param displayName The name shown for the user
      * @param dateOfBirth The user's date of birth
      * @param currency The user's preferred currency
-     * @param profilePhotoPath The path to the user's profile photo, or null if none is set
+     * @param treeLevelPeriod The year and month the user's starting tree level applies to
      * @return A [CreateUserReturnInfo] indicating what happened with the creation
      */
     suspend fun createUser(
@@ -115,7 +116,7 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         displayName: String,
         dateOfBirth: LocalDate,
         currency: String,
-        profilePhotoPath: String?
+        treeLevelPeriod: YearMonth
     ): CreateUserReturnInfo {
         if (username.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Username is empty")
         if (password.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Password is empty")
@@ -123,7 +124,6 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         if (phoneNumber.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is empty")
         if (displayName.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Display name is empty")
         if (currency.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Currency is empty")
-        if (profilePhotoPath?.isBlank() ?: false) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Profile photo path is empty")
         if (!USERNAME_REGEX.matches(username)) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Username may only contain English letters and numbers")
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Email is not a valid email address")
         val normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
@@ -139,7 +139,7 @@ class UserDatabaseSystem(private val userDao: UserDao) {
             displayName = displayName,
             dateOfBirth = dateOfBirth,
             currency = currency,
-            profilePhotoPath = profilePhotoPath
+            treeLevelPeriod = treeLevelPeriod
         )
         userDao.insertUser(user) // Already checked all details not in use so safe to not check after insert
         return CreateUserReturnInfo(wasSuccessful = true, user = user)
@@ -356,6 +356,21 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
         userDao.updateTreeLevel(user.username, newTreeLevel)
         return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(treeLevel = newTreeLevel))
+    }
+
+    /**
+     * Modifies the year and month the user's current tree level applies to
+     *
+     * @param user The [User] being updated
+     * @param newTreeLevelPeriod The new tree level period, cannot be before the user's current period
+     * @return An [UpdateUserReturnInfo] indicating what happened with the update
+     */
+    suspend fun updateTreeLevelPeriod(user: User, newTreeLevelPeriod: YearMonth): UpdateUserReturnInfo {
+        if (user.treeLevelPeriod == newTreeLevelPeriod) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+        if (newTreeLevelPeriod < user.treeLevelPeriod) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New tree level period cannot be before current period")
+        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+        userDao.updateTreeLevelPeriod(user.username, newTreeLevelPeriod)
+        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(treeLevelPeriod = newTreeLevelPeriod))
     }
 
     /**
