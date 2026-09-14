@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/securityPinRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/sage_header"
+    tools:context=".SecurityPinActivity">
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="@string/security_pin"
+        android:textColor="@color/title_on_sage"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/cardBackground"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="28dp"
+        android:background="@drawable/bg_auth_card"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+
+    <ImageView
+        android:id="@+id/ivNatureFooter"
+        android:layout_width="0dp"
+        android:layout_height="240dp"
+        android:alpha="0.4"
+        android:contentDescription="@string/welcome_background_description"
+        android:scaleType="centerCrop"
+        android:src="@drawable/img_nature_footer"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:paddingTop="36dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/cardBackground">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/enter_security_pin"
+                android:textColor="@color/green_text"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/pinRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/etPin1"
+                    style="@style/Widget.MyBudgetTree.PinDigit" />
+
+                <EditText
+                    android:id="@+id/etPin2"
+                    style="@style/Widget.MyBudgetTree.PinDigit" />
+
+                <EditText
+                    android:id="@+id/etPin3"
+                    style="@style/Widget.MyBudgetTree.PinDigit" />
+
+                <EditText
+                    android:id="@+id/etPin4"
+                    style="@style/Widget.MyBudgetTree.PinDigit" />
+
+                <EditText
+                    android:id="@+id/etPin5"
+                    style="@style/Widget.MyBudgetTree.PinDigit" />
+
+                <EditText
+                    android:id="@+id/etPin6"
+                    style="@style/Widget.MyBudgetTree.PinDigit" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAccept"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginStart="56dp"
+                android:layout_marginTop="36dp"
+                android:layout_marginEnd="56dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="@string/accept"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/sage_button"
+                app:cornerRadius="28dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSendAgain"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginStart="56dp"
+                android:layout_marginTop="14dp"
+                android:layout_marginEnd="56dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="@string/send_again"
+                android:textAllCaps="false"
+                android:textColor="@color/green_text"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/mint_button"
+                app:cornerRadius="28dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="@string/or_sign_up_with"
+                android:textColor="@color/green_text"
+                android:textSize="13sp" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/btnFacebook"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_social_circle"
+                    android:contentDescription="@string/facebook"
+                    android:padding="10dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_facebook" />
+
+                <ImageButton
+                    android:id="@+id/btnGoogle"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="20dp"
+                    android:background="@drawable/bg_social_circle"
+                    android:contentDescription="@string/google"
+                    android:padding="10dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_google" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/dont_have_account"
+                    android:textColor="@color/green_text"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvSignupLink"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:text="@string/sign_up"
+                    android:textColor="@color/link_blue"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

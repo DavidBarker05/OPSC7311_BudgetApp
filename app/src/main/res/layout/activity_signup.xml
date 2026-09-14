@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/signupRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/sage_header"
+    tools:context=".SignupActivity">
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="@string/create_account"
+        android:textColor="@color/white"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/cardBackground"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/bg_auth_card"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+
+    <ImageView
+        android:id="@+id/ivNatureFooter"
+        android:layout_width="0dp"
+        android:layout_height="180dp"
+        android:alpha="0.35"
+        android:contentDescription="@string/welcome_background_description"
+        android:scaleType="centerCrop"
+        android:src="@drawable/img_nature_footer"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ScrollView
+        android:id="@+id/signupScroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:paddingTop="20dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/cardBackground">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="28dp"
+            android:paddingEnd="28dp">
+
+            <TextView
+                style="@style/Widget.MyBudgetTree.FieldLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/full_name" />
+
+            <EditText
+                android:id="@+id/etFullName"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_input_field"
+                android:hint="@string/hint_full_name"
+                android:importantForAutofill="yes"
+                android:inputType="textPersonName|textCapWords"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:textColor="@color/green_text"
+                android:textColorHint="@color/hint_text"
+                android:textSize="15sp" />
+
+            <TextView
+                style="@style/Widget.MyBudgetTree.FieldLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/email" />
+
+            <EditText
+                android:id="@+id/etEmail"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_input_field"
+                android:hint="@string/hint_email"
+                android:importantForAutofill="yes"
+                android:inputType="textEmailAddress"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:textColor="@color/green_text"
+                android:textColorHint="@color/hint_text"
+                android:textSize="15sp" />
+
+            <TextView
+                style="@style/Widget.MyBudgetTree.FieldLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/mobile_number" />
+
+            <EditText
+                android:id="@+id/etPhone"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_input_field"
+                android:hint="@string/hint_phone"
+                android:importantForAutofill="yes"
+                android:inputType="phone"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:textColor="@color/green_text"
+                android:textColorHint="@color/hint_text"
+                android:textSize="15sp" />
+
+            <TextView
+                style="@style/Widget.MyBudgetTree.FieldLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/date_of_birth" />
+
+            <EditText
+                android:id="@+id/etDateOfBirth"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_input_field"
+                android:clickable="true"
+                android:focusable="false"
+                android:hint="@string/hint_date_of_birth"
+                android:inputType="none"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:textColor="@color/green_text"
+                android:textColorHint="@color/hint_text"
+                android:textSize="15sp" />
+
+            <TextView
+                style="@style/Widget.MyBudgetTree.FieldLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/password" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:boxBackgroundColor="@color/input_fill"
+                app:boxBackgroundMode="filled"
+                app:boxCornerRadiusBottomEnd="28dp"
+                app:boxCornerRadiusBottomStart="28dp"
+                app:boxCornerRadiusTopEnd="28dp"
+                app:boxCornerRadiusTopStart="28dp"
+                app:boxStrokeWidth="0dp"
+                app:boxStrokeWidthFocused="0dp"
+                app:endIconMode="password_toggle"
+                app:endIconTint="@color/green_text"
+                app:hintEnabled="false">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:inputType="textPassword"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:textColor="@color/green_text"
+                    android:textSize="15sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                style="@style/Widget.MyBudgetTree.FieldLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/confirm_password" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilConfirmPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:boxBackgroundColor="@color/input_fill"
+                app:boxBackgroundMode="filled"
+                app:boxCornerRadiusBottomEnd="28dp"
+                app:boxCornerRadiusBottomStart="28dp"
+                app:boxCornerRadiusTopEnd="28dp"
+                app:boxCornerRadiusTopStart="28dp"
+                app:boxStrokeWidth="0dp"
+                app:boxStrokeWidthFocused="0dp"
+                app:endIconMode="password_toggle"
+                app:endIconTint="@color/green_text"
+                app:hintEnabled="false">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etConfirmPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:inputType="textPassword"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:textColor="@color/green_text"
+                    android:textSize="15sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:id="@+id/tvTerms"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/terms_notice"
+                android:textColor="@color/green_text"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSignup"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginStart="36dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginEnd="36dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="@string/sign_up"
+                android:textAllCaps="false"
+                android:textColor="@color/green_text"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/sage_button"
+                app:cornerRadius="28dp" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/already_have_account"
+                    android:textColor="@color/green_text"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvLoginLink"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:text="@string/log_in"
+                    android:textColor="@color/link_blue"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

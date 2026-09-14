@@ -1,3 +1,67 @@
 <resources>
-    <string name="app_name">MyBudgetTree</string>
+    <string name="app_name">MyMoneyTree</string>
+    <string name="splash_logo_description">MyMoneyTree logo</string>
+    <string name="welcome_background_description">Forest landscape</string>
+    <string name="logo_badge_description">MyMoneyTree badge</string>
+
+    <string name="log_in">Log In</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="welcome">Welcome</string>
+    <string name="create_account">Create Account</string>
+
+    <string name="username_or_email">Username Or Email</string>
+    <string name="password">Password</string>
+    <string name="full_name">Full Name</string>
+    <string name="email">Email</string>
+    <string name="mobile_number">Mobile Number</string>
+    <string name="date_of_birth">Date Of Birth</string>
+    <string name="confirm_password">Confirm Password</string>
+
+    <string name="hint_full_name">Your full name</string>
+    <string name="hint_email">example@example.com</string>
+    <string name="hint_phone">+123 456 789</string>
+    <string name="hint_date_of_birth">DD / MM / YYYY</string>
+
+    <string name="or_sign_up_with">or sign up with</string>
+    <string name="dont_have_account">Don\'t have an account?</string>
+    <string name="already_have_account">Already have an account?</string>
+    <string name="terms_notice">By continuing, you agree to\nTerms of Use and Privacy Policy.</string>
+    <string name="facebook">Facebook</string>
+    <string name="google">Google</string>
+
+    <string name="forgot_password_title">Forgot Password</string>
+    <string name="reset_password_heading">Reset Password?</string>
+    <string name="reset_password_body">Enter the email address for your account. We will give you a 6-digit security pin so you can choose a new password.</string>
+    <string name="enter_email_address">Enter Email Address</string>
+    <string name="next_step">Next Step</string>
+    <string name="security_pin">Security Pin</string>
+    <string name="enter_security_pin">Enter Security Pin</string>
+    <string name="accept">Accept</string>
+    <string name="send_again">Send Again</string>
+    <string name="new_password_title">New Password</string>
+    <string name="new_password">New Password</string>
+    <string name="confirm_new_password">Confirm New Password</string>
+    <string name="change_password">Change Password</string>
+    <string name="password_changed_successfully">Password Has Been\nChanged Successfully</string>
+    <string name="success_icon_description">Password changed</string>
+    <string name="email_required">Please enter your email address.</string>
+    <string name="email_invalid">Please enter a valid email address.</string>
+    <string name="pin_dialog_title">Your security pin</string>
+    <string name="pin_dialog_message">Your security pin is %1$s\n\nEnter this pin on the next screen. In a finished app this would be sent to your email.</string>
+    <string name="pin_incomplete">Please enter the 6-digit pin.</string>
+    <string name="pin_incorrect">That pin is incorrect. Try again or tap Send Again.</string>
+    <string name="password_required">Please enter and confirm your new password.</string>
+    <string name="passwords_do_not_match">Passwords do not match.</string>
+    <string name="ok">OK</string>
+    <string name="pin_digit">Pin digit</string>
+    <string name="social_coming_soon">Social sign-in is coming soon.</string>
+    <string name="login_fields_required">Please enter your email and password.</string>
+    <string name="login_failed">Invalid username/email or password.</string>
+    <string name="signup_fields_required">Please fill in every field.</string>
+    <string name="signup_invalid_date">Please choose a valid date of birth.</string>
+    <string name="signup_success">Account created. Please log in.</string>
+    <string name="home_greeting">Welcome, %1$s</string>
+    <string name="home_placeholder">You are logged in. More screens will be added next.</string>
+    <string name="log_out">Log Out</string>
 </resources>

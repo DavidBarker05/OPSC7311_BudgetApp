@@ -24,7 +24,7 @@ class BudgetTreeApplication : Application() {
             applicationContext,
             AppDatabase::class.java,
             "mybudgettree.db"
-        ).build()
+        ).fallbackToDestructiveMigration(true).build()
         userDatabaseSystem = UserDatabaseSystem(database.userDao())
         categoryDatabaseSystem = CategoryDatabaseSystem(database.categoryDao(), userDatabaseSystem)
         expenseDatabaseSystem = ExpenseDatabaseSystem(database.expenseDao(), userDatabaseSystem, categoryDatabaseSystem)

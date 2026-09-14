@@ -186,6 +186,27 @@ class UserDatabaseSystem(private val userDao: UserDao) {
     }
 
     /**
+     * Finds a user by username or email and checks the password
+     *
+     * @param usernameOrEmail The username or email entered on the login screen
+     * @param password The password to check
+     * @return A [FindUserReturnInfo] with the matching user if the credentials are valid
+     */
+    suspend fun login(usernameOrEmail: String, password: String): FindUserReturnInfo {
+        if (usernameOrEmail.isBlank()) return FindUserReturnInfo(wasSuccessful = false, errMsg = "Username or email is empty")
+        if (password.isBlank()) return FindUserReturnInfo(wasSuccessful = false, errMsg = "Password is empty")
+        val user = if (usernameOrEmail.contains("@")) {
+            userDao.findUserByEmail(usernameOrEmail)
+        } else {
+            userDao.findUser(usernameOrEmail) ?: userDao.findUserByEmail(usernameOrEmail)
+        }
+        if (user == null || user.password != password) {
+            return FindUserReturnInfo(wasSuccessful = false, errMsg = "Invalid username/email or password")
+        }
+        return FindUserReturnInfo(wasSuccessful = true, user = user)
+    }
+
+    /**
      * Check if the user is in the database
      *
      * @param username The username to search for
