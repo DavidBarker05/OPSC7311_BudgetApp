@@ -8,14 +8,20 @@ import android.widget.Toast
 object MainNavigation {
     enum class Tab { HOME, ANALYTICS, TRANSACTION, CATEGORIES, PROFILE }
 
-    fun bind(activity: Activity, selected: Tab) {
+    fun bind(activity: Activity, selected: Tab? = null) {
         activity.findViewById<ImageButton>(R.id.navHome).apply {
             isSelected = selected == Tab.HOME
             setOnClickListener { open(activity, HomeActivity::class.java, selected == Tab.HOME) }
         }
         activity.findViewById<ImageButton>(R.id.navAnalysis).apply {
-            isSelected = selected == Tab.ANALYTICS
-            setOnClickListener { open(activity, AnalysisActivity::class.java, selected == Tab.ANALYTICS) }
+            isSelected = selected == Tab.ANALYTICS || activity is SearchActivity
+            setOnClickListener {
+                if (activity is SearchActivity) {
+                    activity.finish()
+                    return@setOnClickListener
+                }
+                open(activity, AnalysisActivity::class.java, selected == Tab.ANALYTICS)
+            }
         }
         activity.findViewById<ImageButton>(R.id.navTransactions).apply {
             isSelected = selected == Tab.TRANSACTION

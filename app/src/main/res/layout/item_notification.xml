@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:paddingTop="4dp">
+
+    <ImageView
+        android:id="@+id/ivNotificationIcon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@drawable/bg_notification_icon"
+        android:contentDescription="@string/notifications"
+        android:padding="12dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_notif_bell"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvNotificationTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/green_text"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/ivNotificationIcon"
+        app:layout_constraintTop_toTopOf="@id/ivNotificationIcon"
+        tools:text="Reminder!" />
+
+    <TextView
+        android:id="@+id/tvNotificationBody"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textColor="@color/hint_text"
+        android:textSize="13sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@id/tvNotificationTitle"
+        app:layout_constraintTop_toBottomOf="@id/tvNotificationTitle"
+        tools:text="Set up your automatic savings to meet your savings goal..." />
+
+    <TextView
+        android:id="@+id/tvNotificationHighlight"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/home_header"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@id/tvNotificationTitle"
+        app:layout_constraintTop_toBottomOf="@id/tvNotificationBody"
+        tools:text="Groceries | Pantry | -R100.00"
+        tools:visibility="visible" />
+
+    <TextView
+        android:id="@+id/tvNotificationTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/green_primary"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvNotificationHighlight"
+        tools:text="17:00 - April 24" />
+
+    <View
+        android:id="@+id/notificationDivider"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginTop="12dp"
+        android:background="@color/period_selected"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@id/tvNotificationTitle"
+        app:layout_constraintTop_toBottomOf="@id/tvNotificationTime" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -32,11 +32,6 @@ abstract class PlaceholderSectionActivity : AppCompatActivity() {
     }
 }
 
-class AnalysisActivity : PlaceholderSectionActivity() {
-    override val titleRes: Int = R.string.analytics
-    override val tab: MainNavigation.Tab = MainNavigation.Tab.ANALYTICS
-}
-
 class TransactionActivity : PlaceholderSectionActivity() {
     override val titleRes: Int = R.string.transactions
     override val tab: MainNavigation.Tab = MainNavigation.Tab.TRANSACTION
@@ -50,24 +45,4 @@ class CategoriesActivity : PlaceholderSectionActivity() {
 class ProfileActivity : PlaceholderSectionActivity() {
     override val titleRes: Int = R.string.profile
     override val tab: MainNavigation.Tab = MainNavigation.Tab.PROFILE
-}
-
-class NotificationsActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
-        setContentView(R.layout.activity_section_placeholder)
-
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.sectionRoot)) { view, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.updatePadding(top = bars.top, bottom = bars.bottom)
-            insets
-        }
-
-        findViewById<TextView>(R.id.tvSectionTitle).setText(R.string.notifications)
-        findViewById<TextView>(R.id.tvSectionMessage).setText(R.string.no_notifications)
-        findViewById<android.view.View>(R.id.bottomNav).visibility = android.view.View.GONE
-    }
 }

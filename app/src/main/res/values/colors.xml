@@ -23,4 +23,14 @@
     <color name="period_selected">#FFD5E6D4</color>
     <color name="home_sheet">#FFF3F8F0</color>
     <color name="nav_bar">#FFEFF6EC</color>
+    <color name="analysis_chart_bg">#FFE4F0E2</color>
+    <color name="analysis_bar_income">#FFC5D4C3</color>
+    <color name="analysis_bar_expense">#FF5E7A64</color>
+    <color name="analysis_progress_blue">#FF7EC8F8</color>
+    <color name="analysis_header_sage">#FF6E8F72</color>
+    <color name="analysis_header_muted">#FF8FA08C</color>
+    <color name="analysis_donut_track">#FFC5D4C3</color>
+    <color name="analysis_donut_progress">#FF2F5D3E</color>
+    <color name="analysis_bell_fill">#FFE8F5E0</color>
+    <color name="budget_track">#66FFFFFF</color>
 </resources>
