@@ -31,6 +31,13 @@
         <item name="android:windowBackground">@color/sage_header</item>
     </style>
 
+    <style name="Theme.MyBudgetTree.Home" parent="Theme.MyBudgetTree">
+        <item name="android:statusBarColor">@color/home_header</item>
+        <item name="android:navigationBarColor">@color/nav_bar</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">@color/home_sheet</item>
+    </style>
+
     <style name="Theme.MyBudgetTree.Success" parent="Theme.MyBudgetTree">
         <item name="android:statusBarColor">@color/success_green</item>
         <item name="android:navigationBarColor">@color/success_green</item>

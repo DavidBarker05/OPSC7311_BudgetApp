@@ -58,7 +58,27 @@
         <activity
             android:name=".HomeActivity"
             android:exported="false"
-            android:theme="@style/Theme.MyBudgetTree" />
+            android:theme="@style/Theme.MyBudgetTree.Home" />
+        <activity
+            android:name=".AnalysisActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home" />
+        <activity
+            android:name=".TransactionActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home" />
+        <activity
+            android:name=".CategoriesActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home" />
+        <activity
+            android:name=".ProfileActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home" />
+        <activity
+            android:name=".NotificationsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home" />
     </application>
 
 </manifest>
