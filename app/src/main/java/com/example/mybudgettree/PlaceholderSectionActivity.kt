@@ -32,16 +32,6 @@ abstract class PlaceholderSectionActivity : AppCompatActivity() {
     }
 }
 
-class TransactionActivity : PlaceholderSectionActivity() {
-    override val titleRes: Int = R.string.transactions
-    override val tab: MainNavigation.Tab = MainNavigation.Tab.TRANSACTION
-}
-
-class CategoriesActivity : PlaceholderSectionActivity() {
-    override val titleRes: Int = R.string.categories
-    override val tab: MainNavigation.Tab = MainNavigation.Tab.CATEGORIES
-}
-
 class ProfileActivity : PlaceholderSectionActivity() {
     override val titleRes: Int = R.string.profile
     override val tab: MainNavigation.Tab = MainNavigation.Tab.PROFILE

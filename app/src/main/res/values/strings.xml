@@ -94,6 +94,8 @@
     <string name="no_search_results">No matching transactions.</string>
     <string name="analysis_calendar">Choose date</string>
     <string name="transactions">Transactions</string>
+    <string name="transaction_title">Transaction</string>
+    <string name="no_transactions_filter">No transactions in this view.</string>
     <string name="categories">Categories</string>
     <string name="goals">Goals</string>
     <string name="profile">Profile</string>
@@ -128,4 +130,28 @@
     <string name="money_negative">-R%1$s</string>
     <string name="transaction_detail">%1$s - %2$s</string>
     <string name="log_out">Log Out</string>
+    <string name="category_garden">Category Garden</string>
+    <string name="more">More</string>
+    <string name="sow_expenses">Sow Expenses</string>
+    <string name="new_category">New Category</string>
+    <string name="write_hint">Write...</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="amount">Amount</string>
+    <string name="amount_hint">R0.00</string>
+    <string name="expense_title">Expense Title</string>
+    <string name="enter_message">Enter Message</string>
+    <string name="receipt_track">Receipt Track</string>
+    <string name="upload_image_take_photo">Upload Image / Take Photo</string>
+    <string name="upload_image">Upload Image</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="expense_saved">Expense saved.</string>
+    <string name="category_created">Category added to your garden.</string>
+    <string name="category_name_required">Please enter a category name.</string>
+    <string name="expense_fields_required">Please enter an amount and expense title.</string>
+    <string name="expense_amount_invalid">Please enter a valid amount.</string>
+    <string name="no_categories_yet">Add a category before sowing expenses.</string>
+    <string name="no_category_expenses">No expenses in this category yet.</string>
+    <string name="camera_permission_needed">Camera permission is needed to take a photo.</string>
+    <string name="receipt_added">Receipt added.</string>
 </resources>

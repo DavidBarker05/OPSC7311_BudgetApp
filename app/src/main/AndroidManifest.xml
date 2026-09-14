@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
     <application
         android:name=".BudgetTreeApplication"
         android:allowBackup="true"
@@ -77,6 +82,15 @@
             android:exported="false"
             android:theme="@style/Theme.MyBudgetTree.Home" />
         <activity
+            android:name=".CategoryDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home" />
+        <activity
+            android:name=".SowExpensesActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".ProfileActivity"
             android:exported="false"
             android:theme="@style/Theme.MyBudgetTree.Home" />
@@ -84,6 +98,16 @@
             android:name=".NotificationsActivity"
             android:exported="false"
             android:theme="@style/Theme.MyBudgetTree.Home" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

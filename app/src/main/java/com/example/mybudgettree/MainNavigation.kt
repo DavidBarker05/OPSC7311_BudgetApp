@@ -29,7 +29,13 @@ object MainNavigation {
         }
         activity.findViewById<ImageButton>(R.id.navCategories).apply {
             isSelected = selected == Tab.CATEGORIES
-            setOnClickListener { open(activity, CategoriesActivity::class.java, selected == Tab.CATEGORIES) }
+            setOnClickListener {
+                if (activity is CategoryDetailActivity || activity is SowExpensesActivity) {
+                    open(activity, CategoriesActivity::class.java, alreadyThere = false)
+                    return@setOnClickListener
+                }
+                open(activity, CategoriesActivity::class.java, selected == Tab.CATEGORIES)
+            }
         }
         // TODO: Open the Goals screen when that UI is implemented.
         activity.findViewById<ImageButton>(R.id.navGoals).setOnClickListener {
@@ -44,7 +50,7 @@ object MainNavigation {
     private fun open(activity: Activity, destination: Class<*>, alreadyThere: Boolean) {
         if (alreadyThere) return
         val intent = Intent(activity, destination)
-        if (destination == HomeActivity::class.java) {
+        if (destination == HomeActivity::class.java || destination == CategoriesActivity::class.java) {
             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         activity.startActivity(intent)

@@ -32,5 +32,8 @@
     <color name="analysis_donut_track">#FFC5D4C3</color>
     <color name="analysis_donut_progress">#FF2F5D3E</color>
     <color name="analysis_bell_fill">#FFE8F5E0</color>
-    <color name="budget_track">#66FFFFFF</color>
+    <color name="category_tile">#FFC5D6C4</color>
+    <color name="sow_field">#FFE3F0E0</color>
+    <color name="budget_track">#FFEAF3E8</color>
+    <color name="dialog_scrim">#99000000</color>
 </resources>

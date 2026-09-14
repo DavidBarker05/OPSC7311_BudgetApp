@@ -71,9 +71,19 @@
         android:textColor="@color/green_text"
         android:textSize="13sp"
         app:layout_constraintBottom_toBottomOf="@id/ivTransactionImage"
-        app:layout_constraintEnd_toStartOf="@id/tvTransactionAmount"
+        app:layout_constraintEnd_toStartOf="@id/amountDivider"
         app:layout_constraintTop_toTopOf="@id/ivTransactionImage"
         tools:text="Monthly" />
+
+    <View
+        android:id="@+id/amountDivider"
+        android:layout_width="1dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="8dp"
+        android:background="@color/sage_header"
+        app:layout_constraintBottom_toBottomOf="@id/tvTransactionDetail"
+        app:layout_constraintEnd_toStartOf="@id/tvTransactionAmount"
+        app:layout_constraintTop_toTopOf="@id/tvTransactionName" />
 
     <TextView
         android:id="@+id/tvTransactionAmount"

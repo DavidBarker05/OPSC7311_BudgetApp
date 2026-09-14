@@ -10,5 +10,6 @@ data class TransactionRow(
     val isIncome: Boolean,
     val date: LocalDate,
     val time: LocalTime,
-    val imagePath: String?
+    val imagePath: String?,
+    val iconRes: Int? = null
 )
