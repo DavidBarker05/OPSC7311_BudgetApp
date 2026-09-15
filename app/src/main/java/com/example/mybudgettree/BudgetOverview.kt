@@ -17,7 +17,7 @@ object BudgetOverview {
     ) {
         val totalIncome = incomes.sumOf { it.amount }
         val totalExpense = expenses.sumOf { it.amount }
-        val budgetGoal = categories.mapNotNull { it.budgetAmount }.sum()
+        val budgetGoal = CategoryGoals.spendingOnly(categories).mapNotNull { it.budgetAmount }.sum()
         val percent = if (budgetGoal <= 0.0) {
             0
         } else {

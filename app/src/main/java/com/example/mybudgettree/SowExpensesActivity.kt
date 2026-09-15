@@ -92,7 +92,9 @@ class SowExpensesActivity : AppCompatActivity() {
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
             categories = CategoryGarden.sort(
-                app.categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty()
+                CategoryGoals.spendingOnly(
+                    app.categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty()
+                )
             )
             val names = categories.map { it.categoryName }
             val dropdown = findViewById<AutoCompleteTextView>(R.id.actSowCategory)

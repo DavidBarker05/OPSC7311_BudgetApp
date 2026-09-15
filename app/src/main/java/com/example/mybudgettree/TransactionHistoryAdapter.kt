@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -96,6 +97,7 @@ class TransactionHistoryAdapter(
             image.scaleType = ImageView.ScaleType.CENTER_INSIDE
             val padding = (10 * itemView.resources.displayMetrics.density).toInt()
             image.setPadding(padding, padding, padding, padding)
+            image.setColorFilter(ContextCompat.getColor(itemView.context, R.color.green_text))
         }
     }
 

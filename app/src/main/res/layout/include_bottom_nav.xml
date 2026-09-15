@@ -49,7 +49,6 @@
         android:src="@drawable/ic_nav_categories"
         app:tint="@color/nav_icon_tint" />
 
-    <!-- TODO: Open the Goals screen when that UI is added. -->
     <ImageButton
         android:id="@+id/navGoals"
         android:layout_width="0dp"

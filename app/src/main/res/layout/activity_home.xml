@@ -46,11 +46,13 @@
 
     <ImageButton
         android:id="@+id/btnNotifications"
-        android:layout_width="44dp"
-        android:layout_height="44dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_marginEnd="16dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/notifications"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
         android:src="@drawable/ic_bell"
         app:layout_constraintBottom_toBottomOf="@id/tvUserName"
         app:layout_constraintEnd_toEndOf="parent"
@@ -147,25 +149,292 @@
             tools:text="-R1,187.40" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- TODO: Restore the sapling / watering-can growth status from the Figma home screen. -->
-    <FrameLayout
-        android:id="@+id/placeholderSapling"
+    <LinearLayout
+        android:id="@+id/saplingCard"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:visibility="gone"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/bg_sapling_card"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/balanceCard" />
+        app:layout_constraintTop_toBottomOf="@id/balanceCard">
 
-    <!-- TODO: Restore the savings progress bar and goal amount from the Figma home screen. -->
-    <FrameLayout
-        android:id="@+id/placeholderGoalProgress"
+        <ImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:contentDescription="@string/sapling"
+            android:src="@drawable/ic_sapling" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sapling"
+                android:textColor="@color/green_text"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="@string/sapling_hint"
+                android:textColor="@color/hint_text"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/drop1"
+                android:layout_width="16dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="2dp"
+                android:contentDescription="@string/watering_drop"
+                android:src="@drawable/ic_water_drop" />
+
+            <ImageView
+                android:id="@+id/drop2"
+                android:layout_width="16dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="2dp"
+                android:contentDescription="@string/watering_drop"
+                android:src="@drawable/ic_water_drop" />
+
+            <ImageView
+                android:id="@+id/drop3"
+                android:layout_width="16dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="2dp"
+                android:contentDescription="@string/watering_drop"
+                android:src="@drawable/ic_water_drop" />
+
+            <ImageView
+                android:id="@+id/drop4"
+                android:layout_width="16dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="2dp"
+                android:contentDescription="@string/watering_drop"
+                android:src="@drawable/ic_water_drop" />
+
+            <ImageView
+                android:id="@+id/drop5"
+                android:layout_width="16dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="2dp"
+                android:contentDescription="@string/watering_drop"
+                android:src="@drawable/ic_water_drop" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/budgetBar"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
+        android:layout_height="28dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/bg_budget_track"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/placeholderSapling" />
+        app:layout_constraintTop_toBottomOf="@id/saplingCard">
+
+        <View
+            android:id="@+id/budgetFill"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/bg_budget_fill"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintWidth_default="percent"
+            app:layout_constraintWidth_percent="0.3" />
+
+        <TextView
+            android:id="@+id/tvBudgetPercent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="30%" />
+
+        <TextView
+            android:id="@+id/tvBudgetGoal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="R20,000.00" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/savingsGoalsCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/bg_savings_goals_card"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        android:padding="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/budgetBar">
+
+        <FrameLayout
+            android:id="@+id/homeGoalDonutWrap"
+            android:layout_width="92dp"
+            android:layout_height="92dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <com.example.mybudgettree.DonutTargetView
+                android:id="@+id/homeGoalDonut"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center"
+                android:contentDescription="@string/savings_on_goals"
+                android:src="@drawable/ic_car" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/tvSavingsOnGoals"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:text="@string/savings_on_goals"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="@id/homeGoalDonutWrap"
+            app:layout_constraintStart_toStartOf="@id/homeGoalDonutWrap"
+            app:layout_constraintTop_toBottomOf="@id/homeGoalDonutWrap" />
+
+        <View
+            android:id="@+id/savingsDivider"
+            android:layout_width="1dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="12dp"
+            android:background="@color/title_on_sage"
+            app:layout_constraintBottom_toBottomOf="@id/tvSavingsOnGoals"
+            app:layout_constraintStart_toEndOf="@id/homeGoalDonutWrap"
+            app:layout_constraintTop_toTopOf="@id/homeGoalDonutWrap" />
+
+        <ImageView
+            android:id="@+id/ivRevenueIcon"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="14dp"
+            android:contentDescription="@string/revenue_last_week"
+            android:src="@drawable/ic_money_stack"
+            app:layout_constraintStart_toEndOf="@id/savingsDivider"
+            app:layout_constraintTop_toTopOf="@id/homeGoalDonutWrap" />
+
+        <TextView
+            android:id="@+id/tvRevenueLabel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/revenue_last_week"
+            android:textColor="@color/title_on_sage"
+            android:textSize="11sp"
+            app:layout_constraintBottom_toBottomOf="@id/ivRevenueIcon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/ivRevenueIcon"
+            app:layout_constraintTop_toTopOf="@id/ivRevenueIcon" />
+
+        <TextView
+            android:id="@+id/tvRevenueLastWeek"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/ivRevenueIcon"
+            app:layout_constraintTop_toBottomOf="@id/ivRevenueIcon"
+            tools:text="R4,000.00" />
+
+        <View
+            android:id="@+id/weekMetricDivider"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/title_on_sage"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/ivRevenueIcon"
+            app:layout_constraintTop_toBottomOf="@id/tvRevenueLastWeek" />
+
+        <ImageView
+            android:id="@+id/ivFoodIcon"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginTop="8dp"
+            android:contentDescription="@string/food_last_week"
+            android:src="@drawable/ic_utensils"
+            app:layout_constraintStart_toStartOf="@id/ivRevenueIcon"
+            app:layout_constraintTop_toBottomOf="@id/weekMetricDivider"
+            app:tint="@color/white" />
+
+        <TextView
+            android:id="@+id/tvFoodLabel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/food_last_week"
+            android:textColor="@color/title_on_sage"
+            android:textSize="11sp"
+            app:layout_constraintBottom_toBottomOf="@id/ivFoodIcon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/ivFoodIcon"
+            app:layout_constraintTop_toTopOf="@id/ivFoodIcon" />
+
+        <TextView
+            android:id="@+id/tvFoodLastWeek"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/ivFoodIcon"
+            app:layout_constraintTop_toBottomOf="@id/ivFoodIcon"
+            tools:text="-R100.00" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/periodToggle"
@@ -179,7 +448,7 @@
         app:checkedButton="@id/btnMonthly"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/placeholderGoalProgress"
+        app:layout_constraintTop_toBottomOf="@id/savingsGoalsCard"
         app:selectionRequired="true"
         app:singleSelection="true">
 
@@ -187,15 +456,17 @@
             android:id="@+id/btnDaily"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="48dp"
             android:layout_weight="1"
             android:insetTop="0dp"
             android:insetBottom="0dp"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
             android:text="@string/daily"
             android:textAllCaps="false"
             android:textColor="@color/green_text"
             app:backgroundTint="@color/white"
-            app:cornerRadius="22dp"
+            app:cornerRadius="24dp"
             app:strokeColor="@color/sage_header"
             app:strokeWidth="1dp" />
 
@@ -203,15 +474,17 @@
             android:id="@+id/btnWeekly"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="48dp"
             android:layout_weight="1"
             android:insetTop="0dp"
             android:insetBottom="0dp"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
             android:text="@string/weekly"
             android:textAllCaps="false"
             android:textColor="@color/green_text"
             app:backgroundTint="@color/white"
-            app:cornerRadius="22dp"
+            app:cornerRadius="24dp"
             app:strokeColor="@color/sage_header"
             app:strokeWidth="1dp" />
 
@@ -219,15 +492,17 @@
             android:id="@+id/btnMonthly"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="48dp"
             android:layout_weight="1"
             android:insetTop="0dp"
             android:insetBottom="0dp"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
             android:text="@string/monthly"
             android:textAllCaps="false"
             android:textColor="@color/green_text"
             app:backgroundTint="@color/period_selected"
-            app:cornerRadius="22dp"
+            app:cornerRadius="24dp"
             app:strokeColor="@color/sage_header"
             app:strokeWidth="1dp" />
     </com.google.android.material.button.MaterialButtonToggleGroup>

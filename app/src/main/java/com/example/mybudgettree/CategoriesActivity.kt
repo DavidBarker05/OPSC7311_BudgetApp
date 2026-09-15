@@ -80,7 +80,7 @@ class CategoriesActivity : AppCompatActivity() {
             val expenses = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
             val incomes = app.incomeDatabaseSystem.retrieveAllIncomes(user).incomes.orEmpty()
             BudgetOverview.bind(this@CategoriesActivity, incomes, expenses, categories)
-            adapter.submit(CategoryGarden.sort(categories))
+            adapter.submit(CategoryGarden.sort(CategoryGoals.spendingOnly(categories)))
         }
     }
 

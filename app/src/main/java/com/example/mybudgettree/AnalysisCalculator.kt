@@ -45,7 +45,7 @@ object AnalysisCalculator {
     ): AnalysisSnapshot {
         val totalIncome = incomes.sumOf { it.amount }
         val totalExpense = expenses.sumOf { it.amount }
-        val budgetGoal = categories.mapNotNull { it.budgetAmount }.sum()
+        val budgetGoal = CategoryGoals.spendingOnly(categories).mapNotNull { it.budgetAmount }.sum()
         val ranges = ranges(context, period, anchorDate)
         val buckets = ranges.map { range ->
             AnalysisBucket(

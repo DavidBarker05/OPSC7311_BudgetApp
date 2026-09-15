@@ -4,6 +4,7 @@
     <color name="white">#FFFFFFFF</color>
 
     <color name="cream">#FFF8F7F2</color>
+    <color name="welcome_wash">#22FFFFFF</color>
     <color name="green_primary">#FF1C6D3C</color>
     <color name="green_dark">#FF295E46</color>
     <color name="green_text">#FF1A3328</color>
@@ -36,4 +37,6 @@
     <color name="sow_field">#FFE3F0E0</color>
     <color name="budget_track">#FFEAF3E8</color>
     <color name="dialog_scrim">#99000000</color>
+    <color name="profile_action_dark">#FF1B3D32</color>
+    <color name="home_donut_track">#FF3F7358</color>
 </resources>

@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -71,9 +72,14 @@ class HomeActivity : AppCompatActivity() {
         }
         applyPeriodStyles()
 
+        findViewById<View>(R.id.savingsGoalsCard).setOnClickListener {
+            startActivity(Intent(this, QuicklyAnalysisActivity::class.java))
+        }
+        findViewById<DonutTargetView>(R.id.homeGoalDonut).apply {
+            setShowPercent(false)
+            setRingColors(getColor(R.color.home_donut_track), getColor(R.color.analysis_progress_blue))
+        }
         MainNavigation.bind(this, MainNavigation.Tab.HOME)
-        // TODO: Fill placeholderSapling with the Figma sapling / watering-can growth status.
-        // TODO: Fill placeholderGoalProgress with the Figma savings progress bar and goal amount.
     }
 
     override fun onResume() {
@@ -85,6 +91,7 @@ class HomeActivity : AppCompatActivity() {
         val user = UserSession.currentUser ?: return
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
+            findViewById<TextView>(R.id.tvUserName).text = user.displayName
             val categories = app.categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty()
             val categoryNames = categories.associate { it.id to it.categoryName }
             val expenses = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
@@ -94,6 +101,23 @@ class HomeActivity : AppCompatActivity() {
             val totalIncome = incomes.sumOf { it.amount }
             findViewById<TextView>(R.id.tvTotalBalance).text = MoneyFormatter.format(totalIncome - totalExpense)
             findViewById<TextView>(R.id.tvTotalExpense).text = MoneyFormatter.formatSigned(totalExpense, isIncome = false)
+
+            val snapshot = GoalSnapshot.from(incomes, expenses, categories)
+            GoalSnapshot.bindProgress(this@HomeActivity, snapshot)
+            findViewById<DonutTargetView>(R.id.homeGoalDonut).setPercent(snapshot.goalPercent)
+            findViewById<TextView>(R.id.tvRevenueLastWeek).text = MoneyFormatter.format(snapshot.revenueLastWeek)
+            findViewById<TextView>(R.id.tvFoodLastWeek).text =
+                MoneyFormatter.formatSigned(snapshot.foodLastWeek, isIncome = false)
+            GoalSnapshot.bindDrops(
+                listOf(
+                    findViewById<ImageView>(R.id.drop1),
+                    findViewById(R.id.drop2),
+                    findViewById(R.id.drop3),
+                    findViewById(R.id.drop4),
+                    findViewById(R.id.drop5)
+                ),
+                snapshot.filledDrops
+            )
 
             allRows = (
                 incomes.map { income ->

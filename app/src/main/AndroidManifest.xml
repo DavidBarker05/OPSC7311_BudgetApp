@@ -65,6 +65,10 @@
             android:exported="false"
             android:theme="@style/Theme.MyBudgetTree.Home" />
         <activity
+            android:name=".QuicklyAnalysisActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home" />
+        <activity
             android:name=".AnalysisActivity"
             android:exported="false"
             android:theme="@style/Theme.MyBudgetTree.Home" />
@@ -91,9 +95,32 @@
             android:theme="@style/Theme.MyBudgetTree.Home"
             android:windowSoftInputMode="adjustResize" />
         <activity
+            android:name=".WateringCanActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home" />
+        <activity
+            android:name=".GoalDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home" />
+        <activity
+            android:name=".FillWateringCanActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".ProfileActivity"
             android:exported="false"
             android:theme="@style/Theme.MyBudgetTree.Home" />
+        <activity
+            android:name=".EditProfileActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".HelpActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".NotificationsActivity"
             android:exported="false"

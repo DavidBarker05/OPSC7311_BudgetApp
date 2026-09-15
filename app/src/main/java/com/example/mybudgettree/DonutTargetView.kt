@@ -14,6 +14,7 @@ class DonutTargetView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
     private var percent: Int = 0
+    private var showPercent: Boolean = true
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
@@ -36,6 +37,17 @@ class DonutTargetView @JvmOverloads constructor(
         invalidate()
     }
 
+    fun setShowPercent(show: Boolean) {
+        showPercent = show
+        invalidate()
+    }
+
+    fun setRingColors(trackColor: Int, progressColor: Int) {
+        trackPaint.color = trackColor
+        progressPaint.color = progressColor
+        invalidate()
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val stroke = width.coerceAtMost(height) * 0.12f
@@ -46,8 +58,10 @@ class DonutTargetView @JvmOverloads constructor(
         arc.set(pad, pad, width - pad, height - pad)
         canvas.drawArc(arc, 0f, 360f, false, trackPaint)
         canvas.drawArc(arc, -90f, 360f * (percent / 100f), false, progressPaint)
-        val label = context.getString(R.string.target_percent, percent)
-        canvas.drawText(label, width / 2f, height / 2f - (textPaint.ascent() + textPaint.descent()) / 2f, textPaint)
+        if (showPercent) {
+            val label = context.getString(R.string.target_percent, percent)
+            canvas.drawText(label, width / 2f, height / 2f - (textPaint.ascent() + textPaint.descent()) / 2f, textPaint)
+        }
     }
 
     private fun dp(value: Float): Float = value * resources.displayMetrics.density

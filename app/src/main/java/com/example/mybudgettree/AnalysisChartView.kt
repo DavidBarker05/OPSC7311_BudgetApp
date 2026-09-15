@@ -21,6 +21,7 @@ class AnalysisChartView @JvmOverloads constructor(
     private var labels: List<String> = emptyList()
     private var incomeValues: List<Double> = emptyList()
     private var expenseValues: List<Double> = emptyList()
+    private var expenseOnly: Boolean = false
 
     private val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -46,10 +47,16 @@ class AnalysisChartView @JvmOverloads constructor(
         textAlign = Paint.Align.CENTER
     }
 
-    fun setData(labels: List<String>, incomeValues: List<Double>, expenseValues: List<Double>) {
+    fun setData(
+        labels: List<String>,
+        incomeValues: List<Double>,
+        expenseValues: List<Double>,
+        expenseOnly: Boolean = false
+    ) {
         this.labels = labels
         this.incomeValues = incomeValues
         this.expenseValues = expenseValues
+        this.expenseOnly = expenseOnly
         invalidate()
     }
 
@@ -83,7 +90,7 @@ class AnalysisChartView @JvmOverloads constructor(
         }
 
         val groupWidth = plotWidth / count
-        val barWidth = groupWidth * 0.28f
+        val barWidth = groupWidth * if (expenseOnly) 0.38f else 0.28f
         val corner = dp(6f)
         val path = Path()
         val rect = RectF()
@@ -95,8 +102,12 @@ class AnalysisChartView @JvmOverloads constructor(
             val incomeHeight = ((income / maxValue).toFloat() * plotHeight).coerceAtLeast(0f)
             val expenseHeight = ((expense / maxValue).toFloat() * plotHeight).coerceAtLeast(0f)
 
-            drawBar(canvas, path, rect, center - barWidth - dp(2f), plotBottom, barWidth, incomeHeight, corner, incomePaint)
-            drawBar(canvas, path, rect, center + dp(2f), plotBottom, barWidth, expenseHeight, corner, expensePaint)
+            if (expenseOnly) {
+                drawBar(canvas, path, rect, center - barWidth / 2f, plotBottom, barWidth, expenseHeight, corner, expensePaint)
+            } else {
+                drawBar(canvas, path, rect, center - barWidth - dp(2f), plotBottom, barWidth, incomeHeight, corner, incomePaint)
+                drawBar(canvas, path, rect, center + dp(2f), plotBottom, barWidth, expenseHeight, corner, expensePaint)
+            }
             canvas.drawText(label, center, height - paddingBottom - dp(4f), labelPaint)
         }
     }
