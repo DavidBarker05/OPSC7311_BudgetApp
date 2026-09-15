@@ -1,9 +1,76 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.MyBudgetTree" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    <style name="Base.Theme.MyBudgetTree" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/green_primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/green_dark</item>
+        <item name="android:statusBarColor">@color/cream</item>
+        <item name="android:navigationBarColor">@color/cream</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">@color/cream</item>
     </style>
 
     <style name="Theme.MyBudgetTree" parent="Base.Theme.MyBudgetTree" />
+
+    <style name="Theme.MyBudgetTree.Splash" parent="Theme.MyBudgetTree">
+        <item name="android:statusBarColor">@color/cream</item>
+        <item name="android:navigationBarColor">@color/cream</item>
+        <item name="android:windowBackground">@color/cream</item>
+    </style>
+
+    <style name="Theme.MyBudgetTree.Welcome" parent="Theme.MyBudgetTree">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">@color/cream</item>
+    </style>
+
+    <style name="Theme.MyBudgetTree.Auth" parent="Theme.MyBudgetTree">
+        <item name="android:statusBarColor">@color/sage_header</item>
+        <item name="android:navigationBarColor">@color/card_fill</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">@color/sage_header</item>
+    </style>
+
+    <style name="Theme.MyBudgetTree.Home" parent="Theme.MyBudgetTree">
+        <item name="android:statusBarColor">@color/home_header</item>
+        <item name="android:navigationBarColor">@color/nav_bar</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">@color/home_sheet</item>
+    </style>
+
+    <style name="Theme.MyBudgetTree.Success" parent="Theme.MyBudgetTree">
+        <item name="android:statusBarColor">@color/success_green</item>
+        <item name="android:navigationBarColor">@color/success_green</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">@color/success_green</item>
+    </style>
+
+    <style name="ShapeAppearance.MyBudgetTree.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="Widget.MyBudgetTree.FieldLabel" parent="android:Widget.TextView">
+        <item name="android:textColor">@color/green_text</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+    </style>
+
+    <style name="Widget.MyBudgetTree.PinDigit" parent="android:Widget.EditText">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:layout_margin">4dp</item>
+        <item name="android:background">@drawable/bg_pin_circle</item>
+        <item name="android:gravity">center</item>
+        <item name="android:importantForAutofill">no</item>
+        <item name="android:inputType">number</item>
+        <item name="android:maxLength">1</item>
+        <item name="android:textColor">@color/green_text</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:contentDescription">@string/pin_digit</item>
+    </style>
 </resources>

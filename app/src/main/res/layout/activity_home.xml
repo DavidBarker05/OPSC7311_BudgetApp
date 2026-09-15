@@ -1,0 +1,554 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/homeRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/home_header"
+    tools:context=".HomeActivity">
+
+    <TextView
+        android:id="@+id/tvWelcomeSanctuary"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
+        android:text="@string/welcome_sanctuary"
+        android:textColor="@color/white"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@id/btnNotifications"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvUserName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/title_on_sage"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="@id/tvWelcomeSanctuary"
+        app:layout_constraintStart_toStartOf="@id/tvWelcomeSanctuary"
+        app:layout_constraintTop_toBottomOf="@id/tvWelcomeSanctuary"
+        tools:text="Tiyah Singh" />
+
+    <ImageButton
+        android:id="@+id/btnNotifications"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/notifications"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:src="@drawable/ic_bell"
+        app:layout_constraintBottom_toBottomOf="@id/tvUserName"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tvWelcomeSanctuary" />
+
+    <ImageView
+        android:id="@+id/ivLogoBadge"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:contentDescription="@string/logo_badge_description"
+        android:elevation="8dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/img_logo_badge"
+        app:layout_constraintBottom_toTopOf="@id/homeSheet"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/homeSheet" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/homeSheet"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="56dp"
+        android:background="@drawable/bg_notifications_sheet"
+        android:paddingTop="68dp"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvUserName">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/balanceCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/bg_balance_card"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tvTotalBalanceLabel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/total_balance"
+            android:textColor="@color/hint_text"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toStartOf="@id/balanceDivider"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tvTotalBalance"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:textColor="@color/green_dark"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="@id/tvTotalBalanceLabel"
+            app:layout_constraintStart_toStartOf="@id/tvTotalBalanceLabel"
+            app:layout_constraintTop_toBottomOf="@id/tvTotalBalanceLabel"
+            tools:text="R7,783.00" />
+
+        <View
+            android:id="@+id/balanceDivider"
+            android:layout_width="1dp"
+            android:layout_height="0dp"
+            android:background="@color/sage_header"
+            app:layout_constraintBottom_toBottomOf="@id/tvTotalExpense"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/tvTotalBalanceLabel" />
+
+        <TextView
+            android:id="@+id/tvTotalExpenseLabel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/total_expense"
+            android:textColor="@color/hint_text"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/balanceDivider"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tvTotalExpense"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:textColor="@color/expense_accent"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="@id/tvTotalExpenseLabel"
+            app:layout_constraintStart_toStartOf="@id/tvTotalExpenseLabel"
+            app:layout_constraintTop_toBottomOf="@id/tvTotalExpenseLabel"
+            tools:text="-R1,187.40" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <LinearLayout
+        android:id="@+id/saplingCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/bg_sapling_card"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/balanceCard">
+
+        <ImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:contentDescription="@string/sapling"
+            android:src="@drawable/ic_sapling" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sapling"
+                android:textColor="@color/green_text"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="@string/sapling_hint"
+                android:textColor="@color/hint_text"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/drop1"
+                android:layout_width="16dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="2dp"
+                android:contentDescription="@string/watering_drop"
+                android:src="@drawable/ic_water_drop" />
+
+            <ImageView
+                android:id="@+id/drop2"
+                android:layout_width="16dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="2dp"
+                android:contentDescription="@string/watering_drop"
+                android:src="@drawable/ic_water_drop" />
+
+            <ImageView
+                android:id="@+id/drop3"
+                android:layout_width="16dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="2dp"
+                android:contentDescription="@string/watering_drop"
+                android:src="@drawable/ic_water_drop" />
+
+            <ImageView
+                android:id="@+id/drop4"
+                android:layout_width="16dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="2dp"
+                android:contentDescription="@string/watering_drop"
+                android:src="@drawable/ic_water_drop" />
+
+            <ImageView
+                android:id="@+id/drop5"
+                android:layout_width="16dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="2dp"
+                android:contentDescription="@string/watering_drop"
+                android:src="@drawable/ic_water_drop" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/budgetBar"
+        android:layout_width="0dp"
+        android:layout_height="28dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/bg_budget_track"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/saplingCard">
+
+        <View
+            android:id="@+id/budgetFill"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/bg_budget_fill"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintWidth_default="percent"
+            app:layout_constraintWidth_percent="0.3" />
+
+        <TextView
+            android:id="@+id/tvBudgetPercent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="30%" />
+
+        <TextView
+            android:id="@+id/tvBudgetGoal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="R20,000.00" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/savingsGoalsCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/bg_savings_goals_card"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        android:padding="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/budgetBar">
+
+        <FrameLayout
+            android:id="@+id/homeGoalDonutWrap"
+            android:layout_width="92dp"
+            android:layout_height="92dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <com.example.mybudgettree.DonutTargetView
+                android:id="@+id/homeGoalDonut"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center"
+                android:contentDescription="@string/savings_on_goals"
+                android:src="@drawable/ic_car" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/tvSavingsOnGoals"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:text="@string/savings_on_goals"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="@id/homeGoalDonutWrap"
+            app:layout_constraintStart_toStartOf="@id/homeGoalDonutWrap"
+            app:layout_constraintTop_toBottomOf="@id/homeGoalDonutWrap" />
+
+        <View
+            android:id="@+id/savingsDivider"
+            android:layout_width="1dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="12dp"
+            android:background="@color/title_on_sage"
+            app:layout_constraintBottom_toBottomOf="@id/tvSavingsOnGoals"
+            app:layout_constraintStart_toEndOf="@id/homeGoalDonutWrap"
+            app:layout_constraintTop_toTopOf="@id/homeGoalDonutWrap" />
+
+        <ImageView
+            android:id="@+id/ivRevenueIcon"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="14dp"
+            android:contentDescription="@string/revenue_last_week"
+            android:src="@drawable/ic_money_stack"
+            app:layout_constraintStart_toEndOf="@id/savingsDivider"
+            app:layout_constraintTop_toTopOf="@id/homeGoalDonutWrap" />
+
+        <TextView
+            android:id="@+id/tvRevenueLabel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/revenue_last_week"
+            android:textColor="@color/title_on_sage"
+            android:textSize="11sp"
+            app:layout_constraintBottom_toBottomOf="@id/ivRevenueIcon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/ivRevenueIcon"
+            app:layout_constraintTop_toTopOf="@id/ivRevenueIcon" />
+
+        <TextView
+            android:id="@+id/tvRevenueLastWeek"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/ivRevenueIcon"
+            app:layout_constraintTop_toBottomOf="@id/ivRevenueIcon"
+            tools:text="R4,000.00" />
+
+        <View
+            android:id="@+id/weekMetricDivider"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/title_on_sage"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/ivRevenueIcon"
+            app:layout_constraintTop_toBottomOf="@id/tvRevenueLastWeek" />
+
+        <ImageView
+            android:id="@+id/ivFoodIcon"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginTop="8dp"
+            android:contentDescription="@string/food_last_week"
+            android:src="@drawable/ic_utensils"
+            app:layout_constraintStart_toStartOf="@id/ivRevenueIcon"
+            app:layout_constraintTop_toBottomOf="@id/weekMetricDivider"
+            app:tint="@color/white" />
+
+        <TextView
+            android:id="@+id/tvFoodLabel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/food_last_week"
+            android:textColor="@color/title_on_sage"
+            android:textSize="11sp"
+            app:layout_constraintBottom_toBottomOf="@id/ivFoodIcon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/ivFoodIcon"
+            app:layout_constraintTop_toTopOf="@id/ivFoodIcon" />
+
+        <TextView
+            android:id="@+id/tvFoodLastWeek"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/ivFoodIcon"
+            app:layout_constraintTop_toBottomOf="@id/ivFoodIcon"
+            tools:text="-R100.00" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/periodToggle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="20dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:checkedButton="@id/btnMonthly"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/savingsGoalsCard"
+        app:selectionRequired="true"
+        app:singleSelection="true">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDaily"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:text="@string/daily"
+            android:textAllCaps="false"
+            android:textColor="@color/green_text"
+            app:backgroundTint="@color/white"
+            app:cornerRadius="24dp"
+            app:strokeColor="@color/sage_header"
+            app:strokeWidth="1dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnWeekly"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:text="@string/weekly"
+            android:textAllCaps="false"
+            android:textColor="@color/green_text"
+            app:backgroundTint="@color/white"
+            app:cornerRadius="24dp"
+            app:strokeColor="@color/sage_header"
+            app:strokeWidth="1dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnMonthly"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:text="@string/monthly"
+            android:textAllCaps="false"
+            android:textColor="@color/green_text"
+            app:backgroundTint="@color/period_selected"
+            app:cornerRadius="24dp"
+            app:strokeColor="@color/sage_header"
+            app:strokeWidth="1dp" />
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvTransactions"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingStart="12dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/periodToggle"
+        tools:listitem="@layout/item_transaction" />
+
+    <TextView
+        android:id="@+id/tvEmptyTransactions"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="24dp"
+        android:text="@string/no_transactions"
+        android:textColor="@color/hint_text"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/rvTransactions"
+        app:layout_constraintEnd_toEndOf="@id/rvTransactions"
+        app:layout_constraintStart_toStartOf="@id/rvTransactions"
+        app:layout_constraintTop_toTopOf="@id/rvTransactions" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <include
+        android:id="@+id/bottomNav"
+        layout="@layout/include_bottom_nav"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

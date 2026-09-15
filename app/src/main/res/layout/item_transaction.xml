@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="12dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="10dp">
+
+    <ImageView
+        android:id="@+id/ivTransactionImage"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@drawable/bg_transaction_icon"
+        android:contentDescription="@string/transaction_image"
+        android:padding="10dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_transaction_placeholder"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/green_dark" />
+
+    <TextView
+        android:id="@+id/tvTransactionName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/green_text"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@id/detailDivider"
+        app:layout_constraintStart_toEndOf="@id/ivTransactionImage"
+        app:layout_constraintTop_toTopOf="@id/ivTransactionImage"
+        tools:text="Salary" />
+
+    <TextView
+        android:id="@+id/tvTransactionDetail"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/hint_text"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="@id/tvTransactionName"
+        app:layout_constraintStart_toStartOf="@id/tvTransactionName"
+        app:layout_constraintTop_toBottomOf="@id/tvTransactionName"
+        tools:text="18:27 - April 30" />
+
+    <View
+        android:id="@+id/detailDivider"
+        android:layout_width="1dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="@color/sage_header"
+        app:layout_constraintBottom_toBottomOf="@id/tvTransactionDetail"
+        app:layout_constraintEnd_toStartOf="@id/tvTransactionCategory"
+        app:layout_constraintTop_toTopOf="@id/tvTransactionName" />
+
+    <TextView
+        android:id="@+id/tvTransactionCategory"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:textColor="@color/green_text"
+        android:textSize="13sp"
+        app:layout_constraintBottom_toBottomOf="@id/ivTransactionImage"
+        app:layout_constraintEnd_toStartOf="@id/amountDivider"
+        app:layout_constraintTop_toTopOf="@id/ivTransactionImage"
+        tools:text="Monthly" />
+
+    <View
+        android:id="@+id/amountDivider"
+        android:layout_width="1dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="8dp"
+        android:background="@color/sage_header"
+        app:layout_constraintBottom_toBottomOf="@id/tvTransactionDetail"
+        app:layout_constraintEnd_toStartOf="@id/tvTransactionAmount"
+        app:layout_constraintTop_toTopOf="@id/tvTransactionName" />
+
+    <TextView
+        android:id="@+id/tvTransactionAmount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/green_dark"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/ivTransactionImage"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/ivTransactionImage"
+        tools:text="R4,000.00" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -2,4 +2,41 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="cream">#FFF8F7F2</color>
+    <color name="welcome_wash">#22FFFFFF</color>
+    <color name="green_primary">#FF1C6D3C</color>
+    <color name="green_dark">#FF295E46</color>
+    <color name="green_text">#FF1A3328</color>
+    <color name="mint_button">#FFF1FFF3</color>
+    <color name="sage_header">#FFA0B8A3</color>
+    <color name="sage_button">#FF8FA08C</color>
+    <color name="input_fill">#FFDFF7E2</color>
+    <color name="card_fill">#FFE8F3E6</color>
+    <color name="hint_text">#FF7A8F7C</color>
+    <color name="link_blue">#FF3D7BD9</color>
+    <color name="social_stroke">#FF1A3328</color>
+    <color name="password_field">#FF1B5A3A</color>
+    <color name="success_green">#FF0D4A1C</color>
+    <color name="title_on_sage">#FFE8F5E0</color>
+    <color name="home_header">#FF1B5E3B</color>
+    <color name="expense_accent">#FF3D8A9E</color>
+    <color name="period_selected">#FFD5E6D4</color>
+    <color name="home_sheet">#FFF3F8F0</color>
+    <color name="nav_bar">#FFEFF6EC</color>
+    <color name="analysis_chart_bg">#FFE4F0E2</color>
+    <color name="analysis_bar_income">#FFC5D4C3</color>
+    <color name="analysis_bar_expense">#FF5E7A64</color>
+    <color name="analysis_progress_blue">#FF7EC8F8</color>
+    <color name="analysis_header_sage">#FF6E8F72</color>
+    <color name="analysis_header_muted">#FF8FA08C</color>
+    <color name="analysis_donut_track">#FFC5D4C3</color>
+    <color name="analysis_donut_progress">#FF2F5D3E</color>
+    <color name="analysis_bell_fill">#FFE8F5E0</color>
+    <color name="category_tile">#FFC5D6C4</color>
+    <color name="sow_field">#FFE3F0E0</color>
+    <color name="budget_track">#FFEAF3E8</color>
+    <color name="dialog_scrim">#99000000</color>
+    <color name="profile_action_dark">#FF1B3D32</color>
+    <color name="home_donut_track">#FF3F7358</color>
 </resources>
