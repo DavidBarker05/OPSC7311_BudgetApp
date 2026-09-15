@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
@@ -39,6 +40,11 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 class SowExpensesActivity : AppCompatActivity() {
+
+    companion object {
+        private const val TAG = "SowExpensesActivity"
+    }
+
     private val dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH)
     private var selectedDate = LocalDate.now()
     private var categories: List<Category> = emptyList()
@@ -141,9 +147,11 @@ class SowExpensesActivity : AppCompatActivity() {
                         imagePath = receiptPath
                     )
                     if (result.wasSuccessful) {
+                        Log.i(TAG, "Saved expense '$title' for category '${category.categoryName}'")
                         Toast.makeText(this@SowExpensesActivity, R.string.expense_saved, Toast.LENGTH_SHORT).show()
                         finish()
                     } else {
+                        Log.w(TAG, "Failed to save expense '$title': ${result.errMsg}")
                         Toast.makeText(
                             this@SowExpensesActivity,
                             result.errMsg ?: getString(R.string.expense_fields_required),

@@ -1,5 +1,6 @@
 package com.example.mybudgettree.database.managers
 
+import android.util.Log
 import com.example.mybudgettree.database.daos.ExpenseDao
 import com.example.mybudgettree.database.entries.User
 import com.example.mybudgettree.database.entries.Category
@@ -19,6 +20,22 @@ class ExpenseDatabaseSystem(
     private val userDatabaseSystem: UserDatabaseSystem,
     private val categoryDatabaseSystem: CategoryDatabaseSystem
 ) {
+
+    companion object {
+        private const val TAG = "ExpenseDatabaseSystem"
+
+        private fun logUpdateOutcome(action: String, status: UpdateExpenseReturnStatus, errMsg: String?) {
+            when (status) {
+                UpdateExpenseReturnStatus.Succeeded -> Log.i(TAG, "Successfully $action")
+                UpdateExpenseReturnStatus.Failed -> Log.w(TAG, "Failed to $action: $errMsg")
+                UpdateExpenseReturnStatus.NoChange -> Log.d(TAG, "No change $action")
+            }
+        }
+
+        private fun logCreateOutcome(action: String, wasSuccessful: Boolean, errMsg: String?) {
+            if (wasSuccessful) Log.i(TAG, "Successfully $action") else Log.w(TAG, "Failed to $action: $errMsg")
+        }
+    }
 
     /**
      * Wraps the expense creation return in a detailed form
@@ -109,7 +126,6 @@ class ExpenseDatabaseSystem(
      *
      * @param category The [Category] the expense belongs to
      * @param description The expense's name
-     * @param currencyAtTime The currency the amount was denominated in at the time of the expense
      * @param amount The expense amount, cannot be negative
      * @param date The date the expense occurred on
      * @param startTime The time the expense started
@@ -126,23 +142,27 @@ class ExpenseDatabaseSystem(
         endTime: LocalTime,
         imagePath: String? = null
     ): CreateExpenseReturnInfo {
-        val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-        if (!categoryStatus.wasSuccessful) return CreateExpenseReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-        if (description.isBlank()) return CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Description is blank")
-        if (amount < 0.0) return CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Amount cannot be negative")
-        if (endTime < startTime) return CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Start time is after end time")
-        if (imagePath?.isBlank() ?: false) return CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Image path is empty")
-        val expense = Expense(
-            categoryId = category.id,
-            description = description,
-            amount = amount,
-            date = date,
-            startTime = startTime,
-            endTime = endTime,
-            imagePath = imagePath
-        )
-        val id = expenseDao.insertExpense(expense)
-        return CreateExpenseReturnInfo(wasSuccessful = true, expense = expense.copy(id = id))
+        val result = run {
+            val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
+            if (!categoryStatus.wasSuccessful) return@run CreateExpenseReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
+            if (description.isBlank()) return@run CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Description is blank")
+            if (amount < 0.0) return@run CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Amount cannot be negative")
+            if (endTime < startTime) return@run CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Start time is after end time")
+            if (imagePath?.isBlank() ?: false) return@run CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Image path is empty")
+            val expense = Expense(
+                categoryId = category.id,
+                description = description,
+                amount = amount,
+                date = date,
+                startTime = startTime,
+                endTime = endTime,
+                imagePath = imagePath
+            )
+            val id = expenseDao.insertExpense(expense)
+            CreateExpenseReturnInfo(wasSuccessful = true, expense = expense.copy(id = id))
+        }
+        logCreateOutcome("create expense '$description' for category id ${category.id}", result.wasSuccessful, result.errMsg)
+        return result
     }
 
     /**
@@ -397,11 +417,15 @@ class ExpenseDatabaseSystem(
      * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
      */
     suspend fun updateExpenseDescription(expense: Expense, newDescription: String): UpdateExpenseReturnInfo {
-        if (expense.description == newDescription) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-        if (newDescription.isBlank()) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Description is empty")
-        if (!isExpenseStillValid(expense)) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-        expenseDao.updateExpenseDescription(expense.id, newDescription)
-        return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(description = newDescription))
+        val result = run {
+            if (expense.description == newDescription) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
+            if (newDescription.isBlank()) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Description is empty")
+            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
+            expenseDao.updateExpenseDescription(expense.id, newDescription)
+            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(description = newDescription))
+        }
+        logUpdateOutcome("update description for expense id ${expense.id}", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -412,11 +436,15 @@ class ExpenseDatabaseSystem(
      * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
      */
     suspend fun updateExpenseAmount(expense: Expense, newAmount: Double): UpdateExpenseReturnInfo {
-        if (expense.amount == newAmount) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-        if (newAmount < 0.0) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "New amount cannot be less than 0")
-        if (!isExpenseStillValid(expense)) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-        expenseDao.updateExpenseAmount(expense.id, newAmount)
-        return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(amount = newAmount))
+        val result = run {
+            if (expense.amount == newAmount) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
+            if (newAmount < 0.0) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "New amount cannot be less than 0")
+            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
+            expenseDao.updateExpenseAmount(expense.id, newAmount)
+            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(amount = newAmount))
+        }
+        logUpdateOutcome("update amount for expense id ${expense.id}", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -427,10 +455,14 @@ class ExpenseDatabaseSystem(
      * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
      */
     suspend fun updateExpenseDate(expense: Expense, newDate: LocalDate): UpdateExpenseReturnInfo {
-        if (expense.date == newDate) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-        if (!isExpenseStillValid(expense)) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-        expenseDao.updateExpenseDate(expense.id, newDate)
-        return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(date = newDate))
+        val result = run {
+            if (expense.date == newDate) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
+            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
+            expenseDao.updateExpenseDate(expense.id, newDate)
+            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(date = newDate))
+        }
+        logUpdateOutcome("update date for expense id ${expense.id}", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -441,11 +473,15 @@ class ExpenseDatabaseSystem(
      * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
      */
     suspend fun updateExpenseStartTime(expense: Expense, newStartTime: LocalTime): UpdateExpenseReturnInfo {
-        if (expense.startTime == newStartTime) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-        if (expense.endTime < newStartTime) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Start time is after end time")
-        if (!isExpenseStillValid(expense)) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-        expenseDao.updateExpenseStartTime(expense.id, newStartTime)
-        return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(startTime = newStartTime))
+        val result = run {
+            if (expense.startTime == newStartTime) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
+            if (expense.endTime < newStartTime) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Start time is after end time")
+            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
+            expenseDao.updateExpenseStartTime(expense.id, newStartTime)
+            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(startTime = newStartTime))
+        }
+        logUpdateOutcome("update start time for expense id ${expense.id}", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -456,11 +492,15 @@ class ExpenseDatabaseSystem(
      * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
      */
     suspend fun updateExpenseEndTime(expense: Expense, newEndTime: LocalTime): UpdateExpenseReturnInfo {
-        if (expense.endTime == newEndTime) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-        if (newEndTime < expense.startTime) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "End time is before start time")
-        if (!isExpenseStillValid(expense)) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-        expenseDao.updateExpenseEndTime(expense.id, newEndTime)
-        return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(endTime = newEndTime))
+        val result = run {
+            if (expense.endTime == newEndTime) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
+            if (newEndTime < expense.startTime) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "End time is before start time")
+            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
+            expenseDao.updateExpenseEndTime(expense.id, newEndTime)
+            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(endTime = newEndTime))
+        }
+        logUpdateOutcome("update end time for expense id ${expense.id}", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -471,11 +511,15 @@ class ExpenseDatabaseSystem(
      * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
      */
     suspend fun updateExpenseImage(expense: Expense, newImagePath: String?): UpdateExpenseReturnInfo {
-        if (expense.imagePath == newImagePath) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-        if (newImagePath?.isBlank() ?: false) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Image path cannot be blank")
-        if (!isExpenseStillValid(expense)) return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-        expenseDao.updateExpenseImage(expense.id, newImagePath)
-        return UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(imagePath = newImagePath))
+        val result = run {
+            if (expense.imagePath == newImagePath) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
+            if (newImagePath?.isBlank() ?: false) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Image path cannot be blank")
+            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
+            expenseDao.updateExpenseImage(expense.id, newImagePath)
+            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(imagePath = newImagePath))
+        }
+        logUpdateOutcome("update image for expense id ${expense.id}", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -484,5 +528,10 @@ class ExpenseDatabaseSystem(
      * @param expense The [Expense] to delete
      * @return A status reflection from [ExpenseDeleteReturnStatus]
      */
-    suspend fun deleteExpense(expense: Expense): ExpenseDeleteReturnStatus = if (expenseDao.deleteExpense(expense) == 1) ExpenseDeleteReturnStatus.Deleted else ExpenseDeleteReturnStatus.DoesNotExist
+    suspend fun deleteExpense(expense: Expense): ExpenseDeleteReturnStatus {
+        val status = if (expenseDao.deleteExpense(expense) == 1) ExpenseDeleteReturnStatus.Deleted else ExpenseDeleteReturnStatus.DoesNotExist
+        if (status == ExpenseDeleteReturnStatus.Deleted) Log.i(TAG, "Successfully deleted expense '${expense.description}'")
+        else Log.w(TAG, "Failed to delete expense '${expense.description}': expense does not exist")
+        return status
+    }
 }

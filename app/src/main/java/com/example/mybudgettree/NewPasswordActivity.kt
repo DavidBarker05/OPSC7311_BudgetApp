@@ -2,6 +2,7 @@ package com.example.mybudgettree
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +17,11 @@ import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
 
 class NewPasswordActivity : AppCompatActivity() {
+
+    companion object {
+        private const val TAG = "NewPasswordActivity"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -56,7 +62,11 @@ class NewPasswordActivity : AppCompatActivity() {
                 val user = found.user
                 if (found.wasSuccessful && user != null) {
                     app.userDatabaseSystem.updatePassword(user, password)
+                } else {
+                    Log.w(TAG, "Password reset requested for unknown email")
                 }
+            } else {
+                Log.w(TAG, "Password reset attempted with no email in session")
             }
             startActivity(Intent(this@NewPasswordActivity, PasswordChangedActivity::class.java))
             finish()

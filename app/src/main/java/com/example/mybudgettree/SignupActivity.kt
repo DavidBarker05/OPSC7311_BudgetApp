@@ -3,6 +3,7 @@ package com.example.mybudgettree
 import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
@@ -23,6 +24,11 @@ import java.time.format.DateTimeFormatter
 import java.util.Calendar
 
 class SignupActivity : AppCompatActivity() {
+
+    companion object {
+        private const val TAG = "SignupActivity"
+    }
+
     private val dateFormatter = DateTimeFormatter.ofPattern("dd / MM / yyyy")
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,10 +117,12 @@ class SignupActivity : AppCompatActivity() {
             )
             signupButton.isEnabled = true
             if (result.wasSuccessful) {
+                Log.i(TAG, "Signup succeeded for username '$username', navigating to LoginActivity")
                 Toast.makeText(this@SignupActivity, R.string.signup_success, Toast.LENGTH_SHORT).show()
                 startActivity(Intent(this@SignupActivity, LoginActivity::class.java))
                 finish()
             } else {
+                Log.w(TAG, "Signup failed for username '$username': ${result.errMsg}")
                 Toast.makeText(
                     this@SignupActivity,
                     result.errMsg ?: getString(R.string.signup_fields_required),

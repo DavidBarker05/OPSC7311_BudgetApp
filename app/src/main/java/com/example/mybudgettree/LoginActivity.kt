@@ -2,6 +2,7 @@ package com.example.mybudgettree
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
@@ -18,6 +19,11 @@ import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
+
+    companion object {
+        private const val TAG = "LoginActivity"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -61,6 +67,7 @@ class LoginActivity : AppCompatActivity() {
             loginButton.isEnabled = true
             val user = result.user
             if (result.wasSuccessful && user != null) {
+                Log.i(TAG, "Login succeeded, navigating to HomeActivity")
                 UserSession.login(user)
                 startActivity(
                     Intent(this@LoginActivity, HomeActivity::class.java).apply {
@@ -69,6 +76,7 @@ class LoginActivity : AppCompatActivity() {
                 )
                 finish()
             } else {
+                Log.w(TAG, "Login failed: ${result.errMsg}")
                 Toast.makeText(this@LoginActivity, R.string.login_failed, Toast.LENGTH_SHORT).show()
             }
         }
