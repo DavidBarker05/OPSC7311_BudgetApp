@@ -1,4 +1,23 @@
-# 🌱 My Money Tree
+[Planning & Design_OPSC7311_Part1B_Tiyah_Singh_ST10453245 (1).pdf](https://github.com/user-attachments/files/32261600/Planning.Design_OPSC7311_Part1B_Tiyah_Singh_ST10453245.1.pdf)# 🌱 My Money Tree
+
+Part 1
+-------------------------------------------------------------------------------------------------------------------------------------------------
+Research - [Research_OPSC7311_Part1A_Tiyah_Singh_ST10453245 (1).pdf](https://github.com/user-attachments/files/32261596/Research_OPSC7311_Part1A_Tiyah_Singh_ST10453245.1.pdf)
+
+Planning & Design - [Planning & Design_OPSC7311_Part1B_Tiyah_Singh_ST10453245 (1).pdf](https://github.com/user-attachments/files/32261606/Planning.Design_OPSC7311_Part1B_Tiyah_Singh_ST10453245.1.pdf)
+
+
+Gantt Chart - [OPSC7311_P1_Gantt_Chart_ST10453245_Tiyah_Singh (1).xlsx](https://github.com/user-attachments/files/32261612/OPSC7311_P1_Gantt_Chart_ST10453245_Tiyah_Singh.1.xlsx)
+
+Part 2
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+Code References & Bibliography - 
+
+Gantt Chart Project Schedule - 
+
+Video Demonstration - 
+
 
 ### Welcome to your financial sanctuary.
 
