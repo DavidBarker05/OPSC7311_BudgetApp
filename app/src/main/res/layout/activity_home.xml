@@ -5,17 +5,8 @@
     android:id="@+id/homeRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/home_sheet"
+    android:background="@color/home_header"
     tools:context=".HomeActivity">
-
-    <View
-        android:id="@+id/headerBackground"
-        android:layout_width="0dp"
-        android:layout_height="210dp"
-        android:background="@drawable/bg_home_header"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/tvWelcomeSanctuary"
@@ -63,12 +54,25 @@
         android:layout_width="120dp"
         android:layout_height="120dp"
         android:contentDescription="@string/logo_badge_description"
+        android:elevation="8dp"
         android:scaleType="fitCenter"
         android:src="@drawable/img_logo_badge"
-        app:layout_constraintBottom_toBottomOf="@id/headerBackground"
+        app:layout_constraintBottom_toTopOf="@id/homeSheet"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/headerBackground" />
+        app:layout_constraintTop_toTopOf="@id/homeSheet" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/homeSheet"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="56dp"
+        android:background="@drawable/bg_notifications_sheet"
+        android:paddingTop="68dp"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvUserName">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/balanceCard"
@@ -84,7 +88,7 @@
         android:paddingBottom="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ivLogoBadge">
+        app:layout_constraintTop_toTopOf="parent">
 
         <TextView
             android:id="@+id/tvTotalBalanceLabel"
@@ -516,7 +520,7 @@
         android:paddingTop="8dp"
         android:paddingEnd="12dp"
         android:paddingBottom="8dp"
-        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/periodToggle"
@@ -535,6 +539,8 @@
         app:layout_constraintEnd_toEndOf="@id/rvTransactions"
         app:layout_constraintStart_toStartOf="@id/rvTransactions"
         app:layout_constraintTop_toTopOf="@id/rvTransactions" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <include
         android:id="@+id/bottomNav"
