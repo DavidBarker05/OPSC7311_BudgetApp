@@ -3,6 +3,7 @@ package com.example.mybudgettree
 import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
@@ -27,6 +28,11 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 class FillWateringCanActivity : AppCompatActivity() {
+
+    companion object {
+        private const val TAG = "FillWateringCanActivity"
+    }
+
     private val dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH)
     private var selectedDate = LocalDate.now()
     private var goals: List<Category> = emptyList()
@@ -107,9 +113,11 @@ class FillWateringCanActivity : AppCompatActivity() {
                         endTime = now
                     )
                     if (result.wasSuccessful) {
+                        Log.i(TAG, "Saved savings deposit '$title' for category '${category.categoryName}'")
                         Toast.makeText(this@FillWateringCanActivity, R.string.savings_saved, Toast.LENGTH_SHORT).show()
                         finish()
                     } else {
+                        Log.w(TAG, "Failed to save savings deposit '$title': ${result.errMsg}")
                         Toast.makeText(
                             this@FillWateringCanActivity,
                             result.errMsg ?: getString(R.string.expense_fields_required),

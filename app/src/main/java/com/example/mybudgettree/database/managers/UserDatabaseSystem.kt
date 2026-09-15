@@ -1,5 +1,6 @@
 package com.example.mybudgettree.database.managers
 
+import android.util.Log
 import android.util.Patterns
 import com.example.mybudgettree.database.daos.UserDao
 import com.example.mybudgettree.database.entries.User
@@ -14,6 +15,7 @@ import java.time.YearMonth
 class UserDatabaseSystem(private val userDao: UserDao) {
 
     companion object {
+        private const val TAG = "UserDatabaseSystem"
         private val USERNAME_REGEX = Regex("^[A-Za-z0-9]+$")
         private val PHONE_NUMBER_REGEX = Regex("^\\+?[0-9]{7,15}$")
 
@@ -21,6 +23,18 @@ class UserDatabaseSystem(private val userDao: UserDao) {
             val hasLeadingPlus = phoneNumber.trim().startsWith("+")
             val digitsOnly = phoneNumber.filter { it.isDigit() }
             return if (hasLeadingPlus) "+$digitsOnly" else digitsOnly
+        }
+
+        private fun logUpdateOutcome(action: String, status: UpdateUserReturnStatus, errMsg: String?) {
+            when (status) {
+                UpdateUserReturnStatus.Succeeded -> Log.i(TAG, "Successfully $action")
+                UpdateUserReturnStatus.Failed -> Log.w(TAG, "Failed to $action: $errMsg")
+                UpdateUserReturnStatus.NoChange -> Log.d(TAG, "No change $action")
+            }
+        }
+
+        private fun logCreateOutcome(action: String, wasSuccessful: Boolean, errMsg: String?) {
+            if (wasSuccessful) Log.i(TAG, "Successfully $action") else Log.w(TAG, "Failed to $action: $errMsg")
         }
     }
 
@@ -118,31 +132,35 @@ class UserDatabaseSystem(private val userDao: UserDao) {
         currency: String,
         treeLevelPeriod: YearMonth
     ): CreateUserReturnInfo {
-        if (username.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Username is empty")
-        if (password.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Password is empty")
-        if (email.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Email is empty")
-        if (phoneNumber.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is empty")
-        if (displayName.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Display name is empty")
-        if (currency.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Currency is empty")
-        if (!USERNAME_REGEX.matches(username)) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Username may only contain English letters and numbers")
-        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Email is not a valid email address")
-        val normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
-        if (!PHONE_NUMBER_REGEX.matches(normalizedPhoneNumber)) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is not a valid phone number")
-        if (userDao.findUser(username) != null) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Username is already in use")
-        if (userDao.findUserByEmail(email) != null) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Email is already in use")
-        if (userDao.findUserByPhoneNumber(normalizedPhoneNumber) != null) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is already in use")
-        val user = User(
-            username = username,
-            password = password,
-            email = email,
-            phoneNumber = normalizedPhoneNumber,
-            displayName = displayName,
-            dateOfBirth = dateOfBirth,
-            currency = currency,
-            treeLevelPeriod = treeLevelPeriod
-        )
-        userDao.insertUser(user) // Already checked all details not in use so safe to not check after insert
-        return CreateUserReturnInfo(wasSuccessful = true, user = user)
+        val result = run {
+            if (username.isBlank()) return@run CreateUserReturnInfo(wasSuccessful = false, errMsg = "Username is empty")
+            if (password.isBlank()) return@run CreateUserReturnInfo(wasSuccessful = false, errMsg = "Password is empty")
+            if (email.isBlank()) return@run CreateUserReturnInfo(wasSuccessful = false, errMsg = "Email is empty")
+            if (phoneNumber.isBlank()) return@run CreateUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is empty")
+            if (displayName.isBlank()) return@run CreateUserReturnInfo(wasSuccessful = false, errMsg = "Display name is empty")
+            if (currency.isBlank()) return@run CreateUserReturnInfo(wasSuccessful = false, errMsg = "Currency is empty")
+            if (!USERNAME_REGEX.matches(username)) return@run CreateUserReturnInfo(wasSuccessful = false, errMsg = "Username may only contain English letters and numbers")
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) return@run CreateUserReturnInfo(wasSuccessful = false, errMsg = "Email is not a valid email address")
+            val normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
+            if (!PHONE_NUMBER_REGEX.matches(normalizedPhoneNumber)) return@run CreateUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is not a valid phone number")
+            if (userDao.findUser(username) != null) return@run CreateUserReturnInfo(wasSuccessful = false, errMsg = "Username is already in use")
+            if (userDao.findUserByEmail(email) != null) return@run CreateUserReturnInfo(wasSuccessful = false, errMsg = "Email is already in use")
+            if (userDao.findUserByPhoneNumber(normalizedPhoneNumber) != null) return@run CreateUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is already in use")
+            val user = User(
+                username = username,
+                password = password,
+                email = email,
+                phoneNumber = normalizedPhoneNumber,
+                displayName = displayName,
+                dateOfBirth = dateOfBirth,
+                currency = currency,
+                treeLevelPeriod = treeLevelPeriod
+            )
+            userDao.insertUser(user) // Already checked all details not in use so safe to not check after insert
+            CreateUserReturnInfo(wasSuccessful = true, user = user)
+        }
+        logCreateOutcome("create user '$username'", result.wasSuccessful, result.errMsg)
+        return result
     }
 
     /**
@@ -193,17 +211,23 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @return A [FindUserReturnInfo] with the matching user if the credentials are valid
      */
     suspend fun login(usernameOrEmail: String, password: String): FindUserReturnInfo {
-        if (usernameOrEmail.isBlank()) return FindUserReturnInfo(wasSuccessful = false, errMsg = "Username or email is empty")
-        if (password.isBlank()) return FindUserReturnInfo(wasSuccessful = false, errMsg = "Password is empty")
-        val user = if (usernameOrEmail.contains("@")) {
-            userDao.findUserByEmail(usernameOrEmail)
-        } else {
-            userDao.findUser(usernameOrEmail) ?: userDao.findUserByEmail(usernameOrEmail)
+        val result = run {
+            if (usernameOrEmail.isBlank()) return@run FindUserReturnInfo(wasSuccessful = false, errMsg = "Username or email is empty")
+            if (password.isBlank()) return@run FindUserReturnInfo(wasSuccessful = false, errMsg = "Password is empty")
+            val user = if (usernameOrEmail.contains("@")) {
+                userDao.findUserByEmail(usernameOrEmail)
+            } else {
+                userDao.findUser(usernameOrEmail) ?: userDao.findUserByEmail(usernameOrEmail)
+            }
+            if (user == null || user.password != password) {
+                return@run FindUserReturnInfo(wasSuccessful = false, errMsg = "Invalid username/email or password")
+            }
+            FindUserReturnInfo(wasSuccessful = true, user = user)
         }
-        if (user == null || user.password != password) {
-            return FindUserReturnInfo(wasSuccessful = false, errMsg = "Invalid username/email or password")
-        }
-        return FindUserReturnInfo(wasSuccessful = true, user = user)
+        // Never log the password itself, only the identifier that was attempted
+        if (result.wasSuccessful) Log.i(TAG, "Successful login for '$usernameOrEmail'")
+        else Log.w(TAG, "Failed login attempt for '$usernameOrEmail': ${result.errMsg}")
+        return result
     }
 
     /**
@@ -246,13 +270,17 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @return An [UpdateUserReturnInfo] indicating what happened with the update
      */
     suspend fun updateUsername(user: User, newUsername: String): UpdateUserReturnInfo {
-        if (newUsername.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New username is empty")
-        if (user.username == newUsername) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
-        if (!USERNAME_REGEX.matches(newUsername)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Username may only contain English letters and numbers")
-        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
-        if (doesUserExist(newUsername)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Username is already in use")
-        userDao.updateUsername(user.username, newUsername)
-        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(username = newUsername))
+        val result = run {
+            if (newUsername.isBlank()) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New username is empty")
+            if (user.username == newUsername) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+            if (!USERNAME_REGEX.matches(newUsername)) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Username may only contain English letters and numbers")
+            if (!doesUserExist(user.username)) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+            if (doesUserExist(newUsername)) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Username is already in use")
+            userDao.updateUsername(user.username, newUsername)
+            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(username = newUsername))
+        }
+        logUpdateOutcome("update username for user '${user.username}'", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -263,11 +291,15 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @return An [UpdateUserReturnInfo] indicating what happened with the update
      */
     suspend fun updatePassword(user: User, newPassword: String): UpdateUserReturnInfo {
-        if (newPassword.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New password is empty")
-        if (user.password == newPassword) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
-        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
-        userDao.updatePassword(user.username, newPassword)
-        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(password = newPassword))
+        val result = run {
+            if (newPassword.isBlank()) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New password is empty")
+            if (user.password == newPassword) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+            if (!doesUserExist(user.username)) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+            userDao.updatePassword(user.username, newPassword)
+            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(password = newPassword))
+        }
+        logUpdateOutcome("update password for user '${user.username}'", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -278,13 +310,17 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @return An [UpdateUserReturnInfo] indicating what happened with the update
      */
     suspend fun updateEmail(user: User, newEmail: String): UpdateUserReturnInfo {
-        if (newEmail.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New email is empty")
-        if (user.email == newEmail) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
-        if (!Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Email is not a valid email address")
-        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
-        if (isEmailInUse(newEmail)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Email is already in use")
-        userDao.updateEmail(user.username, newEmail)
-        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(email = newEmail))
+        val result = run {
+            if (newEmail.isBlank()) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New email is empty")
+            if (user.email == newEmail) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+            if (!Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Email is not a valid email address")
+            if (!doesUserExist(user.username)) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+            if (isEmailInUse(newEmail)) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Email is already in use")
+            userDao.updateEmail(user.username, newEmail)
+            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(email = newEmail))
+        }
+        logUpdateOutcome("update email for user '${user.username}'", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -295,14 +331,18 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @return An [UpdateUserReturnInfo] indicating what happened with the update
      */
     suspend fun updatePhoneNumber(user: User, newPhoneNumber: String): UpdateUserReturnInfo {
-        if (newPhoneNumber.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New phone number is empty")
-        val normalizedNewPhoneNumber = normalizePhoneNumber(newPhoneNumber)
-        if (user.phoneNumber == normalizedNewPhoneNumber) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
-        if (!PHONE_NUMBER_REGEX.matches(normalizedNewPhoneNumber)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Phone number is not a valid phone number")
-        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
-        if (isPhoneNumberInUse(normalizedNewPhoneNumber)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Phone number is already in use")
-        userDao.updatePhoneNumber(user.username, normalizedNewPhoneNumber)
-        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(phoneNumber = normalizedNewPhoneNumber))
+        val result = run {
+            if (newPhoneNumber.isBlank()) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New phone number is empty")
+            val normalizedNewPhoneNumber = normalizePhoneNumber(newPhoneNumber)
+            if (user.phoneNumber == normalizedNewPhoneNumber) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+            if (!PHONE_NUMBER_REGEX.matches(normalizedNewPhoneNumber)) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Phone number is not a valid phone number")
+            if (!doesUserExist(user.username)) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+            if (isPhoneNumberInUse(normalizedNewPhoneNumber)) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Phone number is already in use")
+            userDao.updatePhoneNumber(user.username, normalizedNewPhoneNumber)
+            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(phoneNumber = normalizedNewPhoneNumber))
+        }
+        logUpdateOutcome("update phone number for user '${user.username}'", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -313,11 +353,15 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @return An [UpdateUserReturnInfo] indicating what happened with the update
      */
     suspend fun updateDisplayName(user: User, newDisplayName: String): UpdateUserReturnInfo {
-        if (newDisplayName.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New display name is empty")
-        if (user.password == newDisplayName) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
-        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
-        userDao.updateDisplayName(user.username, newDisplayName)
-        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(displayName = newDisplayName))
+        val result = run {
+            if (newDisplayName.isBlank()) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New display name is empty")
+            if (user.password == newDisplayName) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+            if (!doesUserExist(user.username)) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+            userDao.updateDisplayName(user.username, newDisplayName)
+            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(displayName = newDisplayName))
+        }
+        logUpdateOutcome("update display name for user '${user.username}'", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -328,10 +372,14 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @return An [UpdateUserReturnInfo] indicating what happened with the update
      */
     suspend fun updateDateOfBirth(user: User, newDateOfBirth: LocalDate): UpdateUserReturnInfo {
-        if (user.dateOfBirth == newDateOfBirth) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
-        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
-        userDao.updateDateOfBirth(user.username, newDateOfBirth)
-        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(dateOfBirth = newDateOfBirth))
+        val result = run {
+            if (user.dateOfBirth == newDateOfBirth) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+            if (!doesUserExist(user.username)) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+            userDao.updateDateOfBirth(user.username, newDateOfBirth)
+            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(dateOfBirth = newDateOfBirth))
+        }
+        logUpdateOutcome("update date of birth for user '${user.username}'", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -342,11 +390,15 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @return An [UpdateUserReturnInfo] indicating what happened with the update
      */
     suspend fun updateCurrency(user: User, newCurrency: String): UpdateUserReturnInfo {
-        if (newCurrency.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New display name is empty")
-        if (user.currency == newCurrency) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
-        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
-        userDao.updateCurrency(user.username, newCurrency)
-        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(currency = newCurrency))
+        val result = run {
+            if (newCurrency.isBlank()) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New display name is empty")
+            if (user.currency == newCurrency) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+            if (!doesUserExist(user.username)) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+            userDao.updateCurrency(user.username, newCurrency)
+            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(currency = newCurrency))
+        }
+        logUpdateOutcome("update currency for user '${user.username}'", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -357,11 +409,15 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @return An [UpdateUserReturnInfo] indicating what happened with the update
      */
     suspend fun updateProfilePhoto(user: User, newProfilePhotoPath: String?): UpdateUserReturnInfo {
-        if (newProfilePhotoPath?.isBlank() ?: false) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New profile photo path is empty")
-        if (user.profilePhotoPath == newProfilePhotoPath) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
-        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
-        userDao.updateProfilePhoto(user.username, newProfilePhotoPath)
-        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(profilePhotoPath = newProfilePhotoPath))
+        val result = run {
+            if (newProfilePhotoPath?.isBlank() ?: false) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New profile photo path is empty")
+            if (user.profilePhotoPath == newProfilePhotoPath) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+            if (!doesUserExist(user.username)) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+            userDao.updateProfilePhoto(user.username, newProfilePhotoPath)
+            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(profilePhotoPath = newProfilePhotoPath))
+        }
+        logUpdateOutcome("update profile photo for user '${user.username}'", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -372,11 +428,15 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @return An [UpdateUserReturnInfo] indicating what happened with the update
      */
     suspend fun updateTreeLevel(user: User, newTreeLevel: Int): UpdateUserReturnInfo {
-        if (user.treeLevel == newTreeLevel) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
-        if (newTreeLevel < 1) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Tree level cannot be less than 1")
-        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
-        userDao.updateTreeLevel(user.username, newTreeLevel)
-        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(treeLevel = newTreeLevel))
+        val result = run {
+            if (user.treeLevel == newTreeLevel) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+            if (newTreeLevel < 1) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Tree level cannot be less than 1")
+            if (!doesUserExist(user.username)) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+            userDao.updateTreeLevel(user.username, newTreeLevel)
+            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(treeLevel = newTreeLevel))
+        }
+        logUpdateOutcome("update tree level for user '${user.username}'", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -387,11 +447,15 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @return An [UpdateUserReturnInfo] indicating what happened with the update
      */
     suspend fun updateTreeLevelPeriod(user: User, newTreeLevelPeriod: YearMonth): UpdateUserReturnInfo {
-        if (user.treeLevelPeriod == newTreeLevelPeriod) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
-        if (newTreeLevelPeriod < user.treeLevelPeriod) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New tree level period cannot be before current period")
-        if (!doesUserExist(user.username)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
-        userDao.updateTreeLevelPeriod(user.username, newTreeLevelPeriod)
-        return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(treeLevelPeriod = newTreeLevelPeriod))
+        val result = run {
+            if (user.treeLevelPeriod == newTreeLevelPeriod) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+            if (newTreeLevelPeriod < user.treeLevelPeriod) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New tree level period cannot be before current period")
+            if (!doesUserExist(user.username)) return@run UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+            userDao.updateTreeLevelPeriod(user.username, newTreeLevelPeriod)
+            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(treeLevelPeriod = newTreeLevelPeriod))
+        }
+        logUpdateOutcome("update tree level period for user '${user.username}'", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -400,5 +464,10 @@ class UserDatabaseSystem(private val userDao: UserDao) {
      * @param user The [User] to delete
      * @return A status reflection from [UserDeleteReturnStatus]
      */
-    suspend fun deleteUser(user: User): UserDeleteReturnStatus = if (userDao.deleteUser(user) == 1) UserDeleteReturnStatus.Deleted else UserDeleteReturnStatus.DoesNotExist
+    suspend fun deleteUser(user: User): UserDeleteReturnStatus {
+        val status = if (userDao.deleteUser(user) == 1) UserDeleteReturnStatus.Deleted else UserDeleteReturnStatus.DoesNotExist
+        if (status == UserDeleteReturnStatus.Deleted) Log.i(TAG, "Successfully deleted user '${user.username}'")
+        else Log.w(TAG, "Failed to delete user '${user.username}': user does not exist")
+        return status
+    }
 }

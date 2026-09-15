@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
@@ -33,6 +34,11 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 class EditProfileActivity : AppCompatActivity() {
+
+    companion object {
+        private const val TAG = "EditProfileActivity"
+    }
+
     private var cameraFile: File? = null
 
     private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -135,11 +141,17 @@ class EditProfileActivity : AppCompatActivity() {
 
     private fun applyUpdate(result: UpdateUserReturnInfo): Boolean {
         return when (result.status) {
-            UpdateUserReturnStatus.Succeeded, UpdateUserReturnStatus.NoChange -> {
+            UpdateUserReturnStatus.Succeeded -> {
+                Log.i(TAG, "Profile field updated for user '${result.user?.username}'")
+                result.user?.let { UserSession.login(it) }
+                true
+            }
+            UpdateUserReturnStatus.NoChange -> {
                 result.user?.let { UserSession.login(it) }
                 true
             }
             UpdateUserReturnStatus.Failed -> {
+                Log.w(TAG, "Failed to update profile field: ${result.errMsg}")
                 Toast.makeText(this, result.errMsg ?: getString(R.string.signup_fields_required), Toast.LENGTH_SHORT).show()
                 false
             }

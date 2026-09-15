@@ -1,10 +1,12 @@
 package com.example.mybudgettree
 
+import android.util.Log
 import com.example.mybudgettree.database.entries.Category
 import com.example.mybudgettree.database.entries.User
 import com.example.mybudgettree.database.managers.CategoryDatabaseSystem
 
 object CategoryGoals {
+    private const val TAG = "CategoryGoals"
     val names = listOf("Travel", "Wedding", "Car")
     private val defaultTargets = mapOf(
         "Travel" to 25_000.0,
@@ -33,13 +35,26 @@ object CategoryGoals {
         names.forEach { name ->
             val existing = categoryDatabaseSystem.findCategory(user, name).category
             if (existing == null) {
-                val created = categoryDatabaseSystem.createCategory(user, name).category
+                val createResult = categoryDatabaseSystem.createCategory(user, name)
+                val created = createResult.category
+                if (created == null) {
+                    Log.w(TAG, "Failed to seed goal category '$name' for user '${user.username}': ${createResult.errMsg}")
+                    return@forEach
+                }
                 val target = defaultTargets[name]
-                if (created != null && target != null) {
-                    categoryDatabaseSystem.updateCategoryBudget(created, target)
+                if (target != null) {
+                    val budgetResult = categoryDatabaseSystem.updateCategoryBudget(created, target)
+                    if (budgetResult.status == CategoryDatabaseSystem.UpdateCategoryReturnStatus.Failed) {
+                        Log.w(TAG, "Failed to set default target for goal '$name': ${budgetResult.errMsg}")
+                    }
                 }
             } else if (existing.budgetAmount == null) {
-                defaultTargets[name]?.let { categoryDatabaseSystem.updateCategoryBudget(existing, it) }
+                defaultTargets[name]?.let {
+                    val budgetResult = categoryDatabaseSystem.updateCategoryBudget(existing, it)
+                    if (budgetResult.status == CategoryDatabaseSystem.UpdateCategoryReturnStatus.Failed) {
+                        Log.w(TAG, "Failed to set default target for goal '$name': ${budgetResult.errMsg}")
+                    }
+                }
             }
         }
         return goalsOnly(categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty())

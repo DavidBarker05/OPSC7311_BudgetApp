@@ -3,6 +3,7 @@ package com.example.mybudgettree
 import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.Window
 import android.widget.EditText
 import android.widget.ImageButton
@@ -21,6 +22,11 @@ import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
 
 class CategoriesActivity : AppCompatActivity() {
+
+    companion object {
+        private const val TAG = "CategoriesActivity"
+    }
+
     private val adapter = CategoryGardenAdapter(
         onCategory = { category ->
             startActivity(
@@ -102,10 +108,12 @@ class CategoriesActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 val result = app.categoryDatabaseSystem.createCategory(user, name)
                 if (result.wasSuccessful) {
+                    Log.i(TAG, "Created category '$name'")
                     Toast.makeText(this@CategoriesActivity, R.string.category_created, Toast.LENGTH_SHORT).show()
                     dialog.dismiss()
                     loadGarden()
                 } else {
+                    Log.w(TAG, "Failed to create category '$name': ${result.errMsg}")
                     Toast.makeText(
                         this@CategoriesActivity,
                         result.errMsg ?: getString(R.string.category_name_required),

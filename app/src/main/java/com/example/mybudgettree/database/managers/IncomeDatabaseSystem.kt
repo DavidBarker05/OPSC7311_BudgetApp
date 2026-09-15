@@ -1,5 +1,6 @@
 package com.example.mybudgettree.database.managers
 
+import android.util.Log
 import com.example.mybudgettree.database.daos.IncomeDao
 import com.example.mybudgettree.database.entries.User
 import com.example.mybudgettree.database.entries.Category
@@ -19,6 +20,22 @@ class IncomeDatabaseSystem(
     private val userDatabaseSystem: UserDatabaseSystem,
     private val categoryDatabaseSystem: CategoryDatabaseSystem
 ) {
+
+    companion object {
+        private const val TAG = "IncomeDatabaseSystem"
+
+        private fun logUpdateOutcome(action: String, status: UpdateIncomeReturnStatus, errMsg: String?) {
+            when (status) {
+                UpdateIncomeReturnStatus.Succeeded -> Log.i(TAG, "Successfully $action")
+                UpdateIncomeReturnStatus.Failed -> Log.w(TAG, "Failed to $action: $errMsg")
+                UpdateIncomeReturnStatus.NoChange -> Log.d(TAG, "No change $action")
+            }
+        }
+
+        private fun logCreateOutcome(action: String, wasSuccessful: Boolean, errMsg: String?) {
+            if (wasSuccessful) Log.i(TAG, "Successfully $action") else Log.w(TAG, "Failed to $action: $errMsg")
+        }
+    }
 
     /**
      * Wraps the income creation return in a detailed form
@@ -109,7 +126,6 @@ class IncomeDatabaseSystem(
      *
      * @param category The [Category] the income belongs to
      * @param description The income's name
-     * @param currencyAtTime The currency the amount was denominated in at the time of the income
      * @param amount The income amount, cannot be negative
      * @param date The date the income occurred on
      * @param startTime The time the income started
@@ -126,23 +142,27 @@ class IncomeDatabaseSystem(
         endTime: LocalTime,
         imagePath: String? = null
     ): CreateIncomeReturnInfo {
-        val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-        if (!categoryStatus.wasSuccessful) return CreateIncomeReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-        if (description.isBlank()) return CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Description is blank")
-        if (amount < 0.0) return CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Amount cannot be negative")
-        if (endTime < startTime) return CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Start time is after end time")
-        if (imagePath?.isBlank() ?: false) return CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Image path is empty")
-        val income = Income(
-            categoryId = category.id,
-            description = description,
-            amount = amount,
-            date = date,
-            startTime = startTime,
-            endTime = endTime,
-            imagePath = imagePath
-        )
-        val id = incomeDao.insertIncome(income)
-        return CreateIncomeReturnInfo(wasSuccessful = true, income = income.copy(id = id))
+        val result = run {
+            val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
+            if (!categoryStatus.wasSuccessful) return@run CreateIncomeReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
+            if (description.isBlank()) return@run CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Description is blank")
+            if (amount < 0.0) return@run CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Amount cannot be negative")
+            if (endTime < startTime) return@run CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Start time is after end time")
+            if (imagePath?.isBlank() ?: false) return@run CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Image path is empty")
+            val income = Income(
+                categoryId = category.id,
+                description = description,
+                amount = amount,
+                date = date,
+                startTime = startTime,
+                endTime = endTime,
+                imagePath = imagePath
+            )
+            val id = incomeDao.insertIncome(income)
+            CreateIncomeReturnInfo(wasSuccessful = true, income = income.copy(id = id))
+        }
+        logCreateOutcome("create income '$description' for category id ${category.id}", result.wasSuccessful, result.errMsg)
+        return result
     }
 
     /**
@@ -397,11 +417,15 @@ class IncomeDatabaseSystem(
      * @return An [UpdateIncomeReturnInfo] indicating what happened with the update
      */
     suspend fun updateIncomeDescription(income: Income, newDescription: String): UpdateIncomeReturnInfo {
-        if (income.description == newDescription) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
-        if (newDescription.isBlank()) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Description is empty")
-        if (!isIncomeStillValid(income)) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
-        incomeDao.updateIncomeDescription(income.id, newDescription)
-        return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(description = newDescription))
+        val result = run {
+            if (income.description == newDescription) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
+            if (newDescription.isBlank()) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Description is empty")
+            if (!isIncomeStillValid(income)) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
+            incomeDao.updateIncomeDescription(income.id, newDescription)
+            UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(description = newDescription))
+        }
+        logUpdateOutcome("update description for income id ${income.id}", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -412,11 +436,15 @@ class IncomeDatabaseSystem(
      * @return An [UpdateIncomeReturnInfo] indicating what happened with the update
      */
     suspend fun updateIncomeAmount(income: Income, newAmount: Double): UpdateIncomeReturnInfo {
-        if (income.amount == newAmount) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
-        if (newAmount < 0.0) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "New amount cannot be less than 0")
-        if (!isIncomeStillValid(income)) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
-        incomeDao.updateIncomeAmount(income.id, newAmount)
-        return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(amount = newAmount))
+        val result = run {
+            if (income.amount == newAmount) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
+            if (newAmount < 0.0) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "New amount cannot be less than 0")
+            if (!isIncomeStillValid(income)) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
+            incomeDao.updateIncomeAmount(income.id, newAmount)
+            UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(amount = newAmount))
+        }
+        logUpdateOutcome("update amount for income id ${income.id}", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -427,10 +455,14 @@ class IncomeDatabaseSystem(
      * @return An [UpdateIncomeReturnInfo] indicating what happened with the update
      */
     suspend fun updateIncomeDate(income: Income, newDate: LocalDate): UpdateIncomeReturnInfo {
-        if (income.date == newDate) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
-        if (!isIncomeStillValid(income)) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
-        incomeDao.updateIncomeDate(income.id, newDate)
-        return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(date = newDate))
+        val result = run {
+            if (income.date == newDate) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
+            if (!isIncomeStillValid(income)) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
+            incomeDao.updateIncomeDate(income.id, newDate)
+            UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(date = newDate))
+        }
+        logUpdateOutcome("update date for income id ${income.id}", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -441,11 +473,15 @@ class IncomeDatabaseSystem(
      * @return An [UpdateIncomeReturnInfo] indicating what happened with the update
      */
     suspend fun updateIncomeStartTime(income: Income, newStartTime: LocalTime): UpdateIncomeReturnInfo {
-        if (income.startTime == newStartTime) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
-        if (income.endTime < newStartTime) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Start time is after end time")
-        if (!isIncomeStillValid(income)) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
-        incomeDao.updateIncomeStartTime(income.id, newStartTime)
-        return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(startTime = newStartTime))
+        val result = run {
+            if (income.startTime == newStartTime) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
+            if (income.endTime < newStartTime) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Start time is after end time")
+            if (!isIncomeStillValid(income)) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
+            incomeDao.updateIncomeStartTime(income.id, newStartTime)
+            UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(startTime = newStartTime))
+        }
+        logUpdateOutcome("update start time for income id ${income.id}", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -456,11 +492,15 @@ class IncomeDatabaseSystem(
      * @return An [UpdateIncomeReturnInfo] indicating what happened with the update
      */
     suspend fun updateIncomeEndTime(income: Income, newEndTime: LocalTime): UpdateIncomeReturnInfo {
-        if (income.endTime == newEndTime) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
-        if (newEndTime < income.startTime) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "End time is before start time")
-        if (!isIncomeStillValid(income)) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
-        incomeDao.updateIncomeEndTime(income.id, newEndTime)
-        return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(endTime = newEndTime))
+        val result = run {
+            if (income.endTime == newEndTime) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
+            if (newEndTime < income.startTime) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "End time is before start time")
+            if (!isIncomeStillValid(income)) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
+            incomeDao.updateIncomeEndTime(income.id, newEndTime)
+            UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(endTime = newEndTime))
+        }
+        logUpdateOutcome("update end time for income id ${income.id}", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -471,11 +511,15 @@ class IncomeDatabaseSystem(
      * @return An [UpdateIncomeReturnInfo] indicating what happened with the update
      */
     suspend fun updateIncomeImage(income: Income, newImagePath: String?): UpdateIncomeReturnInfo {
-        if (income.imagePath == newImagePath) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
-        if (newImagePath?.isBlank() ?: false) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Image path cannot be blank")
-        if (!isIncomeStillValid(income)) return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
-        incomeDao.updateIncomeImage(income.id, newImagePath)
-        return UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(imagePath = newImagePath))
+        val result = run {
+            if (income.imagePath == newImagePath) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
+            if (newImagePath?.isBlank() ?: false) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Image path cannot be blank")
+            if (!isIncomeStillValid(income)) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
+            incomeDao.updateIncomeImage(income.id, newImagePath)
+            UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(imagePath = newImagePath))
+        }
+        logUpdateOutcome("update image for income id ${income.id}", result.status, result.errMsg)
+        return result
     }
 
     /**
@@ -484,5 +528,10 @@ class IncomeDatabaseSystem(
      * @param income The [Income] to delete
      * @return A status reflection from [IncomeDeleteReturnStatus]
      */
-    suspend fun deleteIncome(income: Income): IncomeDeleteReturnStatus = if (incomeDao.deleteIncome(income) == 1) IncomeDeleteReturnStatus.Deleted else IncomeDeleteReturnStatus.DoesNotExist
+    suspend fun deleteIncome(income: Income): IncomeDeleteReturnStatus {
+        val status = if (incomeDao.deleteIncome(income) == 1) IncomeDeleteReturnStatus.Deleted else IncomeDeleteReturnStatus.DoesNotExist
+        if (status == IncomeDeleteReturnStatus.Deleted) Log.i(TAG, "Successfully deleted income '${income.description}'")
+        else Log.w(TAG, "Failed to delete income '${income.description}': income does not exist")
+        return status
+    }
 }
