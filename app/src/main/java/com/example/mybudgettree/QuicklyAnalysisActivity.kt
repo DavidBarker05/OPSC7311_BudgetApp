@@ -88,12 +88,17 @@ class QuicklyAnalysisActivity : AppCompatActivity() {
                 month.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
             )
             val chart = AnalysisCalculator.snapshot(
-                context = this@QuicklyAnalysisActivity,
                 incomes = incomes,
                 expenses = expenses,
                 monthlyGoal = monthlyGoal,
                 period = AnalysisPeriod.WEEKLY,
-                anchorDate = today
+                anchorDate = today,
+                weekLabels = listOf(
+                    getString(R.string.week_1),
+                    getString(R.string.week_2),
+                    getString(R.string.week_3),
+                    getString(R.string.week_4)
+                )
             )
             findViewById<AnalysisChartView>(R.id.chartView).setData(
                 labels = chart.buckets.map { it.label },

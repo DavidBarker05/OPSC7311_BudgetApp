@@ -107,12 +107,17 @@ class AnalysisActivity : AppCompatActivity() {
         val app = application as BudgetTreeApplication
         val monthlyGoal = app.monthlyGoalDatabaseSystem.getGoal(user, java.time.YearMonth.from(anchorDate))
         val snapshot = AnalysisCalculator.snapshot(
-            context = this,
             incomes = incomes,
             expenses = expenses,
             monthlyGoal = monthlyGoal,
             period = selectedPeriod,
-            anchorDate = anchorDate
+            anchorDate = anchorDate,
+            weekLabels = listOf(
+                getString(R.string.week_1),
+                getString(R.string.week_2),
+                getString(R.string.week_3),
+                getString(R.string.week_4)
+            )
         )
         findViewById<TextView>(R.id.tvTotalBalance).text = MoneyFormatter.format(snapshot.totalBalance)
         findViewById<TextView>(R.id.tvTotalExpense).text =
