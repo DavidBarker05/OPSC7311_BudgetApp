@@ -41,9 +41,10 @@ object BudgetOverview {
             MoneyFormatter.format(totalIncome - totalExpense)
         activity.findViewById<TextView>(R.id.tvTotalExpense).text =
             MoneyFormatter.formatSigned(totalExpense, isIncome = false)
-        activity.findViewById<TextView>(R.id.tvBudgetGoal).text = MoneyFormatter.format(budgetTarget)
-        activity.findViewById<TextView>(R.id.tvBudgetPercent).text =
-            activity.getString(R.string.budget_percent, percent.coerceAtMost(100))
+        val tvBudgetGoal = activity.findViewById<TextView>(R.id.tvBudgetGoal)
+        val tvBudgetPercent = activity.findViewById<TextView>(R.id.tvBudgetPercent)
+        tvBudgetGoal.text = MoneyFormatter.format(budgetTarget)
+        tvBudgetPercent.text = activity.getString(R.string.budget_percent, percent.coerceAtMost(100))
         activity.findViewById<TextView>(R.id.tvExpenseStatus).text =
             BudgetStatusHelper.statusText(activity, level, percent, hasMinGoal)
         val fill = activity.findViewById<View>(R.id.budgetFill)
@@ -51,5 +52,11 @@ object BudgetOverview {
         params.matchConstraintPercentWidth = (percent / 100f).coerceIn(0f, 1f)
         fill.layoutParams = params
         BudgetStatusHelper.tintFill(fill, activity, level)
+        tvBudgetPercent.setTextColor(
+            BudgetStatusHelper.contrastingTextColor(activity.getColor(BudgetStatusHelper.colorRes(level)))
+        )
+        tvBudgetGoal.setTextColor(
+            BudgetStatusHelper.contrastingTextColor(activity.getColor(R.color.budget_track))
+        )
     }
 }

@@ -79,6 +79,7 @@ class HomeActivity : AppCompatActivity() {
         findViewById<DonutTargetView>(R.id.homeGoalDonut).apply {
             setShowPercent(true)
             setRingColors(getColor(R.color.home_donut_track), getColor(R.color.analysis_progress_blue))
+            setTextColor(BudgetStatusHelper.contrastingTextColor(getColor(R.color.home_header)))
         }
         MainNavigation.bind(this, MainNavigation.Tab.HOME)
     }

@@ -34,15 +34,22 @@ data class GoalSnapshot(
         }
 
         fun bindProgress(activity: Activity, snapshot: GoalSnapshot) {
-            activity.findViewById<TextView>(R.id.tvBudgetPercent).text =
-                activity.getString(R.string.budget_percent, snapshot.goalPercent)
-            activity.findViewById<TextView>(R.id.tvBudgetGoal).text = MoneyFormatter.format(snapshot.budgetGoal)
+            val tvBudgetPercent = activity.findViewById<TextView>(R.id.tvBudgetPercent)
+            val tvBudgetGoal = activity.findViewById<TextView>(R.id.tvBudgetGoal)
+            tvBudgetPercent.text = activity.getString(R.string.budget_percent, snapshot.goalPercent)
+            tvBudgetGoal.text = MoneyFormatter.format(snapshot.budgetGoal)
             val fill = activity.findViewById<android.view.View>(R.id.budgetFill)
             val params = fill.layoutParams as ConstraintLayout.LayoutParams
             params.matchConstraintPercentWidth = (snapshot.goalPercent / 100f).coerceIn(0f, 1f)
             fill.layoutParams = params
             val level = BudgetStatusHelper.level(snapshot.spentThisMonth, snapshot.minGoal, snapshot.budgetGoal)
             BudgetStatusHelper.tintFill(fill, activity, level)
+            tvBudgetPercent.setTextColor(
+                BudgetStatusHelper.contrastingTextColor(activity.getColor(BudgetStatusHelper.colorRes(level)))
+            )
+            tvBudgetGoal.setTextColor(
+                BudgetStatusHelper.contrastingTextColor(activity.getColor(R.color.budget_track))
+            )
         }
 
         fun bindDrops(drops: List<ImageView>, filled: Int) {

@@ -10,7 +10,6 @@ object CategoryGarden {
         "Groceries",
         "Rent",
         "Gifts",
-        "Savings",
         "Entertainment"
     )
 

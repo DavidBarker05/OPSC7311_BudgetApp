@@ -126,6 +126,12 @@ class AnalysisActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvExpenseStatus).text =
             BudgetStatusHelper.statusText(this, level, snapshot.expensePercent, snapshot.minGoal > 0.0)
         updateBudgetFill(snapshot.expensePercent.coerceIn(0, 100), level)
+        findViewById<TextView>(R.id.tvBudgetPercent).setTextColor(
+            BudgetStatusHelper.contrastingTextColor(getColor(BudgetStatusHelper.colorRes(level)))
+        )
+        findViewById<TextView>(R.id.tvBudgetGoal).setTextColor(
+            BudgetStatusHelper.contrastingTextColor(getColor(R.color.budget_track))
+        )
         applyPeriodStyles()
 
         findViewById<AnalysisChartView>(R.id.chartView).setData(

@@ -48,6 +48,11 @@ class DonutTargetView @JvmOverloads constructor(
         invalidate()
     }
 
+    fun setTextColor(color: Int) {
+        textPaint.color = color
+        invalidate()
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val stroke = width.coerceAtMost(height) * 0.12f

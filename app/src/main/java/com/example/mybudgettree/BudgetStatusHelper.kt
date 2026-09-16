@@ -1,6 +1,7 @@
 package com.example.mybudgettree
 
 import android.app.Activity
+import android.graphics.Color
 import android.view.View
 
 enum class BudgetLevel { GOOD, WARNING, DANGER, NONE }
@@ -55,5 +56,18 @@ object BudgetStatusHelper {
 
     fun tintFill(fill: View, activity: Activity, level: BudgetLevel) {
         fill.background?.mutate()?.setTint(activity.getColor(colorRes(level)))
+    }
+
+    /**
+     * Picks white or dark text depending on the relative luminance of [backgroundColor], so
+     * numbers overlaid on a colored fill/track stay readable regardless of how light or dark
+     * that color is.
+     */
+    fun contrastingTextColor(backgroundColor: Int): Int {
+        val r = Color.red(backgroundColor) / 255.0
+        val g = Color.green(backgroundColor) / 255.0
+        val b = Color.blue(backgroundColor) / 255.0
+        val luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+        return if (luminance > 0.55) Color.parseColor("#FF1A3328") else Color.WHITE
     }
 }
