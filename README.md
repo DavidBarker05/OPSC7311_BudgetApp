@@ -56,9 +56,9 @@ Part 1B compared products such as YNAB, Wallet by BudgetBakers and Spendee. From
 
 What changed was the presentation and emotional tone. My Money Tree keeps those functional expectations, but organises them around a nature and growth metaphor rather than a purely transactional layout.
 
-### 2.3 Relationship to the wider vision
+### 2.3 Part 2 focus and later gamification
 
-Part 1B also described a longer gamification loop in which savings feed a watering can, water supports Money Tree growth, and growth stages reward consistent behaviour. In Part 2, that idea is only partly realised. Users can create savings goals, add contributions and see watering-can progress. Tree leveling data already has its own database table, but the visible growth system, watering interaction and achievements are reserved for the final PoE so that Part 2 can focus on reliable budgeting behaviour.
+Part 1B described a longer nature and growth theme, including a Money Tree that could grow as users save. Full gamification (tree growth stages, watering interaction and achievements) is required for Part 3, not Part 2. This prototype therefore concentrates on the budgeting core: accounts, categories, transactions, monthly min/max goals and savings goal tracking. The watering-can screen and progress graphics support savings goals in Part 2, while tree leveling data is already stored separately so Part 3 can build on it later.
 
 ## 3. Application functionality
 
@@ -87,7 +87,7 @@ Transaction review is available across Home, Transactions, Search and Category D
 
 ### 3.3 Monthly budgeting
 
-The Monthly Goal allows the user to set a minimum and maximum total spend for the current month. This is the Part 2 min/max spending goal requirement and is treated as a budgeting control, separate from savings gamification.
+The Monthly Goal allows the user to set a minimum and maximum total spend for the current month. This is the Part 2 min/max spending goal requirement and is treated as a budgeting control, separate from the Part 3 Money Tree growth features.
 
 Budget bars and progress indicators on Home, Categories, Category Detail, Watering Can and Analysis are scoped to the current month. By default they reflect the Monthly Goal. When a specific category is opened, progress can instead reflect that category's own monthly budget where one has been set.
 
@@ -143,7 +143,7 @@ Primary entities:
 
 Manager classes (`UserDatabaseSystem`, `CategoryDatabaseSystem`, `ExpenseDatabaseSystem`, `IncomeDatabaseSystem`) validate input and mediate Room access. Activities call these managers rather than talking to DAOs directly. `DateTimeConverter` stores `LocalDate`, `LocalTime` and `YearMonth` values as strings.
 
-Tree and watering-can leveling information is stored in a separate table from `User`. The schema is present for later gamification work, but the growth logic itself is inactive in Part 2 so it does not interfere with category or budget behaviour.
+Tree and watering-can leveling information is stored in a separate table from `User`. The schema is in place for Part 3 gamification, but the growth logic is not active in this Part 2 build.
 
 Database construction occurs in `BudgetTreeApplication`. Schema upgrades currently use destructive migration, which is acceptable for a prototype but means local data can be wiped when the schema changes.
 
@@ -188,34 +188,9 @@ Suggested walkthrough after login:
 4. Create one or more savings goals and add contributions.
 5. Review totals and progress on Home, Transactions and Analysis.
 
-## 6. Project structure
+## 6. Scope, limitations and future development
 
-```text
-OPSC7311_BudgetApp/
-├── .github/workflows/tests.yml
-├── app/
-│   ├── build.gradle.kts
-│   └── src/
-│       ├── main/
-│       │   ├── AndroidManifest.xml
-│       │   ├── java/com/example/mybudgettree/
-│       │   │   ├── *Activity.kt
-│       │   │   ├── MainNavigation.kt
-│       │   │   ├── BudgetTreeApplication.kt
-│       │   │   ├── database/
-│       │   │   └── imagestorage/
-│       │   └── res/
-│       ├── test/
-│       └── androidTest/
-├── gradle/libs.versions.toml
-└── README.md
-```
-
-Main screens include authentication (welcome, login, sign up, password recovery), Home, Analysis, Quickly Analysis, Transactions, Search, Categories, Category Detail, Sow Expenses, Watering Can, Goal Detail, Fill Watering Can, Profile, Edit Profile, Help and Notifications.
-
-## 7. Scope, limitations and future development
-
-### 7.1 Part 2 scope
+### 6.1 Part 2 scope
 
 Part 2 delivers a working Android prototype that demonstrates:
 
@@ -228,20 +203,20 @@ Part 2 delivers a working Android prototype that demonstrates:
 - local Room persistence and image storage
 - GitHub version control and CI
 
-### 7.2 Current limitations
+### 6.2 Current limitations
 
 The prototype remains intentionally focused. Passwords are stored as plain text. The login session is not remembered after the process ends. Social login buttons are placeholders. The in-app notifications list is not a push-notification service. Destructive migration can clear local data on schema change. Automated testing does not yet cover the full UI surface.
 
-### 7.3 Future development
+### 6.3 Future development
 
-Further work toward the final PoE can expand the Money Tree growth system (visible tree stages, watering interaction and achievements), strengthen password handling, persist the login session, improve financial reporting and broaden unit and UI testing. Cloud synchronisation and a finished commercial service are outside the current academic prototype.
+Part 3 will introduce the required gamification layer, including Money Tree growth stages, watering interaction and achievements. Other later improvements may include stronger password handling, a remembered login session, clearer financial reporting and broader unit and UI testing. Cloud synchronisation and a finished commercial service remain outside the academic prototype.
 
-## 8. Author and project information
+## 7. Authors and project information
 
 | Field | Details |
 | --- | --- |
 | Project | My Money Tree |
-| Student | Tiyah Singh | Jamie-Lee Davies | David Adam Barker
+| Team | Tiyah Singh, David Adam Barker, Jamie-Lee Davies |
 | Institution | Vega School / EMERIS |
 | Programme | BCIS in Software Development and Design |
 | Stage | Part 2 Prototype |
@@ -249,9 +224,6 @@ Further work toward the final PoE can expand the Money Tree growth system (visib
 | Version | 1.0 |
 | Repository | https://github.com/DavidBarker05/OPSC7311_BudgetApp |
 
-## 9. References
+## 8. References
 
-Planning research for Part 1B included YNAB, Wallet by BudgetBakers and Spendee. Implementation work drew on Android Developers documentation, the Room persistence library, Kotlin language resources and Material Design 3 guidance. 
-
-
-https://github.com/DavidBarker05/OPSC7311_BudgetApp
+Planning research for Part 1B included YNAB, Wallet by BudgetBakers and Spendee. Implementation work drew on Android Developers documentation, the Room persistence library, Kotlin language resources and Material Design 3 guidance.
