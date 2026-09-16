@@ -38,7 +38,7 @@ class AnalysisActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState != null) {
-            selectedPeriod = AnalysisPeriod.values().getOrElse(savedInstanceState.getInt(KEY_PERIOD, 0)) {
+            selectedPeriod = AnalysisPeriod.entries.getOrElse(savedInstanceState.getInt(KEY_PERIOD, 0)) {
                 AnalysisPeriod.DAILY
             }
             anchorDate = LocalDate.parse(savedInstanceState.getString(KEY_ANCHOR, LocalDate.now().toString()))
@@ -74,7 +74,7 @@ class AnalysisActivity : AppCompatActivity() {
                 R.id.btnYear -> AnalysisPeriod.YEARLY
                 else -> AnalysisPeriod.DAILY
             }
-            bindSnapshot()
+            lifecycleScope.launch { bindSnapshot() }
         }
 
         MainNavigation.bind(this, MainNavigation.Tab.ANALYTICS)
@@ -102,12 +102,15 @@ class AnalysisActivity : AppCompatActivity() {
         }
     }
 
-    private fun bindSnapshot() {
+    private suspend fun bindSnapshot() {
+        val user = UserSession.currentUser ?: return
+        val app = application as BudgetTreeApplication
+        val monthlyGoal = app.monthlyGoalDatabaseSystem.getGoal(user, java.time.YearMonth.from(anchorDate))
         val snapshot = AnalysisCalculator.snapshot(
             context = this,
             incomes = incomes,
             expenses = expenses,
-            categories = categories,
+            monthlyGoal = monthlyGoal,
             period = selectedPeriod,
             anchorDate = anchorDate
         )
@@ -128,8 +131,6 @@ class AnalysisActivity : AppCompatActivity() {
             incomeValues = snapshot.buckets.map { it.income },
             expenseValues = snapshot.buckets.map { it.expense }
         )
-        findViewById<DonutTargetView>(R.id.targetIncome).setPercent(snapshot.spentOfIncomePercent)
-        findViewById<DonutTargetView>(R.id.targetBudget).setPercent(snapshot.spentOfBudgetPercent)
     }
 
     private fun statusText(snapshot: AnalysisSnapshot): String {
@@ -178,7 +179,7 @@ class AnalysisActivity : AppCompatActivity() {
             this,
             { _, year, month, day ->
                 anchorDate = LocalDate.of(year, month + 1, day)
-                bindSnapshot()
+                lifecycleScope.launch { bindSnapshot() }
             },
             anchorDate.year,
             anchorDate.monthValue - 1,

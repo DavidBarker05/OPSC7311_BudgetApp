@@ -21,6 +21,7 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.temporal.TemporalAdjusters
 
 class HomeActivity : AppCompatActivity() {
@@ -76,7 +77,7 @@ class HomeActivity : AppCompatActivity() {
             startActivity(Intent(this, QuicklyAnalysisActivity::class.java))
         }
         findViewById<DonutTargetView>(R.id.homeGoalDonut).apply {
-            setShowPercent(false)
+            setShowPercent(true)
             setRingColors(getColor(R.color.home_donut_track), getColor(R.color.analysis_progress_blue))
         }
         MainNavigation.bind(this, MainNavigation.Tab.HOME)
@@ -97,26 +98,23 @@ class HomeActivity : AppCompatActivity() {
             val expenses = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
             val incomes = app.incomeDatabaseSystem.retrieveAllIncomes(user).incomes.orEmpty()
 
-            val totalExpense = expenses.sumOf { it.amount }
-            val totalIncome = incomes.sumOf { it.amount }
-            findViewById<TextView>(R.id.tvTotalBalance).text = MoneyFormatter.format(totalIncome - totalExpense)
-            findViewById<TextView>(R.id.tvTotalExpense).text = MoneyFormatter.formatSigned(totalExpense, isIncome = false)
-
-            val snapshot = GoalSnapshot.from(incomes, expenses, categories)
+            val monthlyGoal = app.monthlyGoalDatabaseSystem.getGoal(user, YearMonth.now())
+            val snapshot = GoalSnapshot.from(expenses, monthlyGoal)
             GoalSnapshot.bindProgress(this@HomeActivity, snapshot)
-            findViewById<DonutTargetView>(R.id.homeGoalDonut).setPercent(snapshot.goalPercent)
-            findViewById<TextView>(R.id.tvRevenueLastWeek).text = MoneyFormatter.format(snapshot.revenueLastWeek)
-            findViewById<TextView>(R.id.tvFoodLastWeek).text =
-                MoneyFormatter.formatSigned(snapshot.foodLastWeek, isIncome = false)
+
+            val savingsSnapshot = SavingsSnapshot.compute(app, user)
+            findViewById<DonutTargetView>(R.id.homeGoalDonut).setPercent(savingsSnapshot.percentOfTarget)
+            findViewById<TextView>(R.id.tvRevenueLastWeek).text = MoneyFormatter.format(savingsSnapshot.savedThisMonth)
+            findViewById<TextView>(R.id.tvFoodLastWeek).text = MoneyFormatter.format(savingsSnapshot.savedThisWeek)
             GoalSnapshot.bindDrops(
                 listOf(
-                    findViewById<ImageView>(R.id.drop1),
+                    findViewById(R.id.drop1),
                     findViewById(R.id.drop2),
                     findViewById(R.id.drop3),
                     findViewById(R.id.drop4),
                     findViewById(R.id.drop5)
                 ),
-                snapshot.filledDrops
+                savingsSnapshot.filledDrops
             )
 
             allRows = (
@@ -162,6 +160,11 @@ class HomeActivity : AppCompatActivity() {
         adapter.submit(filtered)
         findViewById<TextView>(R.id.tvEmptyTransactions).visibility =
             if (filtered.isEmpty()) View.VISIBLE else View.GONE
+
+        val periodIncome = filtered.filter { it.isIncome }.sumOf { it.amount }
+        val periodExpense = filtered.filter { !it.isIncome }.sumOf { it.amount }
+        findViewById<TextView>(R.id.tvTotalBalance).text = MoneyFormatter.format(periodIncome - periodExpense)
+        findViewById<TextView>(R.id.tvTotalExpense).text = MoneyFormatter.formatSigned(periodExpense, isIncome = false)
     }
 
     private fun applyPeriodStyles() {

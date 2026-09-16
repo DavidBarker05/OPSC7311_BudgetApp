@@ -14,17 +14,22 @@ object CategoryGarden {
         "Entertainment"
     )
 
-    fun iconRes(name: String): Int = when (name.trim().lowercase()) {
-        "food" -> R.drawable.ic_utensils
-        "transport" -> R.drawable.ic_cat_transport
-        "medicine" -> R.drawable.ic_cat_medicine
-        "groceries" -> R.drawable.ic_cat_groceries
-        "rent" -> R.drawable.ic_cat_rent
-        "gifts" -> R.drawable.ic_cat_gifts
-        "savings" -> R.drawable.ic_cat_savings
-        "entertainment" -> R.drawable.ic_cat_entertainment
-        else -> R.drawable.ic_cat_generic
+    private fun defaultIconKeyFor(name: String): String? = when (name.trim().lowercase()) {
+        "food" -> "food"
+        "transport" -> "transport"
+        "medicine" -> "medicine"
+        "groceries" -> "groceries"
+        "rent" -> "rent"
+        "gifts" -> "gifts"
+        "savings" -> "savings"
+        "entertainment" -> "entertainment"
+        else -> null
     }
+
+    fun iconKeyFor(category: Category): String =
+        category.iconKey ?: defaultIconKeyFor(category.categoryName) ?: IconCatalog.DEFAULT_KEY
+
+    fun iconRes(category: Category): Int = IconCatalog.resFor(iconKeyFor(category))
 
     fun sort(categories: List<Category>): List<Category> {
         val order = defaultNames.mapIndexed { index, name -> name.lowercase() to index }.toMap()

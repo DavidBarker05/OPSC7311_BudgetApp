@@ -112,11 +112,14 @@ class SignupActivity : AppCompatActivity() {
                 phoneNumber = phone,
                 displayName = fullName,
                 dateOfBirth = dateOfBirth,
-                currency = "ZAR",
-                treeLevelPeriod = YearMonth.now()
+                currency = "ZAR"
             )
             signupButton.isEnabled = true
             if (result.wasSuccessful) {
+                val createdUser = result.user
+                if (createdUser != null) {
+                    app.userTreeDatabaseSystem.createUserTree(createdUser, YearMonth.now())
+                }
                 Log.i(TAG, "Signup succeeded for username '$username', navigating to LoginActivity")
                 Toast.makeText(this@SignupActivity, R.string.signup_success, Toast.LENGTH_SHORT).show()
                 startActivity(Intent(this@SignupActivity, LoginActivity::class.java))

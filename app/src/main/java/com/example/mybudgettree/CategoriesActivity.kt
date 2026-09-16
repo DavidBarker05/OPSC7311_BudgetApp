@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
+import java.time.YearMonth
 
 class CategoriesActivity : AppCompatActivity() {
 
@@ -64,6 +65,7 @@ class CategoriesActivity : AppCompatActivity() {
             layoutManager = GridLayoutManager(this@CategoriesActivity, 3)
             adapter = this@CategoriesActivity.adapter
         }
+        findViewById<ImageButton>(R.id.btnEditMonthlyGoal).setOnClickListener { showMonthlyGoalDialog() }
         MainNavigation.bind(this, MainNavigation.Tab.CATEGORIES)
     }
 
@@ -77,18 +79,69 @@ class CategoriesActivity : AppCompatActivity() {
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
             var categories = app.categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty()
-            if (categories.isEmpty()) {
+            val hasAnyDefaultCategory = categories.any { existing ->
+                CategoryGarden.defaultNames.any { it.equals(existing.categoryName, ignoreCase = true) }
+            }
+            if (!hasAnyDefaultCategory) {
                 CategoryGarden.defaultNames.forEach { name ->
                     app.categoryDatabaseSystem.createCategory(user, name)
                 }
                 categories = app.categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty()
             }
-            val expenses = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
-            val incomes = app.incomeDatabaseSystem.retrieveAllIncomes(user).incomes.orEmpty()
-            BudgetOverview.bind(this@CategoriesActivity, incomes, expenses, categories)
-            adapter.submit(CategoryGarden.sort(CategoryGoals.spendingOnly(categories)))
+            val currentMonth = YearMonth.now()
+            val expensesThisMonth = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
+                .filter { YearMonth.from(it.date) == currentMonth }
+            val incomesThisMonth = app.incomeDatabaseSystem.retrieveAllIncomes(user).incomes.orEmpty()
+                .filter { YearMonth.from(it.date) == currentMonth }
+            val spentThisMonth = expensesThisMonth.sumOf { it.amount }
+            val monthlyGoal = app.monthlyGoalDatabaseSystem.getGoal(user, currentMonth)
+            BudgetOverview.bind(this@CategoriesActivity, incomesThisMonth, expensesThisMonth, spentThisMonth, monthlyGoal?.maxGoal ?: 0.0)
+            adapter.submit(CategoryGarden.sort(categories))
         }
     }
+
+    private fun showMonthlyGoalDialog() {
+        val user = UserSession.currentUser ?: return
+        val app = application as BudgetTreeApplication
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_monthly_goal)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val minField = dialog.findViewById<EditText>(R.id.etMonthlyGoalMin)
+        val maxField = dialog.findViewById<EditText>(R.id.etMonthlyGoalMax)
+        lifecycleScope.launch {
+            val existing = app.monthlyGoalDatabaseSystem.getGoal(user, YearMonth.now())
+            if (existing != null) {
+                minField.setText(plainAmount(existing.minGoal))
+                maxField.setText(plainAmount(existing.maxGoal))
+            }
+        }
+        dialog.findViewById<MaterialButton>(R.id.btnCancelMonthlyGoal).setOnClickListener { dialog.dismiss() }
+        dialog.findViewById<MaterialButton>(R.id.btnSaveMonthlyGoal).setOnClickListener {
+            val min = minField.text?.toString()?.trim()?.toDoubleOrNull() ?: 0.0
+            val max = maxField.text?.toString()?.trim()?.toDoubleOrNull() ?: 0.0
+            lifecycleScope.launch {
+                val result = app.monthlyGoalDatabaseSystem.saveGoal(user, YearMonth.now(), min, max)
+                if (result.wasSuccessful) {
+                    Log.i(TAG, "Saved monthly goal min=$min max=$max")
+                    Toast.makeText(this@CategoriesActivity, R.string.monthly_goal_saved, Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                    loadGarden()
+                } else {
+                    Log.w(TAG, "Failed to save monthly goal: ${result.errMsg}")
+                    Toast.makeText(this@CategoriesActivity, result.errMsg, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        dialog.show()
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.82).toInt(),
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+    }
+
+    private fun plainAmount(amount: Double): String =
+        if (amount % 1.0 == 0.0) amount.toInt().toString() else amount.toString()
 
     private fun showNewCategoryDialog() {
         val dialog = Dialog(this)

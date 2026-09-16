@@ -24,7 +24,7 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 class TransactionActivity : AppCompatActivity() {
-    private val adapter = TransactionHistoryAdapter(::showMonthPicker)
+    private val adapter = TransactionHistoryAdapter(::showMonthPicker, onEntryClick = ::openEditTransaction)
     private var allRows: List<TransactionRow> = emptyList()
     private var typeFilter = TypeFilter.ALL
     private var monthFilter: YearMonth? = null
@@ -40,7 +40,7 @@ class TransactionActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState != null) {
-            typeFilter = TypeFilter.values().getOrElse(savedInstanceState.getInt(KEY_FILTER, 0)) {
+            typeFilter = TypeFilter.entries.getOrElse(savedInstanceState.getInt(KEY_FILTER, 0)) {
                 TypeFilter.ALL
             }
             monthFilter = savedInstanceState.getString(KEY_MONTH)?.let(YearMonth::parse)
@@ -108,6 +108,7 @@ class TransactionActivity : AppCompatActivity() {
             allRows = (
                 incomes.map { income ->
                     TransactionRow(
+                        id = income.id,
                         title = income.description,
                         categoryName = categoryNames[income.categoryId] ?: "",
                         amount = income.amount,
@@ -118,6 +119,7 @@ class TransactionActivity : AppCompatActivity() {
                     )
                 } + expenses.map { expense ->
                     TransactionRow(
+                        id = expense.id,
                         title = expense.description,
                         categoryName = categoryNames[expense.categoryId] ?: "",
                         amount = expense.amount,
@@ -166,6 +168,14 @@ class TransactionActivity : AppCompatActivity() {
         )
         findViewById<LinearLayout>(R.id.cardExpense).setBackgroundResource(
             if (typeFilter == TypeFilter.EXPENSE) R.drawable.bg_filter_selected else R.drawable.bg_balance_card
+        )
+    }
+
+    private fun openEditTransaction(row: TransactionRow) {
+        startActivity(
+            Intent(this, EditTransactionActivity::class.java)
+                .putExtra(EditTransactionActivity.EXTRA_TRANSACTION_ID, row.id)
+                .putExtra(EditTransactionActivity.EXTRA_IS_INCOME, row.isIncome)
         )
     }
 

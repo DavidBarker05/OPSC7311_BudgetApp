@@ -39,4 +39,5 @@
     <color name="dialog_scrim">#99000000</color>
     <color name="profile_action_dark">#FF1B3D32</color>
     <color name="home_donut_track">#FF3F7358</color>
+    <color name="destructive_red">#FFB3452C</color>
 </resources>

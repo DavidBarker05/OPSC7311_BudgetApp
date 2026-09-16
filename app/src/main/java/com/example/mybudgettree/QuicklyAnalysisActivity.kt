@@ -55,7 +55,7 @@ class QuicklyAnalysisActivity : AppCompatActivity() {
             adapter = this@QuicklyAnalysisActivity.adapter
         }
         findViewById<DonutTargetView>(R.id.quicklyGoalDonut).apply {
-            setShowPercent(false)
+            setShowPercent(true)
             setRingColors(getColor(R.color.analysis_donut_track), getColor(R.color.analysis_progress_blue))
         }
         MainNavigation.bind(this, MainNavigation.Tab.HOME)
@@ -75,12 +75,12 @@ class QuicklyAnalysisActivity : AppCompatActivity() {
             val categoryNames = categories.associate { it.id to it.categoryName }
             val expenses = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
             val incomes = app.incomeDatabaseSystem.retrieveAllIncomes(user).incomes.orEmpty()
-            val snapshot = GoalSnapshot.from(incomes, expenses, categories, today)
+            val monthlyGoal = app.monthlyGoalDatabaseSystem.getGoal(user, YearMonth.from(today))
 
-            findViewById<DonutTargetView>(R.id.quicklyGoalDonut).setPercent(snapshot.goalPercent)
-            findViewById<TextView>(R.id.tvRevenueLastWeek).text = MoneyFormatter.format(snapshot.revenueLastWeek)
-            findViewById<TextView>(R.id.tvFoodLastWeek).text =
-                MoneyFormatter.formatSigned(snapshot.foodLastWeek, isIncome = false)
+            val savingsSnapshot = SavingsSnapshot.compute(app, user, today)
+            findViewById<DonutTargetView>(R.id.quicklyGoalDonut).setPercent(savingsSnapshot.percentOfTarget)
+            findViewById<TextView>(R.id.tvRevenueLastWeek).text = MoneyFormatter.format(savingsSnapshot.savedThisMonth)
+            findViewById<TextView>(R.id.tvFoodLastWeek).text = MoneyFormatter.format(savingsSnapshot.savedThisWeek)
 
             val month = YearMonth.from(today)
             findViewById<TextView>(R.id.tvChartTitle).text = getString(
@@ -91,7 +91,7 @@ class QuicklyAnalysisActivity : AppCompatActivity() {
                 context = this@QuicklyAnalysisActivity,
                 incomes = incomes,
                 expenses = expenses,
-                categories = categories,
+                monthlyGoal = monthlyGoal,
                 period = AnalysisPeriod.WEEKLY,
                 anchorDate = today
             )

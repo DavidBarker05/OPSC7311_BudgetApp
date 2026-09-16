@@ -26,6 +26,13 @@ interface CategoryDao {
     """)
     suspend fun updateCategoryBudget(id: Long, newBudgetAmount: Double?)
 
+    @Query("""
+        UPDATE categories
+        SET icon_key = :newIconKey
+        WHERE id = :id
+    """)
+    suspend fun updateCategoryIcon(id: Long, newIconKey: String?)
+
     @Delete
     suspend fun deleteCategory(category: Category): Int
 

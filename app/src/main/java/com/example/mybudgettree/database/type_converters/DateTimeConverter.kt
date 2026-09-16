@@ -1,6 +1,7 @@
 package com.example.mybudgettree.database.type_converters
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.YearMonth
 import androidx.room.TypeConverter
@@ -11,6 +12,12 @@ class DateTimeConverter {
 
     @TypeConverter
     fun toLocalDate(value: String?): LocalDate? = value?.let { LocalDate.parse(it) }
+
+    @TypeConverter
+    fun fromLocalDateTime(dateTime: LocalDateTime?): String? = dateTime?.toString()
+
+    @TypeConverter
+    fun toLocalDateTime(value: String?): LocalDateTime? = value?.let { LocalDateTime.parse(it) }
 
     @TypeConverter
     fun fromLocalTime(time: LocalTime?): String? = time?.toString()

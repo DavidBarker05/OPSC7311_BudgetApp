@@ -3,18 +3,22 @@ package com.example.mybudgettree.database
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.example.mybudgettree.database.entries.Category
+import com.example.mybudgettree.database.entries.SavingsGoal
 import com.example.mybudgettree.database.entries.User
 import com.example.mybudgettree.database.managers.CategoryDatabaseSystem
 import com.example.mybudgettree.database.managers.ExpenseDatabaseSystem
 import com.example.mybudgettree.database.managers.IncomeDatabaseSystem
+import com.example.mybudgettree.database.managers.MonthlyGoalDatabaseSystem
+import com.example.mybudgettree.database.managers.SavingsContributionDatabaseSystem
+import com.example.mybudgettree.database.managers.SavingsGoalDatabaseSystem
 import com.example.mybudgettree.database.managers.UserDatabaseSystem
+import com.example.mybudgettree.database.managers.UserTreeDatabaseSystem
 import com.example.mybudgettree.imagestorage.ImageStorageSystem
 import com.example.mybudgettree.imagestorage.LocalImageStorageSystem
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import java.time.LocalDate
-import java.time.YearMonth
 
 abstract class DatabaseTestBase {
     protected lateinit var db: AppDatabase
@@ -22,6 +26,10 @@ abstract class DatabaseTestBase {
     protected lateinit var categoryDatabaseSystem: CategoryDatabaseSystem
     protected lateinit var expenseDatabaseSystem: ExpenseDatabaseSystem
     protected lateinit var incomeDatabaseSystem: IncomeDatabaseSystem
+    protected lateinit var savingsGoalDatabaseSystem: SavingsGoalDatabaseSystem
+    protected lateinit var savingsContributionDatabaseSystem: SavingsContributionDatabaseSystem
+    protected lateinit var userTreeDatabaseSystem: UserTreeDatabaseSystem
+    protected lateinit var monthlyGoalDatabaseSystem: MonthlyGoalDatabaseSystem
     protected lateinit var imageStorageSystem: ImageStorageSystem
 
     @Before
@@ -34,6 +42,10 @@ abstract class DatabaseTestBase {
         categoryDatabaseSystem = CategoryDatabaseSystem(db.categoryDao(), userDatabaseSystem)
         expenseDatabaseSystem = ExpenseDatabaseSystem(db.expenseDao(), userDatabaseSystem, categoryDatabaseSystem)
         incomeDatabaseSystem = IncomeDatabaseSystem(db.incomeDao(), userDatabaseSystem, categoryDatabaseSystem)
+        savingsGoalDatabaseSystem = SavingsGoalDatabaseSystem(db.savingsGoalDao(), userDatabaseSystem)
+        savingsContributionDatabaseSystem = SavingsContributionDatabaseSystem(db.savingsContributionDao(), savingsGoalDatabaseSystem)
+        userTreeDatabaseSystem = UserTreeDatabaseSystem(db.userTreeDao())
+        monthlyGoalDatabaseSystem = MonthlyGoalDatabaseSystem(db.monthlyGoalDao())
         imageStorageSystem = LocalImageStorageSystem(ApplicationProvider.getApplicationContext())
     }
 
@@ -50,12 +62,15 @@ abstract class DatabaseTestBase {
             phoneNumber = "0821234567".plus(username.hashCode().toString().takeLast(2)),
             displayName = "Test User",
             dateOfBirth = LocalDate.of(2000, 1, 1),
-            currency = "ZAR",
-            treeLevelPeriod = YearMonth.of(2026, 1)
+            currency = "ZAR"
         ).user!!
     }
 
     protected fun createTestCategory(user: User, categoryName: String = "Groceries"): Category = runBlocking {
         categoryDatabaseSystem.createCategory(user, categoryName).category!!
+    }
+
+    protected fun createTestGoal(user: User, goalName: String = "Wedding"): SavingsGoal = runBlocking {
+        savingsGoalDatabaseSystem.createGoal(user, goalName).goal!!
     }
 }

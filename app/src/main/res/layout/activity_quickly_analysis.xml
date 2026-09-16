@@ -71,14 +71,6 @@
                 android:id="@+id/quicklyGoalDonut"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
-
-            <ImageView
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:layout_gravity="center"
-                android:contentDescription="@string/watering_can_goal_savings"
-                android:src="@drawable/ic_car"
-                app:tint="@color/white" />
         </FrameLayout>
 
         <TextView
@@ -109,7 +101,7 @@
             android:layout_width="28dp"
             android:layout_height="28dp"
             android:layout_marginStart="14dp"
-            android:contentDescription="@string/revenue_last_week"
+            android:contentDescription="@string/saved_this_month"
             android:src="@drawable/ic_money_stack"
             app:layout_constraintStart_toEndOf="@id/quicklyDivider"
             app:layout_constraintTop_toTopOf="@id/quicklyDonutWrap" />
@@ -118,7 +110,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="@string/revenue_last_week"
+            android:text="@string/saved_this_month"
             android:textColor="@color/white"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@id/ivRevenueIcon"
@@ -154,8 +146,8 @@
             android:layout_width="28dp"
             android:layout_height="28dp"
             android:layout_marginTop="10dp"
-            android:contentDescription="@string/food_last_week"
-            android:src="@drawable/ic_utensils"
+            android:contentDescription="@string/saved_this_week"
+            android:src="@drawable/ic_water_drop"
             app:layout_constraintStart_toStartOf="@id/ivRevenueIcon"
             app:layout_constraintTop_toBottomOf="@id/weekMetricDivider"
             app:tint="@color/white" />
@@ -164,7 +156,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="@string/food_last_week"
+            android:text="@string/saved_this_week"
             android:textColor="@color/white"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@id/ivFoodIcon"
