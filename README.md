@@ -13,9 +13,9 @@ Gantt Chart - [OPSC7311_P1_Gantt_Chart_ST10453245_Tiyah_Singh (1).xlsx](https://
 Part 2
 ------------------------------------------------------------------------------------------------------------------------------------------------
 
-Code References & Bibliography List - 
+Code References & Bibliography List - [ST10453245_Code_References_Bibliography.pdf](https://github.com/user-attachments/files/32294733/ST10453245_Code_References_Bibliography.pdf)
 
-Gantt Chart Project Schedule - 
+Gantt Chart Project Schedule - [OPSC7311_P1_Gantt_Chart_ST10453245_Tiyah_Singh.xlsx](https://github.com/user-attachments/files/32295127/OPSC7311_P1_Gantt_Chart_ST10453245_Tiyah_Singh.xlsx)
 
 Video Demonstration - 
 
