@@ -15,16 +15,19 @@ import com.example.mybudgettree.imagestorage.ImageStorageSystem
 import com.example.mybudgettree.imagestorage.LocalImageStorageSystem
 
 class BudgetTreeApplication : Application() {
-    lateinit var database: AppDatabase private set
-    lateinit var userDatabaseSystem: UserDatabaseSystem private set
-    lateinit var categoryDatabaseSystem: CategoryDatabaseSystem private set
-    lateinit var expenseDatabaseSystem: ExpenseDatabaseSystem private set
-    lateinit var incomeDatabaseSystem: IncomeDatabaseSystem private set
-    lateinit var savingsGoalDatabaseSystem: SavingsGoalDatabaseSystem private set
-    lateinit var savingsContributionDatabaseSystem: SavingsContributionDatabaseSystem private set
-    lateinit var userTreeDatabaseSystem: UserTreeDatabaseSystem private set
-    lateinit var monthlyGoalDatabaseSystem: MonthlyGoalDatabaseSystem private set
-    lateinit var imageStorageSystem: ImageStorageSystem private set
+    // internal (rather than private) so instrumented UI tests in the same module can swap
+    // these for an isolated in-memory database instead of the real on-device one — see
+    // UiTestBase in the androidTest source set.
+    lateinit var database: AppDatabase internal set
+    lateinit var userDatabaseSystem: UserDatabaseSystem internal set
+    lateinit var categoryDatabaseSystem: CategoryDatabaseSystem internal set
+    lateinit var expenseDatabaseSystem: ExpenseDatabaseSystem internal set
+    lateinit var incomeDatabaseSystem: IncomeDatabaseSystem internal set
+    lateinit var savingsGoalDatabaseSystem: SavingsGoalDatabaseSystem internal set
+    lateinit var savingsContributionDatabaseSystem: SavingsContributionDatabaseSystem internal set
+    lateinit var userTreeDatabaseSystem: UserTreeDatabaseSystem internal set
+    lateinit var monthlyGoalDatabaseSystem: MonthlyGoalDatabaseSystem internal set
+    lateinit var imageStorageSystem: ImageStorageSystem internal set
 
     override fun onCreate() {
         super.onCreate()

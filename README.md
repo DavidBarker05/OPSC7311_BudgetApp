@@ -66,15 +66,15 @@ The sections below describe the budgeting features that form the core of this Pa
 
 ### 3.1 Account management
 
-Users can create an account with display name, email, phone number, date of birth, password and currency (ZAR). Login accepts either username or email with password. Profile information and profile photo can be edited after login.
+Users can create an account with display name, email, phone number, date of birth, password and currency (ZAR). Login accepts either username or email with password. Profile information and profile photo can be edited after login, and the account can be deleted from Edit Profile with a confirmation prompt.
 
-A local password-recovery prototype is included. The user enters an email address, receives an on-screen security pin, confirms the pin and sets a new password. This is an in-app flow rather than true email delivery. The authenticated session is held in memory for the current process through `UserSession`.
+Password recovery (Forgot Password, security pin and new-password screens) is currently a placeholder: the screens are reachable but only show a "coming soon" message rather than performing a real reset. This is intended to return as an implemented feature alongside Part 3. The authenticated session is held in memory for the current process through `UserSession`.
 
 ### 3.2 Categories and transactions
 
 Categories and transactions are fully manageable after creation.
 
-On first use, the application seeds default garden categories such as Food, Transport, Medicine, Groceries, Rent, Gifts, Savings and Entertainment. Users can create additional categories and, importantly, edit or delete existing ones. Editing covers the category name, icon and optional monthly budget, so budgets can be adjusted as spending habits change.
+On first use, the application seeds default garden categories such as Food, Transport, Medicine, Groceries, Rent, Gifts and Entertainment. Savings is deliberately not one of the defaults, since it is tracked through the Watering Can savings goals instead. Users can create additional categories and, importantly, edit or delete existing ones. Editing covers the category name, icon and optional monthly budget, so budgets can be adjusted as spending habits change.
 
 Expenses and income can be recorded with:
 
@@ -159,9 +159,11 @@ At the manager layer, checks include required user fields, username format, emai
 
 ### 4.4 Testing and continuous integration
 
-Instrumented tests cover the database managers and local image storage behaviour. GitHub Actions builds the debug APK and runs unit and instrumented test tasks on push and pull request to `master`, using JDK 21 and an Android emulator for connected tests.
+Testing is split across two source sets. Local JVM unit tests (`app/src/test`) cover pure logic that does not need a device: currency formatting (`MoneyFormatter`), budget status thresholds and text-contrast colour selection (`BudgetStatusHelper`), default category ordering and icon fallback (`CategoryGarden`, `IconCatalog`), Monthly Goal progress calculation (`GoalSnapshot`) and Analysis period bucketing (`AnalysisCalculator`). These run in seconds with `./gradlew testDebugUnitTest` and need no emulator.
 
-The local unit test suite is still limited, and Espresso UI tests have not been added yet. Testing therefore supports confidence in persistence and image handling more than full interface coverage.
+Instrumented tests (`app/src/androidTest`) cover the database managers, local image storage behaviour, and Espresso UI tests that drive the real Login, Edit Profile (delete account), Home, Analysis, Transactions, Categories, Watering Can and Profile screens, plus a full bottom-navigation walkthrough across all six main screens. UI tests run against an isolated in-memory database swapped into `BudgetTreeApplication` for the duration of each test, so they never touch real on-device data. Run them with `./gradlew connectedDebugAndroidTest` against a device or emulator.
+
+GitHub Actions builds the debug APK and runs both test tasks on push and pull request to `master`, using JDK 21 and an Android emulator for connected tests.
 
 ## 5. How to run the application
 
@@ -211,7 +213,7 @@ Part 2 delivers a working Android prototype with a complete budgeting workflow. 
 
 ### 6.2 Current limitations
 
-The prototype remains intentionally focused. Passwords are stored as plain text. The login session is not remembered after the process ends. Social login buttons are placeholders. The in-app notifications list is not a push-notification service. Destructive migration can clear local data on schema change. Automated testing does not yet cover the full UI surface.
+The prototype remains intentionally focused. Passwords are stored as plain text. The login session is not remembered after the process ends. Social login buttons are placeholders, and password recovery is a non-functional placeholder pending Part 3. The in-app notifications list is not a push-notification service. Destructive migration can clear local data on schema change. Automated UI testing covers the six main screens and key flows (login, delete account, navigation) rather than every screen and dialog in the app.
 
 ### 6.3 Future development
 

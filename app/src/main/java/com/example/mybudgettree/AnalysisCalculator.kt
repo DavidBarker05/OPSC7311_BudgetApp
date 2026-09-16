@@ -1,6 +1,5 @@
 package com.example.mybudgettree
 
-import android.content.Context
 import com.example.mybudgettree.database.entries.Expense
 import com.example.mybudgettree.database.entries.Income
 import com.example.mybudgettree.database.entries.MonthlyGoal
@@ -35,12 +34,12 @@ object AnalysisCalculator {
     private val monthFormatter = DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH)
 
     fun snapshot(
-        context: Context,
         incomes: List<Income>,
         expenses: List<Expense>,
         monthlyGoal: MonthlyGoal?,
         period: AnalysisPeriod,
-        anchorDate: LocalDate
+        anchorDate: LocalDate,
+        weekLabels: List<String> = listOf("Week 1", "Week 2", "Week 3", "Week 4")
     ): AnalysisSnapshot {
         val totalIncome = incomes.sumOf { it.amount }
         val totalExpense = expenses.sumOf { it.amount }
@@ -48,7 +47,7 @@ object AnalysisCalculator {
         val minGoal = monthlyGoal?.minGoal ?: 0.0
         val anchorMonth = YearMonth.from(anchorDate)
         val monthExpense = expenses.filter { YearMonth.from(it.date) == anchorMonth }.sumOf { it.amount }
-        val ranges = ranges(context, period, anchorDate)
+        val ranges = ranges(weekLabels, period, anchorDate)
         val buckets = ranges.map { range ->
             AnalysisBucket(
                 label = range.label,
@@ -80,7 +79,7 @@ object AnalysisCalculator {
 
     private data class DateRange(val label: String, val start: LocalDate, val end: LocalDate)
 
-    private fun ranges(context: Context, period: AnalysisPeriod, anchor: LocalDate): List<DateRange> {
+    private fun ranges(weekLabels: List<String>, period: AnalysisPeriod, anchor: LocalDate): List<DateRange> {
         return when (period) {
             AnalysisPeriod.DAILY -> {
                 val monday = anchor.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
@@ -97,13 +96,7 @@ object AnalysisCalculator {
                 val month = YearMonth.from(anchor)
                 val start = month.atDay(1)
                 val end = month.atEndOfMonth()
-                val labels = listOf(
-                    context.getString(R.string.week_1),
-                    context.getString(R.string.week_2),
-                    context.getString(R.string.week_3),
-                    context.getString(R.string.week_4)
-                )
-                labels.mapIndexed { index, label ->
+                weekLabels.mapIndexed { index, label ->
                     val rangeStart = start.plusDays(index * 7L).coerceAtMost(end)
                     val rangeEnd = if (index == 3) end else rangeStart.plusDays(6).coerceAtMost(end)
                     DateRange(label, rangeStart, rangeEnd)

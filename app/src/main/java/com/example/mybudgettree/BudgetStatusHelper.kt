@@ -1,7 +1,6 @@
 package com.example.mybudgettree
 
 import android.app.Activity
-import android.graphics.Color
 import android.view.View
 
 enum class BudgetLevel { GOOD, WARNING, DANGER, NONE }
@@ -64,10 +63,13 @@ object BudgetStatusHelper {
      * that color is.
      */
     fun contrastingTextColor(backgroundColor: Int): Int {
-        val r = Color.red(backgroundColor) / 255.0
-        val g = Color.green(backgroundColor) / 255.0
-        val b = Color.blue(backgroundColor) / 255.0
+        val r = ((backgroundColor shr 16) and 0xFF) / 255.0
+        val g = ((backgroundColor shr 8) and 0xFF) / 255.0
+        val b = (backgroundColor and 0xFF) / 255.0
         val luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
-        return if (luminance > 0.55) Color.parseColor("#FF1A3328") else Color.WHITE
+        return if (luminance > 0.55) DARK_TEXT_COLOR else WHITE_COLOR
     }
+
+    private const val WHITE_COLOR = -0x1 // 0xFFFFFFFF
+    private const val DARK_TEXT_COLOR = -15060184 // 0xFF1A3328, matches @color/green_text
 }
