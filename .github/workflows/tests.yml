@@ -58,6 +58,7 @@ jobs:
           profile: pixel_6
           disable-animations: true
           script: |
+            adb shell svc power stayon true
             adb shell input keyevent KEYCODE_WAKEUP
             adb shell wm dismiss-keyguard
             ./gradlew connectedDebugAndroidTest --console=plain
