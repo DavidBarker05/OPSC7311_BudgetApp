@@ -33,7 +33,7 @@ Repository: https://github.com/DavidBarker05/OPSC7311_BudgetApp
 
 Budgeting applications are widely available, but many still feel dense, clinical or stressful to use. That matters in a student and young-adult context, where the problem is often not only knowing what to track, but being willing to open the app regularly.
 
-My Money Tree was designed to keep the useful parts of modern budgeting software (categories, amounts, dates, history, progress and clear navigation) while presenting them in a quieter, nature-inspired interface. The Part 2 build turns that design direction into a working Android prototype with local persistence, validated input, optional receipt images, monthly min/max spending goals and user-created savings goals.
+My Money Tree was designed to keep the useful parts of modern budgeting software (categories, amounts, dates, history, progress and clear navigation) while presenting them in a quieter, nature-inspired interface. Beyond basic logging, the Part 2 prototype supports full management of categories and transactions, user-selected start and end times, optional receipt images, a Monthly Goal with minimum and maximum spend, and fully customisable savings goals with contributions.
 
 The prototype is intended for a single logged-in user on one device. All application data is stored locally. Cloud sync, social authentication and commercial deployment fall outside the Part 2 scope.
 
@@ -62,6 +62,8 @@ Part 1B described a longer nature and growth theme, including a Money Tree that 
 
 ## 3. Application functionality
 
+The sections below describe the budgeting features that form the core of this Part 2 submission. Particular attention was given to making categories, transactions, monthly spend limits and savings goals fully usable rather than display-only.
+
 ### 3.1 Account management
 
 Users can create an account with display name, email, phone number, date of birth, password and currency (ZAR). Login accepts either username or email with password. Profile information and profile photo can be edited after login.
@@ -70,7 +72,9 @@ A local password-recovery prototype is included. The user enters an email addres
 
 ### 3.2 Categories and transactions
 
-On first use, the application seeds default garden categories such as Food, Transport, Medicine, Groceries, Rent, Gifts, Savings and Entertainment. Users can create additional categories and edit or delete existing ones, including name, icon and optional monthly budget.
+Categories and transactions are fully manageable after creation.
+
+On first use, the application seeds default garden categories such as Food, Transport, Medicine, Groceries, Rent, Gifts, Savings and Entertainment. Users can create additional categories and, importantly, edit or delete existing ones. Editing covers the category name, icon and optional monthly budget, so budgets can be adjusted as spending habits change.
 
 Expenses and income can be recorded with:
 
@@ -78,35 +82,35 @@ Expenses and income can be recorded with:
 - amount
 - category
 - date
-- start time and end time
+- start time and end time chosen by the user
 - optional receipt or proof image from gallery or camera
 
-Saved entries can later be edited or deleted, including their attached image. Amounts may be entered with currency symbols such as R or $; these are stripped before parsing. Receipt images are stored locally through `LocalImageStorageSystem` and linked by file path on the relevant database row.
+Start and end times are part of the logging flow rather than silent defaults. Saved expenses and income can later be edited or deleted, including their attached receipt image. Amounts may be entered with currency symbols such as R or $; these are stripped before parsing. Receipt images are stored locally through `LocalImageStorageSystem` and linked by file path on the relevant database row.
 
 Transaction review is available across Home, Transactions, Search and Category Detail, with support for period, category and income/expense filtering.
 
 ### 3.3 Monthly budgeting
 
-The Monthly Goal allows the user to set a minimum and maximum total spend for the current month. This is the Part 2 min/max spending goal requirement and is treated as a budgeting control, separate from the Part 3 Money Tree growth features.
+A central Part 2 requirement is the Monthly Goal. This lets the user set both a minimum and a maximum total spend for the current month. It is a real budgeting control for overall monthly spending and is separate from the Part 3 Money Tree growth features.
 
-Budget bars and progress indicators on Home, Categories, Category Detail, Watering Can and Analysis are scoped to the current month. By default they reflect the Monthly Goal. When a specific category is opened, progress can instead reflect that category's own monthly budget where one has been set.
+Budget bars and progress indicators on Home, Categories, Category Detail, Watering Can and Analysis are scoped to the current month only, so progress reflects the active month rather than mixed all-time totals. By default they show the Monthly Goal. When a specific category is opened, progress can instead reflect that category's own monthly budget where one has been set.
 
 On the Home screen, the Daily / Weekly / Monthly toggle updates both the balance figures and the transaction list below them, so the summary and detail views stay aligned.
 
 ### 3.4 Savings goals
 
-Savings goals are user-created rather than hardcoded. From the Goals (Watering Can) area, a user can create a goal with a name, icon and optional target amount, then edit or delete that goal later. Contributions can be added or removed against each goal.
+Savings goals are created by the user. There are no fixed Travel, Wedding or Car goals. From the Goals (Watering Can) area, a user can create a goal with a name, icon and optional target amount, then edit or delete that goal later. Contributions can be added or removed against each goal, so savings progress can be maintained over time.
 
-`WateringCanView` and Goal Detail present progress from actual contributions versus each goal target. Home and Quickly Analysis also use genuine savings-goal figures, rather than presenting expense or category-budget calculations under a savings label.
+`WateringCanView` and Goal Detail present progress from actual contributions versus each goal target. Home and Quickly Analysis also use genuine savings-goal figures for the Savings On Goals style summaries, rather than mixing expense or category-budget calculations into those views.
 
 ### 3.5 Analysis and review
 
 The application includes:
 
 - Home dashboard with period-based totals and recent activity
-- Transactions history with month and type filters
+- Transactions history with month and type filters, including edit and delete
 - Analysis with period totals, charting and monthly budget progress
-- Quickly Analysis as an additional snapshot view
+- Quickly Analysis as an additional snapshot view with savings progress
 - Search by text, category, type and date
 - an in-app notifications list built from recent activity and reminder copy
 
@@ -182,24 +186,26 @@ No API keys or Firebase setup are required. On first launch the application move
 
 Suggested walkthrough after login:
 
-1. Review or edit categories in the Categories garden.
-2. Add an expense through Sow Expenses, including date, times and optional receipt.
-3. Set a Monthly Goal with minimum and maximum spend.
-4. Create one or more savings goals and add contributions.
-5. Review totals and progress on Home, Transactions and Analysis.
+1. Review, edit or delete categories in the Categories garden, including monthly budgets.
+2. Add an expense through Sow Expenses with date, start and end times, and an optional receipt.
+3. Open an existing expense or income entry to edit or delete it if needed.
+4. Set a Monthly Goal with both minimum and maximum spend.
+5. Create custom savings goals, add or remove contributions, and check watering-can progress.
+6. Use Home, Transactions and Analysis to review period totals and current-month budget progress.
 
 ## 6. Scope, limitations and future development
 
 ### 6.1 Part 2 scope
 
-Part 2 delivers a working Android prototype that demonstrates:
+Part 2 delivers a working Android prototype with a complete budgeting workflow. In particular, the build demonstrates:
 
 - account creation and login
-- editable categories and transactions
-- optional receipt images
-- user-selected start and end times
-- monthly minimum and maximum spending goals
-- user-created savings goals with contributions
+- create, edit and delete for categories
+- create, edit and delete for expenses and income, including receipt images
+- user-selected start and end times on transaction entry
+- Monthly Goal with minimum and maximum total spend
+- current-month budget progress across the main review screens
+- user-created savings goals with add and remove contributions
 - local Room persistence and image storage
 - GitHub version control and CI
 
@@ -216,7 +222,7 @@ Part 3 will introduce the required gamification layer, including Money Tree grow
 | Field | Details |
 | --- | --- |
 | Project | My Money Tree |
-| Team | Tiyah Singh, David Adam Barker, Jamie-Lee Davies |
+| Team | David Adam Barker, Jamie-Lee Davies, Tiyah Singh |
 | Institution | Vega School / EMERIS |
 | Programme | BCIS in Software Development and Design |
 | Stage | Part 2 Prototype |
@@ -226,4 +232,4 @@ Part 3 will introduce the required gamification layer, including Money Tree grow
 
 ## 8. References
 
-Planning research for Part 1B included YNAB, Wallet by BudgetBakers and Spendee. Implementation work drew on Android Developers documentation, the Room persistence library, Kotlin language resources and Material Design 3 guidance.
+Planning research for Part 1B included YNAB, Wallet by BudgetBakers and Spendee. Implementation work drew on Android Developers documentation, the Room persistence library, Kotlin language resources and Material Design 3 guidance. 
