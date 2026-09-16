@@ -2,6 +2,10 @@ package com.example.mybudgettree.ui
 
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import com.example.mybudgettree.BudgetTreeApplication
 import com.example.mybudgettree.UserSession
 import com.example.mybudgettree.database.AppDatabase
@@ -52,6 +56,28 @@ abstract class UiTestBase {
     fun tearDownApp() {
         UserSession.logout()
         db.close()
+    }
+
+    /**
+     * Polls for [text] to appear on screen for up to [timeoutMs], instead of asserting once.
+     * Espresso only tracks work already posted to the main thread's message queue, so it can
+     * decide the app is "idle" and check the view hierarchy before an async coroutine (e.g.
+     * [com.example.mybudgettree.CategoriesActivity] seeding default categories from Room) has
+     * actually finished and updated the UI
+     */
+    protected fun waitForText(text: String, timeoutMs: Long = 5000, intervalMs: Long = 200) {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        var lastError: Throwable? = null
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                onView(withText(text)).check(matches(isDisplayed()))
+                return
+            } catch (e: Throwable) {
+                lastError = e
+                Thread.sleep(intervalMs)
+            }
+        }
+        throw lastError ?: AssertionError("Timed out waiting for text: $text")
     }
 
     protected fun createTestUser(username: String = "testuser", password: String = "password123"): User = runBlocking {

@@ -23,7 +23,7 @@ class CategoriesActivityUiTest : UiTestBase() {
         UserSession.login(createTestUser(username = "categoryuser"))
 
         ActivityScenario.launch(CategoriesActivity::class.java).use {
-            onView(withText("Food")).check(matches(isDisplayed()))
+            waitForText("Food") // categories are seeded asynchronously on first load
             onView(withText("Transport")).check(matches(isDisplayed()))
             onView(withText("Rent")).check(matches(isDisplayed()))
             // Savings is deliberately excluded from the seeded defaults — it's tracked via
@@ -37,6 +37,7 @@ class CategoriesActivityUiTest : UiTestBase() {
         UserSession.login(createTestUser(username = "categoryuser2"))
 
         ActivityScenario.launch(CategoriesActivity::class.java).use {
+            waitForText("Food") // categories are seeded asynchronously on first load
             onView(withText("Food")).perform(click())
 
             onView(withId(R.id.tvCategoryTitle)).check(matches(withText("Food")))
