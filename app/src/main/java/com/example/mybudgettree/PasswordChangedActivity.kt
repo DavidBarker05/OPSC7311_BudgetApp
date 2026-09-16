@@ -19,7 +19,6 @@ class PasswordChangedActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
         setContentView(R.layout.activity_password_changed)
-        PasswordResetSession.clear()
 
         findViewById<android.view.View>(R.id.passwordSuccessRoot).setOnClickListener { openLogin() }
         handler.postDelayed(goToLogin, 2500L)

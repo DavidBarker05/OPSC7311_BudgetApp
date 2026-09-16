@@ -31,6 +31,7 @@
     <string name="google">Google</string>
 
     <string name="forgot_password_title">Forgot Password</string>
+    <string name="password_reset_coming_soon">Password recovery isn\'t available yet.</string>
     <string name="reset_password_heading">Reset Password?</string>
     <string name="reset_password_body">Enter the email address for your account. We will give you a 6-digit security pin so you can choose a new password.</string>
     <string name="enter_email_address">Enter Email Address</string>
@@ -85,6 +86,8 @@
     <string name="expenses_status_watch">%1$d%% Of Your Expenses, Be Careful.</string>
     <string name="expenses_status_over">%1$d%% Of Your Expenses, Over Budget.</string>
     <string name="expenses_status_no_budget">Add category budgets to track this progress.</string>
+    <string name="expenses_status_over_min">%1$d%% Of Your Expenses — Past Your Minimum Goal, Watch Your Spending.</string>
+    <string name="expenses_status_over_max">%1$d%% Of Your Expenses — Over Your Maximum Goal, Start Saving Money!</string>
     <string name="analysis_search">Search</string>
     <string name="search_hint">Search...</string>
     <string name="select_category">Select the category</string>
@@ -172,6 +175,9 @@
     <string name="currency">Currency</string>
     <string name="update_profile">Update Profile</string>
     <string name="profile_updated">Profile updated.</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="delete_account_confirm">Delete your account and all of its data? This cannot be undone.</string>
+    <string name="account_deleted">Account deleted.</string>
     <string name="profile_photo_updated">Profile photo updated.</string>
     <string name="change_photo">Change photo</string>
     <string name="help_and_faqs">Help &amp; FAQS</string>
@@ -268,6 +274,7 @@
     <string name="edit_expense">Edit Expense</string>
     <string name="edit_income">Edit Income</string>
     <string name="remove_image">Remove Image</string>
+    <string name="view_full_image">View Full Image</string>
     <string name="no_image">No image</string>
     <string name="delete_expense">Delete Expense</string>
     <string name="delete_income">Delete Income</string>

@@ -77,6 +77,7 @@ class EditProfileActivity : AppCompatActivity() {
         }
         findViewById<View>(R.id.btnChangePhoto).setOnClickListener { showPhotoChooser() }
         findViewById<MaterialButton>(R.id.btnUpdateProfile).setOnClickListener { saveProfile() }
+        findViewById<MaterialButton>(R.id.btnDeleteAccount).setOnClickListener { confirmDeleteAccount() }
         MainNavigation.bind(this, MainNavigation.Tab.PROFILE)
         bindFields()
     }
@@ -155,6 +156,31 @@ class EditProfileActivity : AppCompatActivity() {
                 Toast.makeText(this, result.errMsg ?: getString(R.string.signup_fields_required), Toast.LENGTH_SHORT).show()
                 false
             }
+        }
+    }
+
+    private fun confirmDeleteAccount() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.delete_account)
+            .setMessage(R.string.delete_account_confirm)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.delete) { _, _ -> deleteAccount() }
+            .show()
+    }
+
+    private fun deleteAccount() {
+        val user = UserSession.currentUser ?: return
+        val app = application as BudgetTreeApplication
+        lifecycleScope.launch {
+            app.userDatabaseSystem.deleteUser(user)
+            UserSession.logout()
+            Toast.makeText(this@EditProfileActivity, R.string.account_deleted, Toast.LENGTH_SHORT).show()
+            startActivity(
+                Intent(this@EditProfileActivity, WelcomeActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+            )
+            finish()
         }
     }
 

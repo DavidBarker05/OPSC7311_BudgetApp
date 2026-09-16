@@ -2,13 +2,10 @@ package com.example.mybudgettree
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Patterns
-import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -31,25 +28,8 @@ class ForgotPasswordActivity : AppCompatActivity() {
             insets
         }
 
-        val emailField = findViewById<EditText>(R.id.etEmail)
         findViewById<MaterialButton>(R.id.btnNextStep).setOnClickListener {
-            val email = emailField.text?.toString()?.trim().orEmpty()
-            when {
-                email.isBlank() -> Toast.makeText(this, R.string.email_required, Toast.LENGTH_SHORT).show()
-                !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
-                    Toast.makeText(this, R.string.email_invalid, Toast.LENGTH_SHORT).show()
-                }
-                else -> {
-                    val pin = PasswordResetSession.start(email)
-                    AlertDialog.Builder(this)
-                        .setTitle(R.string.pin_dialog_title)
-                        .setMessage(getString(R.string.pin_dialog_message, pin))
-                        .setPositiveButton(R.string.ok) { _, _ ->
-                            startActivity(Intent(this, SecurityPinActivity::class.java))
-                        }
-                        .show()
-                }
-            }
+            Toast.makeText(this, R.string.password_reset_coming_soon, Toast.LENGTH_SHORT).show()
         }
         findViewById<MaterialButton>(R.id.btnSignup).setOnClickListener { openSignup() }
         findViewById<TextView>(R.id.tvSignupLink).setOnClickListener { openSignup() }

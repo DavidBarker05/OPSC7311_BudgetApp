@@ -40,4 +40,5 @@
     <color name="profile_action_dark">#FF1B3D32</color>
     <color name="home_donut_track">#FF3F7358</color>
     <color name="destructive_red">#FFB3452C</color>
+    <color name="warning_orange">#FFD98A2B</color>
 </resources>

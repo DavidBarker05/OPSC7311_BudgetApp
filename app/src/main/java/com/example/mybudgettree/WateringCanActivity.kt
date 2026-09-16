@@ -90,7 +90,14 @@ class WateringCanActivity : AppCompatActivity() {
                 .filter { YearMonth.from(it.date) == currentMonth }
             val spentThisMonth = expensesThisMonth.sumOf { it.amount }
             val monthlyGoal = app.monthlyGoalDatabaseSystem.getGoal(user, currentMonth)
-            BudgetOverview.bind(this@WateringCanActivity, incomesThisMonth, expensesThisMonth, spentThisMonth, monthlyGoal?.maxGoal ?: 0.0)
+            BudgetOverview.bind(
+                this@WateringCanActivity,
+                incomesThisMonth,
+                expensesThisMonth,
+                spentThisMonth,
+                monthlyGoal?.maxGoal ?: 0.0,
+                monthlyGoal?.minGoal ?: 0.0
+            )
             adapter.submit(goals)
             var saved = 0.0
             var target = 0.0

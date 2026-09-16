@@ -84,6 +84,7 @@ class TransactionHistoryAdapter(
                 if (bitmap != null) {
                     image.setImageBitmap(bitmap)
                     image.clearColorFilter()
+                    image.imageTintList = null
                     image.scaleType = ImageView.ScaleType.CENTER_CROP
                     image.setPadding(0, 0, 0, 0)
                 } else {
