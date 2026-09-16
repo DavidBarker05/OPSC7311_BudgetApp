@@ -115,6 +115,10 @@
             android:theme="@style/Theme.MyBudgetTree.Home"
             android:windowSoftInputMode="adjustResize" />
         <activity
+            android:name=".ViewImageActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home" />
+        <activity
             android:name=".WateringCanActivity"
             android:exported="false"
             android:theme="@style/Theme.MyBudgetTree.Home" />

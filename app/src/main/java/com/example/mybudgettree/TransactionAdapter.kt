@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -56,6 +57,7 @@ class TransactionAdapter(
                 if (bitmap != null) {
                     image.setImageBitmap(bitmap)
                     image.clearColorFilter()
+                    image.imageTintList = null
                     image.scaleType = ImageView.ScaleType.CENTER_CROP
                     image.setPadding(0, 0, 0, 0)
                 } else {
@@ -74,6 +76,7 @@ class TransactionAdapter(
             }
             image.setImageResource(placeholder)
             image.scaleType = ImageView.ScaleType.CENTER_INSIDE
+            image.setColorFilter(ContextCompat.getColor(itemView.context, R.color.green_dark))
             val padding = (10 * itemView.resources.displayMetrics.density).toInt()
             image.setPadding(padding, padding, padding, padding)
         }

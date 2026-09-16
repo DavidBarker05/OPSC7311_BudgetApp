@@ -249,6 +249,21 @@
                 </FrameLayout>
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnViewImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="8dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="@string/view_full_image"
+                    android:textAllCaps="false"
+                    android:textColor="@color/green_text"
+                    android:textSize="14sp"
+                    android:visibility="gone"
+                    app:backgroundTint="@color/sow_field"
+                    app:cornerRadius="20dp" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnRemoveImage"
                     android:layout_width="match_parent"
                     android:layout_height="40dp"

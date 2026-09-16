@@ -25,6 +25,8 @@ data class AnalysisSnapshot(
     val periodIncome: Double,
     val periodExpense: Double,
     val budgetGoal: Double,
+    val minGoal: Double,
+    val monthExpense: Double,
     val expensePercent: Int,
     val buckets: List<AnalysisBucket>
 )
@@ -43,6 +45,7 @@ object AnalysisCalculator {
         val totalIncome = incomes.sumOf { it.amount }
         val totalExpense = expenses.sumOf { it.amount }
         val budgetGoal = monthlyGoal?.maxGoal ?: 0.0
+        val minGoal = monthlyGoal?.minGoal ?: 0.0
         val anchorMonth = YearMonth.from(anchorDate)
         val monthExpense = expenses.filter { YearMonth.from(it.date) == anchorMonth }.sumOf { it.amount }
         val ranges = ranges(context, period, anchorDate)
@@ -62,6 +65,8 @@ object AnalysisCalculator {
             periodIncome = periodIncome,
             periodExpense = periodExpense,
             budgetGoal = budgetGoal,
+            minGoal = minGoal,
+            monthExpense = monthExpense,
             expensePercent = percent(monthExpense, budgetGoal, capAtHundred = false),
             buckets = buckets
         )

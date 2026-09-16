@@ -101,6 +101,13 @@ class EditTransactionActivity : AppCompatActivity() {
             imageCleared = true
             showReceiptPreview()
         }
+        findViewById<MaterialButton>(R.id.btnViewImage).setOnClickListener {
+            val path = imagePath ?: return@setOnClickListener
+            startActivity(
+                Intent(this, ViewImageActivity::class.java)
+                    .putExtra(ViewImageActivity.EXTRA_IMAGE_PATH, path)
+            )
+        }
         findViewById<MaterialButton>(R.id.btnSaveTransaction).setOnClickListener { saveChanges() }
         findViewById<MaterialButton>(R.id.btnDeleteTransaction).setOnClickListener { confirmDelete() }
 
@@ -327,11 +334,13 @@ class EditTransactionActivity : AppCompatActivity() {
         val hint = findViewById<TextView>(R.id.tvReceiptHint)
         val preview = findViewById<ImageView>(R.id.ivReceiptPreview)
         val removeButton = findViewById<MaterialButton>(R.id.btnRemoveImage)
+        val viewButton = findViewById<MaterialButton>(R.id.btnViewImage)
         if (path.isNullOrBlank()) {
             hint.visibility = View.VISIBLE
             hint.setText(R.string.no_image)
             preview.visibility = View.GONE
             removeButton.visibility = View.GONE
+            viewButton.visibility = View.GONE
             return
         }
         val bitmap = BitmapFactory.decodeFile(path)
@@ -340,12 +349,14 @@ class EditTransactionActivity : AppCompatActivity() {
             hint.setText(R.string.no_image)
             preview.visibility = View.GONE
             removeButton.visibility = View.GONE
+            viewButton.visibility = View.GONE
             return
         }
         hint.visibility = View.GONE
         preview.visibility = View.VISIBLE
         preview.setImageBitmap(bitmap)
         removeButton.visibility = View.VISIBLE
+        viewButton.visibility = View.VISIBLE
     }
 
     private fun plainAmount(amount: Double): String =

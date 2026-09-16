@@ -14,7 +14,8 @@
         android:layout_width="0dp"
         android:layout_height="44dp"
         android:layout_weight="1"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@drawable/bg_nav_icon_selected"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/nav_home"
         android:src="@drawable/ic_nav_home"
         app:tint="@color/nav_icon_tint" />
@@ -24,7 +25,8 @@
         android:layout_width="0dp"
         android:layout_height="44dp"
         android:layout_weight="1"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@drawable/bg_nav_icon_selected"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/nav_analytics"
         android:src="@drawable/ic_nav_analysis"
         app:tint="@color/nav_icon_tint" />
@@ -34,7 +36,8 @@
         android:layout_width="0dp"
         android:layout_height="44dp"
         android:layout_weight="1"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@drawable/bg_nav_icon_selected"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/nav_transactions"
         android:src="@drawable/ic_nav_transaction"
         app:tint="@color/nav_icon_tint" />
@@ -44,7 +47,8 @@
         android:layout_width="0dp"
         android:layout_height="44dp"
         android:layout_weight="1"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@drawable/bg_nav_icon_selected"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/nav_categories"
         android:src="@drawable/ic_nav_categories"
         app:tint="@color/nav_icon_tint" />
@@ -54,7 +58,8 @@
         android:layout_width="0dp"
         android:layout_height="44dp"
         android:layout_weight="1"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@drawable/bg_nav_icon_selected"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/nav_goals"
         android:src="@drawable/ic_nav_goals"
         app:tint="@color/nav_icon_tint" />
@@ -64,7 +69,8 @@
         android:layout_width="0dp"
         android:layout_height="44dp"
         android:layout_weight="1"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@drawable/bg_nav_icon_selected"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/nav_profile"
         android:src="@drawable/ic_nav_profile"
         app:tint="@color/nav_icon_tint" />

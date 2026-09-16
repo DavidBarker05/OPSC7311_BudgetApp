@@ -95,7 +95,14 @@ class CategoriesActivity : AppCompatActivity() {
                 .filter { YearMonth.from(it.date) == currentMonth }
             val spentThisMonth = expensesThisMonth.sumOf { it.amount }
             val monthlyGoal = app.monthlyGoalDatabaseSystem.getGoal(user, currentMonth)
-            BudgetOverview.bind(this@CategoriesActivity, incomesThisMonth, expensesThisMonth, spentThisMonth, monthlyGoal?.maxGoal ?: 0.0)
+            BudgetOverview.bind(
+                this@CategoriesActivity,
+                incomesThisMonth,
+                expensesThisMonth,
+                spentThisMonth,
+                monthlyGoal?.maxGoal ?: 0.0,
+                monthlyGoal?.minGoal ?: 0.0
+            )
             adapter.submit(CategoryGarden.sort(categories))
         }
     }

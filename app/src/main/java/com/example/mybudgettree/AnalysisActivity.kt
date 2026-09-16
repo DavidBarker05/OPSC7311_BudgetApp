@@ -122,8 +122,16 @@ class AnalysisActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvBudgetGoal).text = MoneyFormatter.format(snapshot.budgetGoal)
         findViewById<TextView>(R.id.tvBudgetPercent).text =
             getString(R.string.budget_percent, snapshot.expensePercent)
-        findViewById<TextView>(R.id.tvExpenseStatus).text = statusText(snapshot)
-        updateBudgetFill(snapshot.expensePercent.coerceIn(0, 100))
+        val level = BudgetStatusHelper.level(snapshot.monthExpense, snapshot.minGoal, snapshot.budgetGoal)
+        findViewById<TextView>(R.id.tvExpenseStatus).text =
+            BudgetStatusHelper.statusText(this, level, snapshot.expensePercent, snapshot.minGoal > 0.0)
+        updateBudgetFill(snapshot.expensePercent.coerceIn(0, 100), level)
+        findViewById<TextView>(R.id.tvBudgetPercent).setTextColor(
+            BudgetStatusHelper.contrastingTextColor(getColor(BudgetStatusHelper.colorRes(level)))
+        )
+        findViewById<TextView>(R.id.tvBudgetGoal).setTextColor(
+            BudgetStatusHelper.contrastingTextColor(getColor(R.color.budget_track))
+        )
         applyPeriodStyles()
 
         findViewById<AnalysisChartView>(R.id.chartView).setData(
@@ -133,24 +141,12 @@ class AnalysisActivity : AppCompatActivity() {
         )
     }
 
-    private fun statusText(snapshot: AnalysisSnapshot): String {
-        if (snapshot.budgetGoal <= 0.0) {
-            return getString(R.string.expenses_status_no_budget)
-        }
-        val percent = snapshot.expensePercent
-        val res = when {
-            percent > 100 -> R.string.expenses_status_over
-            percent > 70 -> R.string.expenses_status_watch
-            else -> R.string.expenses_status_good
-        }
-        return getString(res, percent)
-    }
-
-    private fun updateBudgetFill(percent: Int) {
+    private fun updateBudgetFill(percent: Int, level: BudgetLevel) {
         val fill = findViewById<android.view.View>(R.id.budgetFill)
         val params = fill.layoutParams as ConstraintLayout.LayoutParams
         params.matchConstraintPercentWidth = (percent / 100f).coerceIn(0f, 1f)
         fill.layoutParams = params
+        BudgetStatusHelper.tintFill(fill, this, level)
     }
 
     private fun applyPeriodStyles() {

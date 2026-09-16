@@ -64,9 +64,8 @@
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/ivProfilePhoto"
-            android:layout_width="118dp"
-            android:layout_height="118dp"
-            android:layout_marginTop="28dp"
+            android:layout_width="256dp"
+            android:layout_height="256dp"
             android:background="@drawable/bg_profile_icon_circle"
             android:contentDescription="@string/profile"
             android:padding="28dp"
