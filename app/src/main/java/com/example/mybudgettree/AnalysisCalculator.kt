@@ -1,14 +1,13 @@
 package com.example.mybudgettree
 
 import android.content.Context
-import com.example.mybudgettree.database.entries.Category
 import com.example.mybudgettree.database.entries.Expense
 import com.example.mybudgettree.database.entries.Income
+import com.example.mybudgettree.database.entries.MonthlyGoal
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
@@ -27,9 +26,7 @@ data class AnalysisSnapshot(
     val periodExpense: Double,
     val budgetGoal: Double,
     val expensePercent: Int,
-    val buckets: List<AnalysisBucket>,
-    val spentOfIncomePercent: Int,
-    val spentOfBudgetPercent: Int
+    val buckets: List<AnalysisBucket>
 )
 
 object AnalysisCalculator {
@@ -39,13 +36,15 @@ object AnalysisCalculator {
         context: Context,
         incomes: List<Income>,
         expenses: List<Expense>,
-        categories: List<Category>,
+        monthlyGoal: MonthlyGoal?,
         period: AnalysisPeriod,
         anchorDate: LocalDate
     ): AnalysisSnapshot {
         val totalIncome = incomes.sumOf { it.amount }
         val totalExpense = expenses.sumOf { it.amount }
-        val budgetGoal = CategoryGoals.spendingOnly(categories).mapNotNull { it.budgetAmount }.sum()
+        val budgetGoal = monthlyGoal?.maxGoal ?: 0.0
+        val anchorMonth = YearMonth.from(anchorDate)
+        val monthExpense = expenses.filter { YearMonth.from(it.date) == anchorMonth }.sumOf { it.amount }
         val ranges = ranges(context, period, anchorDate)
         val buckets = ranges.map { range ->
             AnalysisBucket(
@@ -56,10 +55,6 @@ object AnalysisCalculator {
         }
         val periodIncome = buckets.sumOf { it.income }
         val periodExpense = buckets.sumOf { it.expense }
-        val spanStart = ranges.first().start
-        val spanEnd = ranges.last().end
-        val spanDays = ChronoUnit.DAYS.between(spanStart, spanEnd) + 1
-        val proratedBudget = if (budgetGoal <= 0.0) 0.0 else budgetGoal * (spanDays / 30.0)
 
         return AnalysisSnapshot(
             totalBalance = totalIncome - totalExpense,
@@ -67,10 +62,8 @@ object AnalysisCalculator {
             periodIncome = periodIncome,
             periodExpense = periodExpense,
             budgetGoal = budgetGoal,
-            expensePercent = percent(totalExpense, budgetGoal, capAtHundred = false),
-            buckets = buckets,
-            spentOfIncomePercent = percent(periodExpense, periodIncome),
-            spentOfBudgetPercent = percent(periodExpense, proratedBudget)
+            expensePercent = percent(monthExpense, budgetGoal, capAtHundred = false),
+            buckets = buckets
         )
     }
 

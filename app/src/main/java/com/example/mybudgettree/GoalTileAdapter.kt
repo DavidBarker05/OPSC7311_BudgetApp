@@ -1,6 +1,5 @@
 package com.example.mybudgettree
 
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,16 +8,23 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import com.example.mybudgettree.database.entries.Category
+import com.example.mybudgettree.database.entries.SavingsGoal
+
+data class GoalTile(
+    val goal: SavingsGoal?,
+    val isMore: Boolean
+)
 
 class GoalTileAdapter(
-    private val onGoal: (Category) -> Unit
+    private val onGoal: (SavingsGoal) -> Unit,
+    private val onMore: () -> Unit
 ) : RecyclerView.Adapter<GoalTileAdapter.Holder>() {
-    private val items = mutableListOf<Category>()
+    private val items = mutableListOf<GoalTile>()
 
-    fun submit(goals: List<Category>) {
+    fun submit(goals: List<SavingsGoal>) {
         items.clear()
-        items.addAll(goals)
+        items.addAll(goals.map { GoalTile(it, isMore = false) })
+        items += GoalTile(goal = null, isMore = true)
         notifyDataSetChanged()
     }
 
@@ -28,7 +34,7 @@ class GoalTileAdapter(
     }
 
     override fun onBindViewHolder(holder: Holder, position: Int) {
-        holder.bind(items[position], position == 0)
+        holder.bind(items[position])
     }
 
     override fun getItemCount(): Int = items.size
@@ -38,17 +44,21 @@ class GoalTileAdapter(
         private val icon = view.findViewById<ImageView>(R.id.ivGoalIcon)
         private val name = view.findViewById<TextView>(R.id.tvGoalName)
 
-        fun bind(goal: Category, highlighted: Boolean) {
-            name.text = goal.categoryName
-            icon.setImageResource(CategoryGoals.iconRes(goal.categoryName))
-            if (highlighted) {
-                background.setBackgroundResource(R.drawable.bg_goal_tile_dark)
-                icon.setColorFilter(Color.WHITE)
+        fun bind(tile: GoalTile) {
+            if (tile.isMore) {
+                background.setBackgroundResource(R.drawable.bg_category_tile)
+                icon.setImageResource(R.drawable.ic_plus)
+                icon.setColorFilter(ContextCompat.getColor(itemView.context, R.color.green_text))
+                name.text = itemView.context.getString(R.string.more)
+                itemView.setOnClickListener { onMore() }
             } else {
+                val goal = tile.goal ?: return
+                name.text = goal.goalName
+                icon.setImageResource(IconCatalog.resFor(goal.iconKey))
                 background.setBackgroundResource(R.drawable.bg_category_tile)
                 icon.setColorFilter(ContextCompat.getColor(itemView.context, R.color.green_text))
+                itemView.setOnClickListener { onGoal(goal) }
             }
-            itemView.setOnClickListener { onGoal(goal) }
         }
     }
 }

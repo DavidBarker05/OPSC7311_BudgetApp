@@ -2,6 +2,7 @@ package com.example.mybudgettree
 
 import android.Manifest
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
@@ -46,7 +47,10 @@ class SowExpensesActivity : AppCompatActivity() {
     }
 
     private val dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH)
+    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     private var selectedDate = LocalDate.now()
+    private var selectedStartTime: LocalTime = LocalTime.MIDNIGHT
+    private var selectedEndTime: LocalTime = LocalTime.MIDNIGHT
     private var categories: List<Category> = emptyList()
     private var receiptPath: String? = null
     private var cameraFile: File? = null
@@ -86,9 +90,12 @@ class SowExpensesActivity : AppCompatActivity() {
             startActivity(Intent(this, NotificationsActivity::class.java))
         }
         findViewById<View>(R.id.dateField).setOnClickListener { showDatePicker() }
+        findViewById<View>(R.id.tvStartTime).setOnClickListener { showTimePicker(isStart = true) }
+        findViewById<View>(R.id.tvEndTime).setOnClickListener { showTimePicker(isStart = false) }
         findViewById<View>(R.id.receiptArea).setOnClickListener { showReceiptChooser() }
         findViewById<MaterialButton>(R.id.btnSaveExpense).setOnClickListener { saveExpense() }
         bindDate()
+        bindTimes()
         MainNavigation.bind(this, MainNavigation.Tab.CATEGORIES)
         loadCategories()
     }
@@ -98,9 +105,7 @@ class SowExpensesActivity : AppCompatActivity() {
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
             categories = CategoryGarden.sort(
-                CategoryGoals.spendingOnly(
-                    app.categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty()
-                )
+                app.categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty()
             )
             val names = categories.map { it.categoryName }
             val dropdown = findViewById<AutoCompleteTextView>(R.id.actSowCategory)
@@ -116,7 +121,6 @@ class SowExpensesActivity : AppCompatActivity() {
     private fun saveExpense() {
         if (UserSession.currentUser == null) return
         val title = findViewById<EditText>(R.id.etExpenseTitle).text?.toString()?.trim().orEmpty()
-        val message = findViewById<EditText>(R.id.etMessage).text?.toString()?.trim().orEmpty()
         val amountText = findViewById<EditText>(R.id.etAmount).text?.toString()?.trim().orEmpty()
             .replace("R", "", ignoreCase = true)
             .replace("$", "")
@@ -133,17 +137,15 @@ class SowExpensesActivity : AppCompatActivity() {
                     Toast.makeText(this, R.string.expense_amount_invalid, Toast.LENGTH_SHORT).show()
                     return
                 }
-                val description = if (message.isBlank()) title else "$title\n$message"
-                val now = LocalTime.now().withSecond(0).withNano(0)
                 val app = application as BudgetTreeApplication
                 lifecycleScope.launch {
                     val result = app.expenseDatabaseSystem.createExpense(
                         category = category,
-                        description = description,
+                        description = title,
                         amount = amount,
                         date = selectedDate,
-                        startTime = now,
-                        endTime = now,
+                        startTime = selectedStartTime,
+                        endTime = selectedEndTime,
                         imagePath = receiptPath
                     )
                     if (result.wasSuccessful) {
@@ -177,6 +179,26 @@ class SowExpensesActivity : AppCompatActivity() {
             selectedDate.year,
             selectedDate.monthValue - 1,
             selectedDate.dayOfMonth
+        ).show()
+    }
+
+    private fun bindTimes() {
+        findViewById<TextView>(R.id.tvStartTime).text = timeFormatter.format(selectedStartTime)
+        findViewById<TextView>(R.id.tvEndTime).text = timeFormatter.format(selectedEndTime)
+    }
+
+    private fun showTimePicker(isStart: Boolean) {
+        val initial = if (isStart) selectedStartTime else selectedEndTime
+        TimePickerDialog(
+            this,
+            { _, hour, minute ->
+                val time = LocalTime.of(hour, minute)
+                if (isStart) selectedStartTime = time else selectedEndTime = time
+                bindTimes()
+            },
+            initial.hour,
+            initial.minute,
+            true
         ).show()
     }
 

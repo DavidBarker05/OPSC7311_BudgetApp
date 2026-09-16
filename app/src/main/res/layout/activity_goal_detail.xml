@@ -30,7 +30,7 @@
         android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@id/btnBack"
-        app:layout_constraintEnd_toStartOf="@id/btnHeaderBell"
+        app:layout_constraintEnd_toStartOf="@id/btnEditGoal"
         app:layout_constraintStart_toEndOf="@id/btnBack"
         app:layout_constraintTop_toTopOf="@id/btnBack"
         tools:text="Wedding" />
@@ -46,6 +46,34 @@
         android:src="@drawable/ic_bell"
         app:layout_constraintBottom_toBottomOf="@id/btnBack"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnBack"
+        app:tint="@color/green_text" />
+
+    <ImageButton
+        android:id="@+id/btnDeleteGoal"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/bg_analysis_bell"
+        android:contentDescription="@string/delete_goal"
+        android:padding="9dp"
+        android:src="@drawable/ic_delete"
+        app:layout_constraintBottom_toBottomOf="@id/btnBack"
+        app:layout_constraintEnd_toStartOf="@id/btnHeaderBell"
+        app:layout_constraintTop_toTopOf="@id/btnBack"
+        app:tint="@color/destructive_red" />
+
+    <ImageButton
+        android:id="@+id/btnEditGoal"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/bg_analysis_bell"
+        android:contentDescription="@string/edit_savings_goal"
+        android:padding="9dp"
+        android:src="@drawable/ic_edit"
+        app:layout_constraintBottom_toBottomOf="@id/btnBack"
+        app:layout_constraintEnd_toStartOf="@id/btnDeleteGoal"
         app:layout_constraintTop_toTopOf="@id/btnBack"
         app:tint="@color/green_text" />
 

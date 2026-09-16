@@ -95,6 +95,26 @@
             android:theme="@style/Theme.MyBudgetTree.Home"
             android:windowSoftInputMode="adjustResize" />
         <activity
+            android:name=".SowIncomeActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".EditCategoryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".EditSavingsGoalActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".EditTransactionActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".WateringCanActivity"
             android:exported="false"
             android:theme="@style/Theme.MyBudgetTree.Home" />

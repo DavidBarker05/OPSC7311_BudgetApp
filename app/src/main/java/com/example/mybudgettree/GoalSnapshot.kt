@@ -4,41 +4,30 @@ import android.app.Activity
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
-import com.example.mybudgettree.database.entries.Category
 import com.example.mybudgettree.database.entries.Expense
-import com.example.mybudgettree.database.entries.Income
-import java.time.DayOfWeek
+import com.example.mybudgettree.database.entries.MonthlyGoal
 import java.time.LocalDate
-import java.time.temporal.TemporalAdjusters
-import kotlin.math.roundToInt
+import java.time.YearMonth
 
 data class GoalSnapshot(
     val goalPercent: Int,
-    val budgetGoal: Double,
-    val revenueLastWeek: Double,
-    val foodLastWeek: Double,
-    val filledDrops: Int
+    val budgetGoal: Double
 ) {
     companion object {
         fun from(
-            incomes: List<Income>,
             expenses: List<Expense>,
-            categories: List<Category>,
+            monthlyGoal: MonthlyGoal?,
             today: LocalDate = LocalDate.now()
         ): GoalSnapshot {
-            val budgetGoal = CategoryGoals.spendingOnly(categories).mapNotNull { it.budgetAmount }.sum()
-            val totalExpense = expenses.sumOf { it.amount }
+            val budgetGoal = monthlyGoal?.maxGoal ?: 0.0
+            val currentMonth = YearMonth.from(today)
+            val spentThisMonth = expenses.filter { YearMonth.from(it.date) == currentMonth }.sumOf { it.amount }
             val goalPercent = if (budgetGoal <= 0.0) {
                 0
             } else {
-                ((totalExpense / budgetGoal) * 100.0).toInt().coerceIn(0, 100)
+                ((spentThisMonth / budgetGoal) * 100.0).toInt().coerceIn(0, 100)
             }
-            val weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-            val foodIds = categories.filter { it.categoryName.equals("Food", ignoreCase = true) }.map { it.id }.toSet()
-            val revenueLastWeek = incomes.filter { it.date in weekStart..today }.sumOf { it.amount }
-            val foodLastWeek = expenses.filter { it.date in weekStart..today && it.categoryId in foodIds }.sumOf { it.amount }
-            val filledDrops = if (budgetGoal <= 0.0) 0 else (goalPercent / 20.0).roundToInt().coerceIn(0, 5)
-            return GoalSnapshot(goalPercent, budgetGoal, revenueLastWeek, foodLastWeek, filledDrops)
+            return GoalSnapshot(goalPercent, budgetGoal)
         }
 
         fun bindProgress(activity: Activity, snapshot: GoalSnapshot) {

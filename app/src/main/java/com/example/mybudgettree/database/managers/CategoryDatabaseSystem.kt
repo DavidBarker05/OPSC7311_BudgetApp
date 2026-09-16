@@ -235,6 +235,24 @@ class CategoryDatabaseSystem(
     }
 
     /**
+     * Modifies the icon for the category
+     *
+     * @param category The [Category] being updated
+     * @param newIconKey The new [com.example.mybudgettree.IconCatalog] key, or null to fall back to the name-based default
+     * @return An [UpdateCategoryReturnInfo] indicating what happened with the update
+     */
+    suspend fun updateCategoryIcon(category: Category, newIconKey: String?): UpdateCategoryReturnInfo {
+        val result = run {
+            if (category.iconKey == newIconKey) return@run UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.NoChange, category = category)
+            if (!isCategoryStillValid(category)) return@run UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Failed, errMsg = "Category does not exist")
+            categoryDao.updateCategoryIcon(category.id, newIconKey)
+            UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Succeeded, category = category.copy(iconKey = newIconKey))
+        }
+        logUpdateOutcome("update icon for category '${category.categoryName}'", result.status, result.errMsg)
+        return result
+    }
+
+    /**
      * Deletes the category from the database
      *
      * @param category The [Category] to delete

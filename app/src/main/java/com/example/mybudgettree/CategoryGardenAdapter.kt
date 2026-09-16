@@ -48,7 +48,7 @@ class CategoryGardenAdapter(
                 itemView.setOnClickListener { onMore() }
             } else {
                 val category = tile.category ?: return
-                icon.setImageResource(CategoryGarden.iconRes(category.categoryName))
+                icon.setImageResource(CategoryGarden.iconRes(category))
                 name.text = category.categoryName
                 itemView.setOnClickListener { onCategory(category) }
             }

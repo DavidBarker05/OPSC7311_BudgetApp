@@ -75,7 +75,6 @@
     <string name="income">Income</string>
     <string name="expense">Expense</string>
     <string name="income_and_expenses">Income &amp; Expenses</string>
-    <string name="my_targets">My Targets</string>
     <string name="week_1">1st Week</string>
     <string name="week_2">2nd Week</string>
     <string name="week_3">3rd Week</string>
@@ -134,6 +133,11 @@
     <string name="category_garden">Category Garden</string>
     <string name="more">More</string>
     <string name="sow_expenses">Sow Expenses</string>
+    <string name="sow_income">Sow Income</string>
+    <string name="add_expense">Add Expense</string>
+    <string name="add_income">Add Income</string>
+    <string name="income_title">Income Title</string>
+    <string name="income_saved">Income saved.</string>
     <string name="new_category">New Category</string>
     <string name="write_hint">Write...</string>
     <string name="save">Save</string>
@@ -212,8 +216,6 @@
     <string name="watering_can_goal_savings">Watering Can\nGoal Savings</string>
     <string name="sapling">Sapling</string>
     <string name="sapling_hint">Save Weekly To Fill Your Watering Can</string>
-    <string name="revenue_last_week">Revenue Last Week</string>
-    <string name="food_last_week">Food Last Week</string>
     <string name="month_expenses">%1$s Expenses</string>
     <string name="watering_drop">Watering drop</string>
     <string name="my_watering_can">My Watering Can</string>
@@ -228,4 +230,57 @@
     <string name="savings_saved">Savings added.</string>
     <string name="no_goal_savings">No savings for this goal yet.</string>
     <string name="watering_can">Watering can</string>
+
+    <string name="edit_category">Edit Category</string>
+    <string name="category_name">Category Name</string>
+    <string name="choose_icon">Choose Icon</string>
+    <string name="set_monthly_budget">Set Monthly Budget</string>
+    <string name="monthly_budget_hint">Monthly budget amount</string>
+    <string name="delete">Delete</string>
+    <string name="delete_category">Delete Category</string>
+    <string name="delete_category_confirm">Delete \"%1$s\" and all of its expenses and income? This cannot be undone.</string>
+    <string name="category_updated">Category updated.</string>
+    <string name="category_deleted">Category deleted.</string>
+
+    <string name="new_savings_goal">New Savings Goal</string>
+    <string name="goal_name_hint">Goal name</string>
+    <string name="target_amount">Target Amount (Optional)</string>
+    <string name="target_amount_hint">R0.00 (optional)</string>
+    <string name="goal_created">Savings goal created.</string>
+    <string name="goal_name_required">Please enter a goal name.</string>
+    <string name="delete_goal">Delete Goal</string>
+    <string name="delete_goal_confirm">Delete \"%1$s\" and all of its savings? This cannot be undone.</string>
+    <string name="goal_deleted">Savings goal deleted.</string>
+    <string name="remove_savings">Remove</string>
+    <string name="savings_removed">Savings entry removed.</string>
+    <string name="select_goal">Select the goal</string>
+    <string name="no_goals_yet">Add a savings goal before adding savings.</string>
+
+    <string name="edit_monthly_goal">Edit monthly goal</string>
+    <string name="set_monthly_goal">Set Monthly Goal</string>
+    <string name="minimum_spend">Minimum Spend</string>
+    <string name="maximum_spend">Maximum Spend</string>
+    <string name="monthly_goal_saved">Monthly goal saved.</string>
+
+    <string name="edit_savings_goal">Edit Savings Goal</string>
+    <string name="goal_updated">Savings goal updated.</string>
+
+    <string name="edit_expense">Edit Expense</string>
+    <string name="edit_income">Edit Income</string>
+    <string name="remove_image">Remove Image</string>
+    <string name="no_image">No image</string>
+    <string name="delete_expense">Delete Expense</string>
+    <string name="delete_income">Delete Income</string>
+    <string name="delete_expense_confirm">Delete this expense? This cannot be undone.</string>
+    <string name="delete_income_confirm">Delete this income? This cannot be undone.</string>
+    <string name="expense_updated">Expense updated.</string>
+    <string name="income_updated">Income updated.</string>
+    <string name="expense_deleted">Expense deleted.</string>
+    <string name="income_deleted">Income deleted.</string>
+
+    <string name="saved_this_month">Saved This Month</string>
+    <string name="saved_this_week">Saved This Week</string>
+    <string name="start_time">Start Time</string>
+    <string name="end_time">End Time</string>
+    <string name="time_invalid">Start time must be before end time.</string>
 </resources>

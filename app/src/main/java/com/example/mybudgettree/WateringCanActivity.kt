@@ -1,8 +1,13 @@
 package com.example.mybudgettree
 
+import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
+import android.view.Window
+import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -15,14 +20,24 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
+import java.time.YearMonth
 
 class WateringCanActivity : AppCompatActivity() {
-    private val adapter = GoalTileAdapter { goal ->
-        startActivity(
-            Intent(this, GoalDetailActivity::class.java)
-                .putExtra(GoalDetailActivity.EXTRA_CATEGORY_ID, goal.id)
-        )
+
+    companion object {
+        private const val TAG = "WateringCanActivity"
     }
+
+    private var selectedIconKey: String? = IconCatalog.DEFAULT_KEY
+    private val adapter = GoalTileAdapter(
+        onGoal = { goal ->
+            startActivity(
+                Intent(this, GoalDetailActivity::class.java)
+                    .putExtra(GoalDetailActivity.EXTRA_GOAL_ID, goal.id)
+            )
+        },
+        onMore = { showNewGoalDialog() }
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +69,7 @@ class WateringCanActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.btnSaveMore).setOnClickListener {
             startActivity(Intent(this, FillWateringCanActivity::class.java))
         }
+        findViewById<ImageButton>(R.id.btnEditMonthlyGoal).setOnClickListener { showMonthlyGoalDialog() }
         MainNavigation.bind(this, MainNavigation.Tab.GOALS)
     }
 
@@ -66,17 +82,113 @@ class WateringCanActivity : AppCompatActivity() {
         val user = UserSession.currentUser ?: return
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
-            val goals = CategoryGoals.ensureForUser(user, app.categoryDatabaseSystem)
-            val allCategories = app.categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty()
-            val expenses = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
-            val incomes = app.incomeDatabaseSystem.retrieveAllIncomes(user).incomes.orEmpty()
-            BudgetOverview.bind(this@WateringCanActivity, incomes, expenses, allCategories)
+            val goals = app.savingsGoalDatabaseSystem.getAllGoalsForUser(user).goals.orEmpty()
+            val currentMonth = YearMonth.now()
+            val expensesThisMonth = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
+                .filter { YearMonth.from(it.date) == currentMonth }
+            val incomesThisMonth = app.incomeDatabaseSystem.retrieveAllIncomes(user).incomes.orEmpty()
+                .filter { YearMonth.from(it.date) == currentMonth }
+            val spentThisMonth = expensesThisMonth.sumOf { it.amount }
+            val monthlyGoal = app.monthlyGoalDatabaseSystem.getGoal(user, currentMonth)
+            BudgetOverview.bind(this@WateringCanActivity, incomesThisMonth, expensesThisMonth, spentThisMonth, monthlyGoal?.maxGoal ?: 0.0)
             adapter.submit(goals)
-            val goalIds = goals.map { it.id }.toSet()
-            val saved = incomes.filter { it.categoryId in goalIds }.sumOf { it.amount }
-            val target = goals.mapNotNull { it.budgetAmount }.sum()
+            var saved = 0.0
+            var target = 0.0
+            goals.forEach { goal ->
+                saved += app.savingsContributionDatabaseSystem.retrieveAllContributionsForGoal(goal).contributions.orEmpty().sumOf { it.amount }
+                target += goal.targetAmount ?: 0.0
+            }
             val percent = if (target <= 0.0) 0 else ((saved / target) * 100.0).toInt().coerceIn(0, 100)
             findViewById<WateringCanView>(R.id.wateringCanView).setFillPercent(percent)
         }
     }
+
+    private fun showNewGoalDialog() {
+        val user = UserSession.currentUser ?: return
+        selectedIconKey = IconCatalog.DEFAULT_KEY
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_new_savings_goal)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val nameField = dialog.findViewById<EditText>(R.id.etNewGoalName)
+        val targetField = dialog.findViewById<EditText>(R.id.etNewGoalTarget)
+        IconPicker.populate(dialog.findViewById(R.id.iconGrid), selectedIconKey) { key -> selectedIconKey = key }
+        dialog.findViewById<MaterialButton>(R.id.btnCancelGoal).setOnClickListener { dialog.dismiss() }
+        dialog.findViewById<MaterialButton>(R.id.btnSaveGoal).setOnClickListener {
+            val name = nameField.text?.toString()?.trim().orEmpty()
+            if (name.isBlank()) {
+                Toast.makeText(this, R.string.goal_name_required, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val targetText = targetField.text?.toString()?.trim().orEmpty()
+                .replace("R", "", ignoreCase = true)
+                .replace(",", "")
+            val target = targetText.toDoubleOrNull()
+            val app = application as BudgetTreeApplication
+            lifecycleScope.launch {
+                val result = app.savingsGoalDatabaseSystem.createGoal(user, name, selectedIconKey, target)
+                if (result.wasSuccessful) {
+                    Log.i(TAG, "Created savings goal '$name'")
+                    Toast.makeText(this@WateringCanActivity, R.string.goal_created, Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                    loadGoals()
+                } else {
+                    Log.w(TAG, "Failed to create savings goal '$name': ${result.errMsg}")
+                    Toast.makeText(
+                        this@WateringCanActivity,
+                        result.errMsg ?: getString(R.string.goal_name_required),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+        dialog.show()
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.82).toInt(),
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+    }
+
+    private fun showMonthlyGoalDialog() {
+        val user = UserSession.currentUser ?: return
+        val app = application as BudgetTreeApplication
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_monthly_goal)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val minField = dialog.findViewById<EditText>(R.id.etMonthlyGoalMin)
+        val maxField = dialog.findViewById<EditText>(R.id.etMonthlyGoalMax)
+        lifecycleScope.launch {
+            val existing = app.monthlyGoalDatabaseSystem.getGoal(user, YearMonth.now())
+            if (existing != null) {
+                minField.setText(plainAmount(existing.minGoal))
+                maxField.setText(plainAmount(existing.maxGoal))
+            }
+        }
+        dialog.findViewById<MaterialButton>(R.id.btnCancelMonthlyGoal).setOnClickListener { dialog.dismiss() }
+        dialog.findViewById<MaterialButton>(R.id.btnSaveMonthlyGoal).setOnClickListener {
+            val min = minField.text?.toString()?.trim()?.toDoubleOrNull() ?: 0.0
+            val max = maxField.text?.toString()?.trim()?.toDoubleOrNull() ?: 0.0
+            lifecycleScope.launch {
+                val result = app.monthlyGoalDatabaseSystem.saveGoal(user, YearMonth.now(), min, max)
+                if (result.wasSuccessful) {
+                    Log.i(TAG, "Saved monthly goal min=$min max=$max")
+                    Toast.makeText(this@WateringCanActivity, R.string.monthly_goal_saved, Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                    loadGoals()
+                } else {
+                    Log.w(TAG, "Failed to save monthly goal: ${result.errMsg}")
+                    Toast.makeText(this@WateringCanActivity, result.errMsg, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        dialog.show()
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.82).toInt(),
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+    }
+
+    private fun plainAmount(amount: Double): String =
+        if (amount % 1.0 == 0.0) amount.toInt().toString() else amount.toString()
 }

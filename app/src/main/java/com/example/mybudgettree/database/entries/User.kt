@@ -5,7 +5,6 @@ import androidx.room.PrimaryKey
 import androidx.room.ColumnInfo
 import androidx.room.Index
 import java.time.LocalDate
-import java.time.YearMonth
 
 /**
  * A user account
@@ -18,8 +17,6 @@ import java.time.YearMonth
  * @property dateOfBirth The user's date of birth
  * @property currency The user's preferred currency
  * @property profilePhotoPath The path to the user's profile photo, or null if none is set
- * @property treeLevel The current growth level of the user's money tree
- * @property treeLevelPeriod The year and month the current [treeLevel] applies to, used to detect when a new month has started so the tree can reset
  */
 @Entity(
     tableName = "users",
@@ -36,7 +33,5 @@ data class User(
     @ColumnInfo(name = "display_name") val displayName: String,
     @ColumnInfo(name = "date_of_birth") val dateOfBirth: LocalDate,
     val currency: String,
-    @ColumnInfo(name = "profile_photo_path") val profilePhotoPath: String? = null,
-    @ColumnInfo(name = "tree_level") val treeLevel: Int = 1,
-    @ColumnInfo(name = "tree_level_period") val treeLevelPeriod: YearMonth
+    @ColumnInfo(name = "profile_photo_path") val profilePhotoPath: String? = null
 )

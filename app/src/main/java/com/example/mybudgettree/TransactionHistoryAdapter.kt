@@ -14,7 +14,8 @@ import java.util.Locale
 
 class TransactionHistoryAdapter(
     private val onCalendarClick: () -> Unit,
-    private val entryLayout: Int = R.layout.item_transaction
+    private val entryLayout: Int = R.layout.item_transaction,
+    private val onEntryClick: ((TransactionRow) -> Unit)? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private val items = mutableListOf<TransactionListItem>()
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -68,6 +69,7 @@ class TransactionHistoryAdapter(
         private val amount = view.findViewById<TextView>(R.id.tvTransactionAmount)
 
         fun bind(row: TransactionRow) {
+            itemView.setOnClickListener { onEntryClick?.invoke(row) }
             name.text = row.title
             detail.text = itemView.context.getString(
                 R.string.transaction_detail,

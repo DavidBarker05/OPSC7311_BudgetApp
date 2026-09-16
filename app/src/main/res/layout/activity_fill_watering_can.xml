@@ -131,7 +131,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="@string/category"
+                    android:text="@string/goal"
                     android:textColor="@color/green_text"
                     android:textSize="16sp"
                     android:textStyle="bold" />
@@ -144,7 +144,7 @@
                     android:background="@drawable/bg_sow_field"
                     android:drawableEnd="@drawable/ic_dropdown"
                     android:focusable="false"
-                    android:hint="@string/select_category"
+                    android:hint="@string/select_goal"
                     android:inputType="none"
                     android:paddingStart="18dp"
                     android:paddingEnd="16dp"
@@ -175,36 +175,6 @@
                     android:textColor="@color/green_text"
                     android:textColorHint="@color/hint_text"
                     android:textSize="15sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="@string/expense_title"
-                    android:textColor="@color/green_text"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <EditText
-                    android:id="@+id/etFillTitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_sow_field"
-                    android:hint="@string/expense_title"
-                    android:importantForAutofill="no"
-                    android:inputType="textCapWords"
-                    android:paddingStart="18dp"
-                    android:paddingEnd="18dp"
-                    android:textColor="@color/green_text"
-                    android:textColorHint="@color/hint_text"
-                    android:textSize="15sp" />
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="140dp"
-                    android:layout_marginTop="20dp"
-                    android:background="@drawable/bg_sow_field" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSaveSavings"

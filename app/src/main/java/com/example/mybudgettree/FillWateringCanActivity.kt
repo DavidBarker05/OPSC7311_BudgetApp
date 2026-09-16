@@ -19,11 +19,10 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
-import com.example.mybudgettree.database.entries.Category
+import com.example.mybudgettree.database.entries.SavingsGoal
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -31,11 +30,12 @@ class FillWateringCanActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "FillWateringCanActivity"
+        const val EXTRA_GOAL_ID = "goal_id"
     }
 
     private val dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH)
     private var selectedDate = LocalDate.now()
-    private var goals: List<Category> = emptyList()
+    private var goals: List<SavingsGoal> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,53 +71,48 @@ class FillWateringCanActivity : AppCompatActivity() {
         val user = UserSession.currentUser ?: return
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
-            goals = CategoryGoals.ensureForUser(user, app.categoryDatabaseSystem)
-            val names = goals.map { it.categoryName }
+            goals = app.savingsGoalDatabaseSystem.getAllGoalsForUser(user).goals.orEmpty()
+            val names = goals.map { it.goalName }
             val dropdown = findViewById<AutoCompleteTextView>(R.id.actFillCategory)
             dropdown.threshold = 0
             dropdown.setAdapter(ArrayAdapter(this@FillWateringCanActivity, android.R.layout.simple_dropdown_item_1line, names))
             dropdown.setOnClickListener { dropdown.showDropDown() }
-            val preselectId = intent.getLongExtra(GoalDetailActivity.EXTRA_CATEGORY_ID, -1L)
+            val preselectId = intent.getLongExtra(EXTRA_GOAL_ID, -1L)
             val preselected = goals.firstOrNull { it.id == preselectId }
-            if (preselected != null) dropdown.setText(preselected.categoryName, false)
+            if (preselected != null) dropdown.setText(preselected.goalName, false)
         }
     }
 
     private fun saveSavings() {
-        val title = findViewById<EditText>(R.id.etFillTitle).text?.toString()?.trim().orEmpty()
         val amountText = findViewById<EditText>(R.id.etFillAmount).text?.toString()?.trim().orEmpty()
             .replace("R", "", ignoreCase = true)
             .replace("$", "")
             .replace(",", "")
-        val categoryName = findViewById<AutoCompleteTextView>(R.id.actFillCategory).text?.toString()?.trim().orEmpty()
-        val category = goals.firstOrNull { it.categoryName.equals(categoryName, ignoreCase = true) }
+        val goalName = findViewById<AutoCompleteTextView>(R.id.actFillCategory).text?.toString()?.trim().orEmpty()
+        val goal = goals.firstOrNull { it.goalName.equals(goalName, ignoreCase = true) }
         when {
-            goals.isEmpty() -> Toast.makeText(this, R.string.no_categories_yet, Toast.LENGTH_SHORT).show()
-            title.isBlank() || amountText.isBlank() -> Toast.makeText(this, R.string.expense_fields_required, Toast.LENGTH_SHORT).show()
-            category == null -> Toast.makeText(this, R.string.select_category, Toast.LENGTH_SHORT).show()
+            goals.isEmpty() -> Toast.makeText(this, R.string.no_goals_yet, Toast.LENGTH_SHORT).show()
+            amountText.isBlank() -> Toast.makeText(this, R.string.expense_fields_required, Toast.LENGTH_SHORT).show()
+            goal == null -> Toast.makeText(this, R.string.select_goal, Toast.LENGTH_SHORT).show()
             else -> {
                 val amount = amountText.toDoubleOrNull()
                 if (amount == null || amount < 0.0) {
                     Toast.makeText(this, R.string.expense_amount_invalid, Toast.LENGTH_SHORT).show()
                     return
                 }
-                val now = LocalTime.now().withSecond(0).withNano(0)
                 val app = application as BudgetTreeApplication
                 lifecycleScope.launch {
-                    val result = app.incomeDatabaseSystem.createIncome(
-                        category = category,
-                        description = title,
+                    val result = app.savingsContributionDatabaseSystem.createContribution(
+                        goal = goal,
                         amount = amount,
-                        date = selectedDate,
-                        startTime = now,
-                        endTime = now
+                        date = selectedDate
                     )
                     if (result.wasSuccessful) {
-                        Log.i(TAG, "Saved savings deposit '$title' for category '${category.categoryName}'")
+                        Log.i(TAG, "Saved savings deposit for goal '${goal.goalName}'")
                         Toast.makeText(this@FillWateringCanActivity, R.string.savings_saved, Toast.LENGTH_SHORT).show()
                         finish()
                     } else {
-                        Log.w(TAG, "Failed to save savings deposit '$title': ${result.errMsg}")
+                        Log.w(TAG, "Failed to save savings deposit for goal '${goal.goalName}': ${result.errMsg}")
                         Toast.makeText(
                             this@FillWateringCanActivity,
                             result.errMsg ?: getString(R.string.expense_fields_required),

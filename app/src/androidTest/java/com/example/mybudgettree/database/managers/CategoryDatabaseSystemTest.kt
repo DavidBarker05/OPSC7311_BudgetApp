@@ -96,4 +96,48 @@ class CategoryDatabaseSystemTest : DatabaseTestBase() {
         val result = categoryDatabaseSystem.updateCategoryBudget(category, 1000.0)
         assertEquals(CategoryDatabaseSystem.UpdateCategoryReturnStatus.Failed, result.status)
     }
+
+    @Test
+    fun createCategory_hasNoIconByDefault() = runBlocking {
+        val user = createTestUser()
+        val result = categoryDatabaseSystem.createCategory(user, "Groceries")
+        assertNull(result.category?.iconKey)
+    }
+
+    @Test
+    fun updateCategoryIcon_setsKey_succeeds() = runBlocking {
+        val user = createTestUser()
+        val category = createTestCategory(user)
+        val result = categoryDatabaseSystem.updateCategoryIcon(category, "groceries")
+        assertEquals(CategoryDatabaseSystem.UpdateCategoryReturnStatus.Succeeded, result.status)
+        assertEquals("groceries", result.category?.iconKey)
+    }
+
+    @Test
+    fun updateCategoryIcon_sameKey_noChange() = runBlocking {
+        val user = createTestUser()
+        val category = createTestCategory(user)
+        val withIcon = categoryDatabaseSystem.updateCategoryIcon(category, "groceries").category!!
+        val result = categoryDatabaseSystem.updateCategoryIcon(withIcon, "groceries")
+        assertEquals(CategoryDatabaseSystem.UpdateCategoryReturnStatus.NoChange, result.status)
+    }
+
+    @Test
+    fun updateCategoryIcon_setToNull_clearsIcon() = runBlocking {
+        val user = createTestUser()
+        val category = createTestCategory(user)
+        val withIcon = categoryDatabaseSystem.updateCategoryIcon(category, "groceries").category!!
+        val result = categoryDatabaseSystem.updateCategoryIcon(withIcon, null)
+        assertEquals(CategoryDatabaseSystem.UpdateCategoryReturnStatus.Succeeded, result.status)
+        assertNull(result.category?.iconKey)
+    }
+
+    @Test
+    fun updateCategoryIcon_categoryDoesNotExist_fails() = runBlocking {
+        val user = createTestUser()
+        val category = createTestCategory(user)
+        categoryDatabaseSystem.deleteCategory(category)
+        val result = categoryDatabaseSystem.updateCategoryIcon(category, "groceries")
+        assertEquals(CategoryDatabaseSystem.UpdateCategoryReturnStatus.Failed, result.status)
+    }
 }

@@ -25,7 +25,7 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 class CategoryDetailActivity : AppCompatActivity() {
-    private val adapter = TransactionHistoryAdapter(::showMonthPicker, R.layout.item_search_result)
+    private val adapter = TransactionHistoryAdapter(::showMonthPicker, R.layout.item_search_result, ::openEditTransaction)
     private var category: Category? = null
     private var allRows: List<TransactionRow> = emptyList()
     private var monthFilter: YearMonth? = null
@@ -53,10 +53,19 @@ class CategoryDetailActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.btnHeaderBell).setOnClickListener {
             startActivity(Intent(this, NotificationsActivity::class.java))
         }
-        findViewById<MaterialButton>(R.id.btnSowExpenses).setOnClickListener {
+        findViewById<ImageButton>(R.id.btnEditCategory).setOnClickListener { openEditCategory() }
+        findViewById<ImageButton>(R.id.btnEditMonthlyGoal).setOnClickListener { openEditCategory() }
+        findViewById<MaterialButton>(R.id.btnAddExpense).setOnClickListener {
             val id = category?.id ?: return@setOnClickListener
             startActivity(
                 Intent(this, SowExpensesActivity::class.java)
+                    .putExtra(EXTRA_CATEGORY_ID, id)
+            )
+        }
+        findViewById<MaterialButton>(R.id.btnAddIncome).setOnClickListener {
+            val id = category?.id ?: return@setOnClickListener
+            startActivity(
+                Intent(this, SowIncomeActivity::class.java)
                     .putExtra(EXTRA_CATEGORY_ID, id)
             )
         }
@@ -84,15 +93,20 @@ class CategoryDetailActivity : AppCompatActivity() {
             }
             category = found
             findViewById<TextView>(R.id.tvCategoryTitle).text = found.categoryName
-            val categories = app.categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty()
-            val expenses = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
-            val incomes = app.incomeDatabaseSystem.retrieveAllIncomes(user).incomes.orEmpty()
-            BudgetOverview.bind(this@CategoryDetailActivity, incomes, expenses, categories)
+            val currentMonth = YearMonth.now()
+            val expensesThisMonth = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
+                .filter { YearMonth.from(it.date) == currentMonth }
+            val incomesThisMonth = app.incomeDatabaseSystem.retrieveAllIncomes(user).incomes.orEmpty()
+                .filter { YearMonth.from(it.date) == currentMonth }
 
-            val icon = CategoryGarden.iconRes(found.categoryName)
+            val icon = CategoryGarden.iconRes(found)
             val categoryExpenses = app.expenseDatabaseSystem.retrieveAllExpensesForCategory(found).expenses.orEmpty()
-            allRows = categoryExpenses.map { expense ->
+            val categoryIncomes = app.incomeDatabaseSystem.retrieveAllIncomesForCategory(found).incomes.orEmpty()
+            val spentThisMonth = categoryExpenses.filter { YearMonth.from(it.date) == currentMonth }.sumOf { it.amount }
+            BudgetOverview.bind(this@CategoryDetailActivity, incomesThisMonth, expensesThisMonth, spentThisMonth, found.budgetAmount ?: 0.0)
+            val expenseRows = categoryExpenses.map { expense ->
                 TransactionRow(
+                    id = expense.id,
                     title = expense.description.substringBefore('\n'),
                     categoryName = found.categoryName,
                     amount = expense.amount,
@@ -102,7 +116,22 @@ class CategoryDetailActivity : AppCompatActivity() {
                     imagePath = expense.imagePath,
                     iconRes = icon
                 )
-            }.sortedWith(compareByDescending<TransactionRow> { it.date }.thenByDescending { it.time })
+            }
+            val incomeRows = categoryIncomes.map { income ->
+                TransactionRow(
+                    id = income.id,
+                    title = income.description.substringBefore('\n'),
+                    categoryName = found.categoryName,
+                    amount = income.amount,
+                    isIncome = true,
+                    date = income.date,
+                    time = income.startTime,
+                    imagePath = income.imagePath,
+                    iconRes = icon
+                )
+            }
+            allRows = (expenseRows + incomeRows)
+                .sortedWith(compareByDescending<TransactionRow> { it.date }.thenByDescending { it.time })
             bindList()
         }
     }
@@ -121,6 +150,22 @@ class CategoryDetailActivity : AppCompatActivity() {
         adapter.submit(items)
         findViewById<TextView>(R.id.tvEmptyCategory).visibility =
             if (items.isEmpty()) View.VISIBLE else View.GONE
+    }
+
+    private fun openEditTransaction(row: TransactionRow) {
+        startActivity(
+            Intent(this, EditTransactionActivity::class.java)
+                .putExtra(EditTransactionActivity.EXTRA_TRANSACTION_ID, row.id)
+                .putExtra(EditTransactionActivity.EXTRA_IS_INCOME, row.isIncome)
+        )
+    }
+
+    private fun openEditCategory() {
+        val id = category?.id ?: return
+        startActivity(
+            Intent(this, EditCategoryActivity::class.java)
+                .putExtra(EditCategoryActivity.EXTRA_CATEGORY_ID, id)
+        )
     }
 
     private fun showMonthPicker() {

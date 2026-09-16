@@ -13,6 +13,7 @@ import androidx.room.Index
  * @property username The username of the [User] the category belongs to
  * @property categoryName The category's name, must be unique per user
  * @property budgetAmount The category's budgeted amount, or null if no budget is set
+ * @property iconKey The [IconCatalog] key for the category's icon, or null to fall back to a name-based default
  */
 @Entity(
     tableName = "categories",
@@ -33,5 +34,6 @@ data class Category(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val username: String, // Foreign key
     @ColumnInfo(name = "category_name") val categoryName: String,
-    @ColumnInfo(name = "budget_amount") val budgetAmount: Double? = null
+    @ColumnInfo(name = "budget_amount") val budgetAmount: Double? = null,
+    @ColumnInfo(name = "icon_key") val iconKey: String? = null
 )

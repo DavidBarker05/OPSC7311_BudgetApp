@@ -460,35 +460,6 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:text="@string/my_targets"
-                    android:textColor="@color/green_text"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal">
-
-                    <com.example.mybudgettree.DonutTargetView
-                        android:id="@+id/targetIncome"
-                        android:layout_width="0dp"
-                        android:layout_height="150dp"
-                        android:layout_marginEnd="8dp"
-                        android:layout_weight="1" />
-
-                    <com.example.mybudgettree.DonutTargetView
-                        android:id="@+id/targetBudget"
-                        android:layout_width="0dp"
-                        android:layout_height="150dp"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1" />
-                </LinearLayout>
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
     </androidx.constraintlayout.widget.ConstraintLayout>
