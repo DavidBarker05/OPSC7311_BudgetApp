@@ -25,25 +25,25 @@ class MainNavigationUiTest : UiTestBase() {
         UserSession.login(createTestUser(username = "navuser"))
 
         ActivityScenario.launch(HomeActivity::class.java).use {
-            onView(withId(R.id.tvWelcomeSanctuary)).check(matches(isDisplayed()))
+            eventually { onView(withId(R.id.tvWelcomeSanctuary)).check(matches(isDisplayed())) }
 
             onView(withId(R.id.navAnalysis)).perform(click())
-            onView(withId(R.id.tvBudgetPercent)).check(matches(isDisplayed()))
+            eventually { onView(withId(R.id.tvBudgetPercent)).check(matches(isDisplayed())) }
 
             onView(withId(R.id.navTransactions)).perform(click())
-            onView(withId(R.id.tvEmptyTransactions)).check(matches(isDisplayed()))
+            eventually { onView(withId(R.id.tvEmptyTransactions)).check(matches(isDisplayed())) }
 
             onView(withId(R.id.navCategories)).perform(click())
-            onView(withId(R.id.rvCategories)).check(matches(isDisplayed()))
+            eventually { onView(withId(R.id.rvCategories)).check(matches(isDisplayed())) }
 
             onView(withId(R.id.navGoals)).perform(click())
-            onView(withId(R.id.rvGoals)).check(matches(isDisplayed()))
+            eventually { onView(withId(R.id.rvGoals)).check(matches(isDisplayed())) }
 
             onView(withId(R.id.navProfile)).perform(click())
-            onView(withId(R.id.tvProfileName)).check(matches(isDisplayed()))
+            eventually { onView(withId(R.id.tvProfileName)).check(matches(isDisplayed())) }
 
             onView(withId(R.id.navHome)).perform(click())
-            onView(withId(R.id.tvWelcomeSanctuary)).check(matches(isDisplayed()))
+            eventually { onView(withId(R.id.tvWelcomeSanctuary)).check(matches(isDisplayed())) }
         }
     }
 }

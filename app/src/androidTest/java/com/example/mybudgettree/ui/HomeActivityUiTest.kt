@@ -23,9 +23,12 @@ class HomeActivityUiTest : UiTestBase() {
 
         ActivityScenario.launch(HomeActivity::class.java).use {
             onView(withId(R.id.tvWelcomeSanctuary)).check(matches(isDisplayed()))
-            onView(withId(R.id.tvTotalBalance)).check(matches(withText("R0.00")))
-            onView(withId(R.id.tvTotalExpense)).check(matches(withText("-R0.00")))
-            onView(withId(R.id.tvEmptyTransactions)).check(matches(isDisplayed()))
+            // balances and the empty-state are filled in by an async load from Room
+            eventually {
+                onView(withId(R.id.tvTotalBalance)).check(matches(withText("R0.00")))
+                onView(withId(R.id.tvTotalExpense)).check(matches(withText("-R0.00")))
+                onView(withId(R.id.tvEmptyTransactions)).check(matches(isDisplayed()))
+            }
         }
     }
 

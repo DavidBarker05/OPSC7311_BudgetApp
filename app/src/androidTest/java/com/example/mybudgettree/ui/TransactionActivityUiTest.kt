@@ -22,8 +22,11 @@ class TransactionActivityUiTest : UiTestBase() {
         UserSession.login(createTestUser(username = "transactionuser"))
 
         ActivityScenario.launch(TransactionActivity::class.java).use {
-            onView(withId(R.id.tvTotalBalance)).check(matches(withText("R0.00")))
-            onView(withId(R.id.tvEmptyTransactions)).check(matches(isDisplayed()))
+            // balance and empty-state are filled in by an async load from Room
+            eventually {
+                onView(withId(R.id.tvTotalBalance)).check(matches(withText("R0.00")))
+                onView(withId(R.id.tvEmptyTransactions)).check(matches(isDisplayed()))
+            }
         }
     }
 
@@ -32,11 +35,13 @@ class TransactionActivityUiTest : UiTestBase() {
         UserSession.login(createTestUser(username = "transactionuser2"))
 
         ActivityScenario.launch(TransactionActivity::class.java).use {
+            eventually { onView(withId(R.id.tvEmptyTransactions)).check(matches(isDisplayed())) }
+
             onView(withId(R.id.cardIncome)).perform(click())
-            onView(withId(R.id.tvEmptyTransactions)).check(matches(isDisplayed()))
+            eventually { onView(withId(R.id.tvEmptyTransactions)).check(matches(isDisplayed())) }
 
             onView(withId(R.id.cardExpense)).perform(click())
-            onView(withId(R.id.tvEmptyTransactions)).check(matches(isDisplayed()))
+            eventually { onView(withId(R.id.tvEmptyTransactions)).check(matches(isDisplayed())) }
         }
     }
 }

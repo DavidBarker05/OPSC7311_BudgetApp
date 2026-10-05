@@ -40,7 +40,7 @@ class CategoriesActivityUiTest : UiTestBase() {
             waitForText("Food") // categories are seeded asynchronously on first load
             onView(withText("Food")).perform(click())
 
-            onView(withId(R.id.tvCategoryTitle)).check(matches(withText("Food")))
+            eventually { onView(withId(R.id.tvCategoryTitle)).check(matches(withText("Food"))) }
         }
     }
 }

@@ -36,7 +36,7 @@ class ProfileActivityUiTest : UiTestBase() {
         ActivityScenario.launch(ProfileActivity::class.java).use {
             onView(withId(R.id.rowEditProfile)).perform(click())
 
-            onView(withId(R.id.etDisplayName)).check(matches(isDisplayed()))
+            eventually { onView(withId(R.id.etDisplayName)).check(matches(isDisplayed())) }
         }
     }
 
@@ -47,7 +47,7 @@ class ProfileActivityUiTest : UiTestBase() {
         ActivityScenario.launch(ProfileActivity::class.java).use {
             onView(withId(R.id.rowLogout)).perform(click())
 
-            onView(withId(R.id.btnLogin)).check(matches(isDisplayed()))
+            eventually { onView(withId(R.id.btnLogin)).check(matches(isDisplayed())) }
         }
 
         assertFalse(UserSession.isLoggedIn())

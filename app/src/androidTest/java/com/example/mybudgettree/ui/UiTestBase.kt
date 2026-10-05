@@ -66,18 +66,28 @@ abstract class UiTestBase {
      * actually finished and updated the UI
      */
     protected fun waitForText(text: String, timeoutMs: Long = 5000, intervalMs: Long = 200) {
+        eventually(timeoutMs, intervalMs) { onView(withText(text)).check(matches(isDisplayed())) }
+    }
+
+    /**
+     * Retries [block] until it stops throwing or [timeoutMs] runs out, then rethrows the last
+     * failure. Wrap any Espresso check whose result depends on async work (data loaded from
+     * Room, or a new Activity being launched after a click) rather than assuming it has
+     * already happened by the time Espresso looks.
+     */
+    protected fun eventually(timeoutMs: Long = 5000, intervalMs: Long = 200, block: () -> Unit) {
         val deadline = System.currentTimeMillis() + timeoutMs
         var lastError: Throwable? = null
         while (System.currentTimeMillis() < deadline) {
             try {
-                onView(withText(text)).check(matches(isDisplayed()))
+                block()
                 return
             } catch (e: Throwable) {
                 lastError = e
                 Thread.sleep(intervalMs)
             }
         }
-        throw lastError ?: AssertionError("Timed out waiting for text: $text")
+        throw lastError ?: AssertionError("Timed out waiting for condition")
     }
 
     protected fun createTestUser(username: String = "testuser", password: String = "password123"): User = runBlocking {
