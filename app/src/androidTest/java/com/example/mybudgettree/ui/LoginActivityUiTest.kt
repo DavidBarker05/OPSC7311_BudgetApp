@@ -7,10 +7,13 @@ import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.isEnabled
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.mybudgettree.LoginActivity
 import com.example.mybudgettree.R
+import com.example.mybudgettree.UserSession
+import org.junit.Assert.assertFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -30,7 +33,8 @@ class LoginActivityUiTest : UiTestBase() {
             onView(withId(R.id.etPassword)).perform(typeText("correctPass1"), closeSoftKeyboard())
             onView(withId(R.id.btnLogin)).perform(click())
 
-            onView(withId(R.id.tvWelcomeSanctuary)).check(matches(isDisplayed()))
+            // login is checked against Room asynchronously before Home is launched
+            eventually { onView(withId(R.id.tvWelcomeSanctuary)).check(matches(isDisplayed())) }
         }
     }
 
@@ -43,8 +47,13 @@ class LoginActivityUiTest : UiTestBase() {
             onView(withId(R.id.etPassword)).perform(typeText("wrongPassword"), closeSoftKeyboard())
             onView(withId(R.id.btnLogin)).perform(click())
 
+            // the button is disabled while the login attempt runs, so waiting for it to come
+            // back proves the attempt actually finished (and failed) before we assert on it
+            eventually { onView(withId(R.id.btnLogin)).check(matches(isEnabled())) }
+
             // no navigation should have happened — the login button is still on screen
             onView(withId(R.id.btnLogin)).check(matches(isDisplayed()))
+            assertFalse(UserSession.isLoggedIn())
         }
     }
 
@@ -57,7 +66,7 @@ class LoginActivityUiTest : UiTestBase() {
             onView(withId(R.id.etPassword)).perform(typeText("correctPass1"), closeSoftKeyboard())
             onView(withId(R.id.btnLogin)).perform(click())
 
-            onView(withId(R.id.tvWelcomeSanctuary)).check(matches(isDisplayed()))
+            eventually { onView(withId(R.id.tvWelcomeSanctuary)).check(matches(isDisplayed())) }
         }
     }
 }

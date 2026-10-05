@@ -26,7 +26,8 @@ class AnalysisActivityUiTest : UiTestBase() {
         ActivityScenario.launch(AnalysisActivity::class.java).use {
             onView(withId(R.id.btnDaily)).check(matches(isChecked()))
             onView(withId(R.id.btnWeekly)).check(matches(isNotChecked()))
-            onView(withId(R.id.tvBudgetPercent)).check(matches(withText("0%")))
+            // the budget bar text is filled in by an async load from Room
+            eventually { onView(withId(R.id.tvBudgetPercent)).check(matches(withText("0%"))) }
         }
     }
 
@@ -37,8 +38,10 @@ class AnalysisActivityUiTest : UiTestBase() {
         ActivityScenario.launch(AnalysisActivity::class.java).use {
             onView(withId(R.id.btnWeekly)).perform(click())
 
-            onView(withId(R.id.btnWeekly)).check(matches(isChecked()))
-            onView(withId(R.id.btnDaily)).check(matches(isNotChecked()))
+            eventually {
+                onView(withId(R.id.btnWeekly)).check(matches(isChecked()))
+                onView(withId(R.id.btnDaily)).check(matches(isNotChecked()))
+            }
         }
     }
 
@@ -47,7 +50,7 @@ class AnalysisActivityUiTest : UiTestBase() {
         UserSession.login(createTestUser(username = "analysisuser3"))
 
         ActivityScenario.launch(AnalysisActivity::class.java).use {
-            onView(withId(R.id.tvExpenseStatus)).check(matches(isDisplayed()))
+            eventually { onView(withId(R.id.tvExpenseStatus)).check(matches(isDisplayed())) }
         }
     }
 }

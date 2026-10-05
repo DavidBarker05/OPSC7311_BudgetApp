@@ -34,7 +34,8 @@ class EditProfileDeleteAccountUiTest : UiTestBase() {
             onView(withId(R.id.btnDeleteAccount)).perform(scrollTo(), click())
             onView(withText(R.string.delete)).perform(click())
 
-            onView(withId(R.id.btnLogin)).check(matches(isDisplayed()))
+            // the user is deleted asynchronously before the Welcome screen is launched
+            eventually { onView(withId(R.id.btnLogin)).check(matches(isDisplayed())) }
         }
 
         val stillExists = runBlocking { app.userDatabaseSystem.doesUserExist("deleteme") }

@@ -32,10 +32,12 @@ class WateringCanActivityUiTest : UiTestBase() {
         UserSession.login(createTestUser(username = "wateringuser2"))
 
         ActivityScenario.launch(WateringCanActivity::class.java).use {
-            // the "+" add-goal tile is the only item seeded for a fresh user with no goals yet
+            // the "+" add-goal tile is the only item for a fresh user with no goals yet, and
+            // it only appears once the goals have been loaded from Room
+            waitForText(app.getString(R.string.more))
             onView(withText(R.string.more)).perform(click())
 
-            onView(withId(R.id.etNewGoalName)).check(matches(isDisplayed()))
+            eventually { onView(withId(R.id.etNewGoalName)).check(matches(isDisplayed())) }
         }
     }
 }
