@@ -1,41 +1,41 @@
 package com.example.mybudgettree.database.entries
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import androidx.room.ForeignKey
-import androidx.room.ColumnInfo
-import androidx.room.Index
 import java.time.LocalDate
 import java.time.LocalDateTime
+import com.google.firebase.firestore.DocumentId
 
 /**
- * A single deposit against a savings goal
+ * A single deposit against a savings goal, stored in Firestore at `users/{uid}/savingsContributions/{id}`.
+ * The owning user is identified by the path rather than a field, while the goal it applies to is
+ * referenced by [goalId]
  *
- * @property id The auto-generated primary key for the contribution
- * @property goalId The id of the [SavingsGoal] this contribution applies to
+ * The date and time are stored as ISO-8601 strings, since Firestore can't store `java.time` types; use the
+ * `...As...` functions to read them back as `java.time` objects
+ *
+ * @property id The auto-generated document ID, filled in from the document rather than stored as a field
+ * @property goalId The id of the [SavingsGoal] this contribution applies to; Firestore doesn't enforce this link, so it must be validated in code
  * @property amount The amount deposited
- * @property date The date the contribution was made
- * @property createdAt The moment the contribution was recorded, kept for future watering-can logic
+ * @property date The date the contribution was made, as an ISO-8601 date (e.g. "2026-10-05")
+ * @property createdAt The moment the contribution was recorded, as an ISO-8601 date-time (e.g. "2026-10-05T14:30:00"), kept for future watering-can logic
  */
-@Entity(
-    tableName = "savings_contributions",
-    foreignKeys = [
-        ForeignKey(
-            entity = SavingsGoal::class,
-            parentColumns = ["id"],
-            childColumns = ["goal_id"],
-            onUpdate = ForeignKey.CASCADE,
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [
-        Index(value = ["goal_id"])
-    ]
-)
 data class SavingsContribution(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    @ColumnInfo(name = "goal_id") val goalId: Long,
-    val amount: Double,
-    val date: LocalDate,
-    @ColumnInfo(name = "created_at") val createdAt: LocalDateTime
-)
+    @DocumentId val id: String = "",
+    val goalId: String = "",
+    val amount: Double = 0.0,
+    val date: String = "",
+    val createdAt: String = ""
+) {
+    /**
+     * Parses [date] into a [LocalDate]
+     *
+     * @return The date the contribution was made
+     */
+    fun dateAsLocalDate(): LocalDate = LocalDate.parse(date)
+
+    /**
+     * Parses [createdAt] into a [LocalDateTime]
+     *
+     * @return The moment the contribution was recorded
+     */
+    fun createdAtAsLocalDateTime(): LocalDateTime = LocalDateTime.parse(createdAt)
+}
