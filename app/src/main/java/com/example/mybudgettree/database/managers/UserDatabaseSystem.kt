@@ -40,15 +40,6 @@ class UserDatabaseSystem(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
-    /*
-    /**
-     * This system manages user state, credentials validation, account discovery, updates, and removals
-     *
-     * @property userDao The underlying Data Access Object managing RoomDB operations
-     */
-    class UserDatabaseSystem(private val userDao: UserDao) {
-    */
-
     private val users get() = db.collection("users")
     private val phoneNumbers get() = db.collection("phoneNumbers")
 
