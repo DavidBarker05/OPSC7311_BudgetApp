@@ -82,14 +82,21 @@ class UserDatabaseSystem(
                 Log.w(TAG, "Failed $verbOnFailure $messageDetails: $errMsg")
         }
 
-        private fun logUpdateOutcome(
+        private fun logOutcome(
             status: UpdateUserReturnStatus,
             messageDetails: String,
             errMsg: String?
         ) {
             when (status) {
-                UpdateUserReturnStatus.Succeeded -> Log.i(TAG, "Successfully updated $messageDetails")
-                UpdateUserReturnStatus.Failed -> Log.w(TAG, "Failed to update $messageDetails: $errMsg")
+                UpdateUserReturnStatus.Succeeded, UpdateUserReturnStatus.Failed -> {
+                    logOutcome(
+                        wasSuccessful = status == UpdateUserReturnStatus.Succeeded,
+                        verbOnSuccess = "updated",
+                        verbOnFailure = "to update",
+                        messageDetails = messageDetails,
+                        errMsg = errMsg
+                    )
+                }
                 UpdateUserReturnStatus.NoChange -> Log.d(TAG, "No change, $messageDetails is already up to date")
                 UpdateUserReturnStatus.PendingVerification -> Log.i(TAG, "Started update for $messageDetails, waiting for the user to verify it")
             }
@@ -408,7 +415,7 @@ class UserDatabaseSystem(
      */
     suspend fun updateEmail(user: User, newEmail: String): UpdateUserReturnInfo {
         val result = tryUpdateEmail(user, newEmail)
-        logUpdateOutcome(
+        logOutcome(
             status = result.status,
             messageDetails = "email for user '${user.uid}'",
             errMsg = result.errMsg
@@ -452,7 +459,7 @@ class UserDatabaseSystem(
      */
     suspend fun updatePassword(user: User, newPassword: String): UpdateUserReturnInfo {
         val result = tryUpdatePassword(user, newPassword)
-        logUpdateOutcome(
+        logOutcome(
             status = result.status,
             messageDetails = "password for user '${user.uid}'",
             errMsg = result.errMsg
@@ -488,7 +495,7 @@ class UserDatabaseSystem(
      */
     suspend fun updatePhoneNumber(user: User, newPhoneNumber: String): UpdateUserReturnInfo {
         val result = tryUpdatePhoneNumber(user, newPhoneNumber)
-        logUpdateOutcome(
+        logOutcome(
             status = result.status,
             messageDetails = "phone number for user '${user.uid}'",
             errMsg = result.errMsg
@@ -535,7 +542,7 @@ class UserDatabaseSystem(
      */
     suspend fun updateDisplayName(user: User, newDisplayName: String): UpdateUserReturnInfo {
         val result = tryUpdateDisplayName(user, newDisplayName)
-        logUpdateOutcome(
+        logOutcome(
             status = result.status,
             messageDetails = "display name for user '${user.uid}'",
             errMsg = result.errMsg
@@ -558,7 +565,7 @@ class UserDatabaseSystem(
      */
     suspend fun updateDateOfBirth(user: User, newDateOfBirth: LocalDate): UpdateUserReturnInfo {
         val result = tryUpdateDateOfBirth(user, newDateOfBirth)
-        logUpdateOutcome(
+        logOutcome(
             status = result.status,
             messageDetails = "date of birth for user '${user.uid}'",
             errMsg = result.errMsg
@@ -580,7 +587,7 @@ class UserDatabaseSystem(
      */
     suspend fun updateCurrency(user: User, newCurrency: String): UpdateUserReturnInfo {
         val result = tryUpdateCurrency(user, newCurrency)
-        logUpdateOutcome(
+        logOutcome(
             status = result.status,
             messageDetails = "currency for user '${user.uid}'",
             errMsg = result.errMsg
@@ -603,7 +610,7 @@ class UserDatabaseSystem(
      */
     suspend fun updateProfilePhoto(user: User, newProfilePhotoPath: String?): UpdateUserReturnInfo {
         val result = tryUpdateProfilePhoto(user, newProfilePhotoPath)
-        logUpdateOutcome(
+        logOutcome(
             status = result.status,
             messageDetails = "profile photo for user '${user.uid}'",
             errMsg = result.errMsg
