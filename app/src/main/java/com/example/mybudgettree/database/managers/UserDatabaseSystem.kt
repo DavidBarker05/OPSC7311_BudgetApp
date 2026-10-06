@@ -2,9 +2,6 @@ package com.example.mybudgettree.database.managers
 
 import android.util.Log
 import android.util.Patterns
-import com.example.mybudgettree.database.entries.PhoneNumberLookup
-import com.example.mybudgettree.database.entries.User
-import com.example.mybudgettree.database.entries.UserTree
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.FirebaseTooManyRequestsException
 import java.time.LocalDate
@@ -20,10 +17,16 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+
+import com.example.mybudgettree.database.entries.PhoneNumberLookup
+import com.example.mybudgettree.database.entries.User
+import com.example.mybudgettree.database.entries.UserTree
+import com.example.mybudgettree.database.managers.shared.*
 
 /**
  * This system manages user state, credentials validation, account discovery, updates, and removals
@@ -59,118 +62,6 @@ class UserDatabaseSystem(
             val digitsOnly = phoneNumber.filter { it.isDigit() }
             return if (hasLeadingPlus) "+$digitsOnly" else digitsOnly
         }
-
-        private fun logOutcome(
-            wasSuccessful: Boolean,
-            verbOnSuccess: String,
-            verbOnFailure: String,
-            messageDetails: String,
-            errMsg: String?
-        ) {
-            if (wasSuccessful)
-                Log.i(TAG, "Successfully $verbOnSuccess $messageDetails")
-            else
-                Log.w(TAG, "Failed $verbOnFailure $messageDetails: $errMsg")
-        }
-
-        private fun logOutcome(
-            status: UpdateUserReturnStatus,
-            messageDetails: String,
-            errMsg: String?
-        ) {
-            when (status) {
-                UpdateUserReturnStatus.Succeeded, UpdateUserReturnStatus.Failed -> {
-                    logOutcome(
-                        wasSuccessful = status == UpdateUserReturnStatus.Succeeded,
-                        verbOnSuccess = "updated",
-                        verbOnFailure = "to update",
-                        messageDetails = messageDetails,
-                        errMsg = errMsg
-                    )
-                }
-                UpdateUserReturnStatus.NoChange -> Log.d(TAG, "No change, $messageDetails is already up to date")
-                UpdateUserReturnStatus.PendingVerification -> Log.i(TAG, "Started update for $messageDetails, waiting for the user to verify it")
-            }
-        }
-    }
-
-    /**
-     * Wraps the update creation return in a detailed form
-     *
-     * @property wasSuccessful True if the user profile was created without error, false otherwise
-     * @property user The newly created [User] record if successful, or null on execution failure
-     * @property errMsg The explanatory message detailing why creation failed, or null if successful
-     */
-    data class CreateUserReturnInfo(
-        val wasSuccessful: Boolean,
-        val user: User? = null,
-        val errMsg: String? = null
-    )
-
-    /**
-     * Wraps the search request return in a detailed form
-     *
-     * @property wasSuccessful True if the target record was found, false otherwise
-     * @property user The retrieved [User] entity if located, or null if the record doesn't exist
-     * @property errMsg The diagnostic message stating the cause of failure, or null if found
-     */
-    data class FindUserReturnInfo(
-        val wasSuccessful: Boolean,
-        val user: User? = null,
-        val errMsg: String? = null
-    )
-
-    /**
-     * Identifies exactly what happened when updating a user
-     */
-    enum class UpdateUserReturnStatus {
-        /**
-         * The update failed
-         */
-        Failed,
-        /**
-         * The update did not change any data, but did not fail
-         */
-        NoChange,
-        /**
-         * The update successfully changed data
-         */
-        Succeeded,
-        /**
-         * The update was started but only takes effect once the user confirms it from a link sent to them
-         */
-        PendingVerification
-    }
-
-    /**
-     * Wraps the update request return in a detailed form
-     *
-     * @property status A [UpdateUserReturnStatus] specifying the operation outcome
-     * @property user The modified [User] profile containing updated fields, or null if the task failed
-     * @property errMsg The error message, only set if the [status] is [UpdateUserReturnStatus.Failed]
-     */
-    data class UpdateUserReturnInfo(
-        val status: UpdateUserReturnStatus,
-        val user: User? = null,
-        val errMsg: String? = null
-    )
-
-    /**
-     * Indicates what happened when trying to delete a user
-     */
-    enum class UserDeleteReturnStatus {
-        /**
-         * The user couldn't be deleted because it doesn't exist in the database
-         */
-        DoesNotExist,
-        /**
-         * The user was successfully deleted
-         */
-        Deleted,
-        /**
-         * The password was wrong, or the session could not be confirmed, so nothing was deleted
-         */
-        ReauthenticationFailed
     }
 
     /**
@@ -187,7 +78,7 @@ class UserDatabaseSystem(
      * @param displayName The name shown for the user
      * @param dateOfBirth The user's date of birth
      * @param currency The user's preferred currency
-     * @return A [CreateUserReturnInfo] indicating what happened with the creation
+     * @return A [CreateReturnInfo] indicating what happened with the creation
      */
     suspend fun createUser(
         email: String,
@@ -196,9 +87,10 @@ class UserDatabaseSystem(
         displayName: String,
         dateOfBirth: LocalDate,
         currency: String
-    ): CreateUserReturnInfo {
+    ): CreateReturnInfo<User> {
         val result = tryCreateUser(email, password, phoneNumber, displayName, dateOfBirth, currency)
         logOutcome(
+            tag = TAG,
             wasSuccessful = result.wasSuccessful,
             verbOnSuccess = "created",
             verbOnFailure = "to create",
@@ -215,15 +107,15 @@ class UserDatabaseSystem(
         displayName: String,
         dateOfBirth: LocalDate,
         currency: String
-    ): CreateUserReturnInfo {
-        if (email.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Email is empty")
-        if (password.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Password is empty")
-        if (phoneNumber.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is empty")
-        if (displayName.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Display name is empty")
-        if (currency.isBlank()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Currency is empty")
-        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Email is not a valid email address")
+    ): CreateReturnInfo<User> {
+        if (email.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Email is empty")
+        if (password.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Password is empty")
+        if (phoneNumber.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Phone number is empty")
+        if (displayName.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Display name is empty")
+        if (currency.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Currency is empty")
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Email is not a valid email address")
         val normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
-        if (!PHONE_NUMBER_REGEX.matches(normalizedPhoneNumber)) return CreateUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is not a valid phone number")
+        if (!PHONE_NUMBER_REGEX.matches(normalizedPhoneNumber)) return CreateReturnInfo(wasSuccessful = false, errMsg = "Phone number is not a valid phone number")
         var createdAuthUser: FirebaseUser? = null
         var wasCreated = false
         return try {
@@ -253,25 +145,25 @@ class UserDatabaseSystem(
                     false
                 }
             }.await()
-            if (isPhoneNumberTaken) CreateUserReturnInfo(wasSuccessful = false, errMsg = "Phone number is already in use")
+            if (isPhoneNumberTaken) CreateReturnInfo<User>(wasSuccessful = false, errMsg = "Phone number is already in use")
             wasCreated = true
             // The uid is not stored as a field, so add it back for the caller
-            CreateUserReturnInfo(wasSuccessful = true, user = profile.copy(uid = uid))
+            CreateReturnInfo(wasSuccessful = true, value = profile.copy(uid = uid))
         } catch (_: FirebaseAuthUserCollisionException) {
-            CreateUserReturnInfo(wasSuccessful = false, errMsg = "Email is already in use")
+            CreateReturnInfo(wasSuccessful = false, errMsg = "Email is already in use")
         } catch (_: FirebaseAuthWeakPasswordException) {
-            CreateUserReturnInfo(wasSuccessful = false, errMsg = "Password is too weak")
+            CreateReturnInfo(wasSuccessful = false, errMsg = "Password is too weak")
         } catch (_: FirebaseAuthInvalidCredentialsException) {
-            CreateUserReturnInfo(wasSuccessful = false, errMsg = "Email is not a valid email address")
+            CreateReturnInfo(wasSuccessful = false, errMsg = "Email is not a valid email address")
         } catch (_: FirebaseNetworkException) {
-            CreateUserReturnInfo(wasSuccessful = false, errMsg = "No internet connection")
+            CreateReturnInfo(wasSuccessful = false, errMsg = "No internet connection")
         } catch (_: FirebaseTooManyRequestsException) {
-            CreateUserReturnInfo(wasSuccessful = false, errMsg = "Too many attempts, please try again later")
+            CreateReturnInfo(wasSuccessful = false, errMsg = "Too many attempts, please try again later")
         } catch (e: CancellationException) {
             throw e // Rethrow so the generic catch below doesn't swallow the cancellation
                     // Kotlin then ends the coroutine quietly
         } catch (e: Exception) {
-            CreateUserReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not create account")
+            CreateReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not create account")
         } finally {
             // Roll back the half-created account. NonCancellable so this still runs if the screen was closed
             // mid-signup, and runCatching so a failed delete can't hide the original error
@@ -290,11 +182,12 @@ class UserDatabaseSystem(
      *
      * @param email The email entered on the login screen
      * @param password The password to check
-     * @return A [FindUserReturnInfo] with the matching user if the credentials are valid
+     * @return A [FindReturnInfo] with the matching user if the credentials are valid
      */
-    suspend fun login(email: String, password: String): FindUserReturnInfo {
+    suspend fun login(email: String, password: String): FindReturnInfo<User> {
         val result = tryLogin(email, password)
         logOutcome(
+            tag = TAG,
             wasSuccessful = result.wasSuccessful,
             verbOnSuccess = "login",
             verbOnFailure = "login attempt",
@@ -304,31 +197,31 @@ class UserDatabaseSystem(
         return result
     }
 
-    private suspend fun tryLogin(email: String, password: String): FindUserReturnInfo {
-        if (email.isBlank()) return FindUserReturnInfo(wasSuccessful = false, errMsg = "Email is empty")
-        if (password.isBlank()) return FindUserReturnInfo(wasSuccessful = false, errMsg = "Password is empty")
+    private suspend fun tryLogin(email: String, password: String): FindReturnInfo<User> {
+        if (email.isBlank()) return FindReturnInfo(wasSuccessful = false, errMsg = "Email is empty")
+        if (password.isBlank()) return FindReturnInfo(wasSuccessful = false, errMsg = "Password is empty")
         return try {
             val authUser = auth.signInWithEmailAndPassword(email.trim(), password).await().user!!
-            val profile = users.document(authUser.uid).get().await().toObject(User::class.java)
+            val profile = users.document(authUser.uid).get().await().toObject<User>()
             if (profile == null) {
                 auth.signOut() // an account without a profile can't be used
-                FindUserReturnInfo(wasSuccessful = false, errMsg = "Invalid email or password")
+                FindReturnInfo(wasSuccessful = false, errMsg = "Invalid email or password")
             } else {
-                FindUserReturnInfo(wasSuccessful = true, user = syncEmail(authUser, profile))
+                FindReturnInfo(wasSuccessful = true, value = syncEmail(authUser, profile))
             }
         } catch (_: FirebaseAuthInvalidUserException) {
-            FindUserReturnInfo(wasSuccessful = false, errMsg = "Invalid email or password")
+            FindReturnInfo(wasSuccessful = false, errMsg = "Invalid email or password")
         } catch (_: FirebaseAuthInvalidCredentialsException) {
-            FindUserReturnInfo(wasSuccessful = false, errMsg = "Invalid email or password")
+            FindReturnInfo(wasSuccessful = false, errMsg = "Invalid email or password")
         } catch (_: FirebaseNetworkException) {
-            FindUserReturnInfo(wasSuccessful = false, errMsg = "No internet connection")
+            FindReturnInfo(wasSuccessful = false, errMsg = "No internet connection")
         } catch (_: FirebaseTooManyRequestsException) {
-            FindUserReturnInfo(wasSuccessful = false, errMsg = "Too many attempts, please try again later")
+            FindReturnInfo(wasSuccessful = false, errMsg = "Too many attempts, please try again later")
         } catch (e: CancellationException) {
             throw e // Rethrow so the generic catch below doesn't swallow the cancellation
                     // Kotlin then ends the coroutine quietly
         } catch (e: Exception) {
-            FindUserReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not log in")
+            FindReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not log in")
         }
     }
 
@@ -340,7 +233,7 @@ class UserDatabaseSystem(
     suspend fun getCurrentUser(): User? {
         val uid = auth.currentUser?.uid ?: return null
         return try {
-            users.document(uid).get().await().toObject(User::class.java)
+            users.document(uid).get().await().toObject<User>()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -377,36 +270,20 @@ class UserDatabaseSystem(
     }
 
     /**
-     * Check if the user still exists in the database
-     *
-     * @param user The [User] to validate
-     * @return True if the user still exists, false otherwise
-     */
-    suspend fun isUserValid(user: User): Boolean {
-        if (auth.currentUser?.uid != user.uid) return false
-        return try {
-            users.document(user.uid).get().await().exists()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    /**
      * Updates the email for the user
      *
      * Firebase does not change the email straight away. It sends a verification link to the new address, and the
-     * email only changes once the user clicks it, so this returns [UpdateUserReturnStatus.PendingVerification]
+     * email only changes once the user clicks it, so this returns [UpdateReturnStatus.PendingVerification]
      * with the unchanged user. The profile is brought up to date on the next [login]
      *
      * @param user The [User] being updated
      * @param newEmail The new email
-     * @return An [UpdateUserReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateEmail(user: User, newEmail: String): UpdateUserReturnInfo {
+    suspend fun updateEmail(user: User, newEmail: String): UpdateReturnInfo<User> {
         val result = tryUpdateEmail(user, newEmail)
         logOutcome(
+            tag = TAG,
             status = result.status,
             messageDetails = "email for user '${user.uid}'",
             errMsg = result.errMsg
@@ -414,26 +291,25 @@ class UserDatabaseSystem(
         return result
     }
 
-    private suspend fun tryUpdateEmail(user: User, newEmail: String): UpdateUserReturnInfo {
-        if (newEmail.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New email is empty")
-        if (user.email == newEmail) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
-        if (!Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Email is not a valid email address")
+    private suspend fun tryUpdateEmail(user: User, newEmail: String): UpdateReturnInfo<User> {
+        if (newEmail.isBlank()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New email is empty")
+        if (user.email == newEmail) return UpdateReturnInfo(status = UpdateReturnStatus.NoChange, value = user)
+        if (!Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Email is not a valid email address")
         val authUser = auth.currentUser
-        if (authUser == null || authUser.uid != user.uid) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+        if (authUser == null || authUser.uid != user.uid) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "User does not exist")
         return try {
             authUser.verifyBeforeUpdateEmail(newEmail).await()
-            UpdateUserReturnInfo(status = UpdateUserReturnStatus.PendingVerification, user = user)
+            UpdateReturnInfo(status = UpdateReturnStatus.PendingVerification, value = user)
         } catch (_: FirebaseAuthUserCollisionException) {
-            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Email is already in use")
+            UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Email is already in use")
         } catch (_: FirebaseAuthInvalidCredentialsException) {
-            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Email is not a valid email address")
+            UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Email is not a valid email address")
         } catch (_: FirebaseAuthRecentLoginRequiredException) {
-            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Please log in again before changing your email")
+            UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Please log in again before changing your email")
         } catch (e: CancellationException) {
-            throw e // Rethrow so the generic catch below doesn't swallow the cancellation
-                    // Kotlin then ends the coroutine quietly
+            throw e
         } catch (e: Exception) {
-            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = e.message ?: "Could not update email")
+            UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = e.message ?: "Could not update email")
         }
     }
 
@@ -446,11 +322,12 @@ class UserDatabaseSystem(
      *
      * @param user The [User] being updated
      * @param newPassword The new password
-     * @return An [UpdateUserReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updatePassword(user: User, newPassword: String): UpdateUserReturnInfo {
+    suspend fun updatePassword(user: User, newPassword: String): UpdateReturnInfo<User> {
         val result = tryUpdatePassword(user, newPassword)
         logOutcome(
+            tag = TAG,
             status = result.status,
             messageDetails = "password for user '${user.uid}'",
             errMsg = result.errMsg
@@ -458,22 +335,21 @@ class UserDatabaseSystem(
         return result
     }
 
-    private suspend fun tryUpdatePassword(user: User, newPassword: String): UpdateUserReturnInfo {
-        if (newPassword.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New password is empty")
+    private suspend fun tryUpdatePassword(user: User, newPassword: String): UpdateReturnInfo<User> {
+        if (newPassword.isBlank()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New password is empty")
         val authUser = auth.currentUser
-        if (authUser == null || authUser.uid != user.uid) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+        if (authUser == null || authUser.uid != user.uid) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "User does not exist")
         return try {
             authUser.updatePassword(newPassword).await()
-            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user)
+            UpdateReturnInfo(status = UpdateReturnStatus.Succeeded, value = user)
         } catch (_: FirebaseAuthWeakPasswordException) {
-            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Password is too weak")
+            UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Password is too weak")
         } catch (_: FirebaseAuthRecentLoginRequiredException) {
-            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Please log in again before changing your password")
+            UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Please log in again before changing your password")
         } catch (e: CancellationException) {
-            throw e // Rethrow so the generic catch below doesn't swallow the cancellation
-                    // Kotlin then ends the coroutine quietly
+            throw e
         } catch (e: Exception) {
-            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = e.message ?: "Could not update password")
+            UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = e.message ?: "Could not update password")
         }
     }
 
@@ -482,11 +358,12 @@ class UserDatabaseSystem(
      *
      * @param user The [User] being updated
      * @param newPhoneNumber The new phone number
-     * @return An [UpdateUserReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updatePhoneNumber(user: User, newPhoneNumber: String): UpdateUserReturnInfo {
+    suspend fun updatePhoneNumber(user: User, newPhoneNumber: String): UpdateReturnInfo<User> {
         val result = tryUpdatePhoneNumber(user, newPhoneNumber)
         logOutcome(
+            tag = TAG,
             status = result.status,
             messageDetails = "phone number for user '${user.uid}'",
             errMsg = result.errMsg
@@ -494,12 +371,12 @@ class UserDatabaseSystem(
         return result
     }
 
-    private suspend fun tryUpdatePhoneNumber(user: User, newPhoneNumber: String): UpdateUserReturnInfo {
-        if (newPhoneNumber.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New phone number is empty")
+    private suspend fun tryUpdatePhoneNumber(user: User, newPhoneNumber: String): UpdateReturnInfo<User> {
+        if (newPhoneNumber.isBlank()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New phone number is empty")
         val normalizedNewPhoneNumber = normalizePhoneNumber(newPhoneNumber)
-        if (user.phoneNumber == normalizedNewPhoneNumber) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
-        if (!PHONE_NUMBER_REGEX.matches(normalizedNewPhoneNumber)) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Phone number is not a valid phone number")
-        if (auth.currentUser?.uid != user.uid) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+        if (user.phoneNumber == normalizedNewPhoneNumber) return UpdateReturnInfo(status = UpdateReturnStatus.NoChange, value = user)
+        if (!PHONE_NUMBER_REGEX.matches(normalizedNewPhoneNumber)) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Phone number is not a valid phone number")
+        if (auth.currentUser?.uid != user.uid) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "User does not exist")
         return try {
             val oldPhoneRef = phoneNumbers.document(user.phoneNumber)
             val newPhoneRef = phoneNumbers.document(normalizedNewPhoneNumber)
@@ -514,13 +391,12 @@ class UserDatabaseSystem(
                     false
                 }
             }.await()
-            if (isTaken) UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "Phone number is already in use")
-            else UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = user.copy(phoneNumber = normalizedNewPhoneNumber))
+            if (isTaken) UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Phone number is already in use")
+            else UpdateReturnInfo(status = UpdateReturnStatus.Succeeded, value = user.copy(phoneNumber = normalizedNewPhoneNumber))
         } catch (e: CancellationException) {
-            throw e // Rethrow so the generic catch below doesn't swallow the cancellation
-                    // Kotlin then ends the coroutine quietly
+            throw e
         } catch (e: Exception) {
-            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = e.message ?: "Could not update phone number")
+            UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = e.message ?: "Could not update phone number")
         }
     }
 
@@ -529,11 +405,12 @@ class UserDatabaseSystem(
      *
      * @param user The [User] being updated
      * @param newDisplayName The new display name
-     * @return An [UpdateUserReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateDisplayName(user: User, newDisplayName: String): UpdateUserReturnInfo {
+    suspend fun updateDisplayName(user: User, newDisplayName: String): UpdateReturnInfo<User> {
         val result = tryUpdateDisplayName(user, newDisplayName)
         logOutcome(
+            tag = TAG,
             status = result.status,
             messageDetails = "display name for user '${user.uid}'",
             errMsg = result.errMsg
@@ -541,9 +418,9 @@ class UserDatabaseSystem(
         return result
     }
 
-    private suspend fun tryUpdateDisplayName(user: User, newDisplayName: String): UpdateUserReturnInfo {
-        if (newDisplayName.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New display name is empty")
-        if (user.displayName == newDisplayName) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+    private suspend fun tryUpdateDisplayName(user: User, newDisplayName: String): UpdateReturnInfo<User> {
+        if (newDisplayName.isBlank()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New display name is empty")
+        if (user.displayName == newDisplayName) return UpdateReturnInfo(status = UpdateReturnStatus.NoChange, value = user)
         return updateProfileField(user, "displayName", newDisplayName, user.copy(displayName = newDisplayName))
     }
 
@@ -552,11 +429,12 @@ class UserDatabaseSystem(
      *
      * @param user The [User] being updated
      * @param newDateOfBirth The new date of birth
-     * @return An [UpdateUserReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateDateOfBirth(user: User, newDateOfBirth: LocalDate): UpdateUserReturnInfo {
+    suspend fun updateDateOfBirth(user: User, newDateOfBirth: LocalDate): UpdateReturnInfo<User> {
         val result = tryUpdateDateOfBirth(user, newDateOfBirth)
         logOutcome(
+            tag = TAG,
             status = result.status,
             messageDetails = "date of birth for user '${user.uid}'",
             errMsg = result.errMsg
@@ -564,8 +442,8 @@ class UserDatabaseSystem(
         return result
     }
 
-    private suspend fun tryUpdateDateOfBirth(user: User, newDateOfBirth: LocalDate): UpdateUserReturnInfo {
-        if (user.dateOfBirth == newDateOfBirth.toString()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+    private suspend fun tryUpdateDateOfBirth(user: User, newDateOfBirth: LocalDate): UpdateReturnInfo<User> {
+        if (user.dateOfBirth == newDateOfBirth.toString()) return UpdateReturnInfo(status = UpdateReturnStatus.NoChange, value = user)
         return updateProfileField(user, "dateOfBirth", newDateOfBirth.toString(), user.copy(dateOfBirth = newDateOfBirth.toString()))
     }
 
@@ -574,11 +452,12 @@ class UserDatabaseSystem(
      *
      * @param user The [User] being updated
      * @param newCurrency The new currency
-     * @return An [UpdateUserReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateCurrency(user: User, newCurrency: String): UpdateUserReturnInfo {
+    suspend fun updateCurrency(user: User, newCurrency: String): UpdateReturnInfo<User> {
         val result = tryUpdateCurrency(user, newCurrency)
         logOutcome(
+            tag = TAG,
             status = result.status,
             messageDetails = "currency for user '${user.uid}'",
             errMsg = result.errMsg
@@ -586,9 +465,9 @@ class UserDatabaseSystem(
         return result
     }
 
-    private suspend fun tryUpdateCurrency(user: User, newCurrency: String): UpdateUserReturnInfo {
-        if (newCurrency.isBlank()) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New currency is empty")
-        if (user.currency == newCurrency) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+    private suspend fun tryUpdateCurrency(user: User, newCurrency: String): UpdateReturnInfo<User> {
+        if (newCurrency.isBlank()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New currency is empty")
+        if (user.currency == newCurrency) return UpdateReturnInfo(status = UpdateReturnStatus.NoChange, value = user)
         return updateProfileField(user, "currency", newCurrency, user.copy(currency = newCurrency))
     }
 
@@ -597,11 +476,12 @@ class UserDatabaseSystem(
      *
      * @param user The [User] being updated
      * @param newProfilePhotoPath The new profile photo path, or null to remove it
-     * @return An [UpdateUserReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateProfilePhoto(user: User, newProfilePhotoPath: String?): UpdateUserReturnInfo {
+    suspend fun updateProfilePhoto(user: User, newProfilePhotoPath: String?): UpdateReturnInfo<User> {
         val result = tryUpdateProfilePhoto(user, newProfilePhotoPath)
         logOutcome(
+            tag = TAG,
             status = result.status,
             messageDetails = "profile photo for user '${user.uid}'",
             errMsg = result.errMsg
@@ -609,9 +489,9 @@ class UserDatabaseSystem(
         return result
     }
 
-    private suspend fun tryUpdateProfilePhoto(user: User, newProfilePhotoPath: String?): UpdateUserReturnInfo {
-        if (newProfilePhotoPath?.isBlank() ?: false) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "New profile photo path is empty")
-        if (user.profilePhoto == newProfilePhotoPath) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.NoChange, user = user)
+    private suspend fun tryUpdateProfilePhoto(user: User, newProfilePhotoPath: String?): UpdateReturnInfo<User> {
+        if (newProfilePhotoPath?.isBlank() ?: false) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New profile photo path is empty")
+        if (user.profilePhoto == newProfilePhotoPath) return UpdateReturnInfo(status = UpdateReturnStatus.NoChange, value = user)
         return updateProfileField(user, "profilePhoto", newProfilePhotoPath, user.copy(profilePhoto = newProfilePhotoPath))
     }
 
@@ -625,19 +505,20 @@ class UserDatabaseSystem(
      *
      * @param user The [User] to delete
      * @param password The user's current password, to confirm it is really them
-     * @return A status reflection from [UserDeleteReturnStatus]
+     * @return A status reflection from [DeleteReturnStatus]
      */
-    suspend fun deleteUser(user: User, password: String): UserDeleteReturnStatus {
+    suspend fun deleteUser(user: User, password: String): DeleteReturnStatus {
         val result = tryDeleteUser(user, password)
-        val wasSuccessful = result == UserDeleteReturnStatus.Deleted
+        val wasSuccessful = result == DeleteReturnStatus.Deleted
         val errMsg: String? =
             if (wasSuccessful) null
             else when (result) {
-                UserDeleteReturnStatus.DoesNotExist -> "user does not exist"
-                UserDeleteReturnStatus.ReauthenticationFailed -> "could not confirm the password"
-                else -> "unknown reason"
+                DeleteReturnStatus.DoesNotExist -> "User does not exist"
+                DeleteReturnStatus.ReauthenticationFailed -> "Could not confirm the password"
+                else -> "Unknown reason"
             }
         logOutcome(
+            tag = TAG,
             wasSuccessful = wasSuccessful,
             verbOnSuccess = "deleted",
             verbOnFailure = "to delete",
@@ -647,17 +528,16 @@ class UserDatabaseSystem(
         return result
     }
 
-    private suspend fun tryDeleteUser(user: User, password: String): UserDeleteReturnStatus {
+    private suspend fun tryDeleteUser(user: User, password: String): DeleteReturnStatus {
         val authUser = auth.currentUser
         val email = authUser?.email
-        if (authUser == null || email == null || authUser.uid != user.uid) return UserDeleteReturnStatus.DoesNotExist
+        if (authUser == null || email == null || authUser.uid != user.uid) return DeleteReturnStatus.DoesNotExist
         try {
             authUser.reauthenticate(EmailAuthProvider.getCredential(email, password)).await()
         } catch (e: CancellationException) {
-            throw e // Rethrow so the generic catch below doesn't swallow the cancellation
-                    // Kotlin then ends the coroutine quietly
+            throw e
         } catch (_: Exception) {
-            return UserDeleteReturnStatus.ReauthenticationFailed
+            return DeleteReturnStatus.ReauthenticationFailed
         }
         for (name in USER_SUBCOLLECTIONS) deleteCollection(users.document(user.uid).collection(name))
         db.runBatch { batch ->
@@ -665,31 +545,21 @@ class UserDatabaseSystem(
             batch.delete(users.document(user.uid))
         }.await()
         authUser.delete().await()
-        return UserDeleteReturnStatus.Deleted
+        return DeleteReturnStatus.Deleted
     }
 
-    /**
-     * Writes one field of the signed-in user's profile
-     *
-     * @param user The [User] being updated
-     * @param field The name of the profile field to write
-     * @param value The new value for the field
-     * @param updatedUser The [User] to return if the write succeeds
-     * @return An [UpdateUserReturnInfo] indicating what happened with the update
-     */
-    private suspend fun updateProfileField(user: User, field: String, value: Any?, updatedUser: User): UpdateUserReturnInfo {
-        if (auth.currentUser?.uid != user.uid) return UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
+    private suspend fun updateProfileField(user: User, field: String, value: Any?, updatedUser: User): UpdateReturnInfo<User> {
+        if (auth.currentUser?.uid != user.uid) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "User does not exist")
         return try {
             users.document(user.uid).update(field, value).await()
-            UpdateUserReturnInfo(status = UpdateUserReturnStatus.Succeeded, user = updatedUser)
+            UpdateReturnInfo(status = UpdateReturnStatus.Succeeded, value = updatedUser)
         } catch (e: FirebaseFirestoreException) {
-            if (e.code == FirebaseFirestoreException.Code.NOT_FOUND) UpdateUserReturnInfo(status = UpdateUserReturnStatus.Failed, errMsg = "User does not exist")
-            else UpdateUserReturnInfo(UpdateUserReturnStatus.Failed, errMsg = e.message ?: "Could not update $field")
+            if (e.code == FirebaseFirestoreException.Code.NOT_FOUND) UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "User does not exist")
+            else UpdateReturnInfo(UpdateReturnStatus.Failed, errMsg = e.message ?: "Could not update $field")
         } catch (e: CancellationException) {
-            throw e // Rethrow so the generic catch below doesn't swallow the cancellation
-                    // Kotlin then ends the coroutine quietly
+            throw e
         } catch (e: Exception) {
-            UpdateUserReturnInfo(UpdateUserReturnStatus.Failed, errMsg = e.message ?: "Could not update $field")
+            UpdateReturnInfo(UpdateReturnStatus.Failed, errMsg = e.message ?: "Could not update $field")
         }
     }
 

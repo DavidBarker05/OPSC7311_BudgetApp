@@ -41,6 +41,7 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.firestore)
     implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.kotlin.reflect)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
