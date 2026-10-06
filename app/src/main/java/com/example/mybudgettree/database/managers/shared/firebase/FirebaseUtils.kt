@@ -1,8 +1,6 @@
 package com.example.mybudgettree.database.managers.shared.firebase
 
-import com.example.mybudgettree.database.managers.shared.DeleteReturnStatus
-import com.example.mybudgettree.database.managers.shared.UpdateReturnInfo
-import com.example.mybudgettree.database.managers.shared.UpdateReturnStatus
+import com.example.mybudgettree.database.managers.shared.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore

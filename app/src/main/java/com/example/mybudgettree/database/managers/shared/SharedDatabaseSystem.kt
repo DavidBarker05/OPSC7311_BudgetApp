@@ -60,6 +60,12 @@ enum class DeleteReturnStatus {
     ReauthenticationFailed
 }
 
+data class SaveReturnInfo<T>(
+    val wasSuccessful: Boolean,
+    val value: T? = null,
+    val errMsg: String? = null
+)
+
 fun logOutcome(
     tag: String,
     wasSuccessful: Boolean,
