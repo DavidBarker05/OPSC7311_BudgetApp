@@ -1,40 +1,32 @@
 package com.example.mybudgettree.database.managers
 
-import android.util.Log
-import com.example.mybudgettree.database.daos.SavingsContributionDao
 import com.example.mybudgettree.database.entries.SavingsGoal
 import com.example.mybudgettree.database.entries.SavingsContribution
 import java.time.LocalDate
 import java.time.LocalDateTime
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
+import kotlin.coroutines.cancellation.CancellationException
+import com.example.mybudgettree.database.managers.shared.*
+import com.example.mybudgettree.database.managers.shared.firebase.*
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.toObjects
 
 /**
  * This system manages savings contribution creation, discovery, and removal
  *
- * @property savingsContributionDao The underlying Data Access Object managing RoomDB operations
- * @property savingsGoalDatabaseSystem Used to validate that the owning goal exists before contribution operations proceed
  */
 class SavingsContributionDatabaseSystem(
-    private val savingsContributionDao: SavingsContributionDao,
-    private val savingsGoalDatabaseSystem: SavingsGoalDatabaseSystem
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ) {
 
     companion object {
         private const val TAG = "SavingsContributionDatabaseSystem"
     }
 
-    data class CreateContributionReturnInfo(
-        val wasSuccessful: Boolean,
-        val contribution: SavingsContribution? = null,
-        val errMsg: String? = null
-    )
-
-    data class FindAllContributionsReturnInfo(
-        val wasSuccessful: Boolean,
-        val contributions: List<SavingsContribution>? = null,
-        val errMsg: String? = null
-    )
-
-    enum class ContributionDeleteReturnStatus { DoesNotExist, Deleted }
+    private fun contributions(uid: String): CollectionReference = db.collection("users").document(uid).collection("savingsContributions")
 
     /**
      * Records a new deposit against the goal
@@ -42,40 +34,114 @@ class SavingsContributionDatabaseSystem(
      * @param goal The [SavingsGoal] the deposit applies to
      * @param amount The amount deposited, cannot be negative
      * @param date The date the deposit was made
-     * @return A [CreateContributionReturnInfo] indicating what happened with the creation
+     * @return A [CreateReturnInfo] indicating what happened with the creation
      */
-    suspend fun createContribution(goal: SavingsGoal, amount: Double, date: LocalDate): CreateContributionReturnInfo {
-        val result = run {
-            if (amount < 0.0) return@run CreateContributionReturnInfo(wasSuccessful = false, errMsg = "Amount cannot be negative")
-            if (!savingsGoalDatabaseSystem.isGoalStillValid(goal)) return@run CreateContributionReturnInfo(wasSuccessful = false, errMsg = "Goal does not exist")
-            val contribution = SavingsContribution(goalId = goal.id, amount = amount, date = date, createdAt = LocalDateTime.now())
-            val id = savingsContributionDao.insertContribution(contribution)
-            CreateContributionReturnInfo(wasSuccessful = true, contribution = contribution.copy(id = id))
-        }
-        if (result.wasSuccessful) Log.i(TAG, "Successfully added contribution to goal '${goal.goalName}'")
-        else Log.w(TAG, "Failed to add contribution to goal '${goal.goalName}': ${result.errMsg}")
+    suspend fun createContribution(goal: SavingsGoal, amount: Double, date: LocalDate): CreateReturnInfo<SavingsContribution> {
+        val result = tryCreateContribution(goal, amount, date)
+        logOutcome(
+            tag = TAG,
+            wasSuccessful = result.wasSuccessful,
+            verbOnSuccess = "added",
+            verbOnFailure = "to add",
+            messageDetails = "contribution to goal '${goal.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryCreateContribution(goal: SavingsGoal, amount: Double, date: LocalDate): CreateReturnInfo<SavingsContribution> {
+        if (goal.id.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Goal id is empty")
+        if (amount < 0.0) return CreateReturnInfo(wasSuccessful = false, errMsg = "Amount cannot be negative")
+        val uid = auth.uid ?: return CreateReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        if (!db .collection("users")
+                .document(uid)
+                .collection("savingsGoals")
+                .document(goal.id)
+                .get()
+                .await()
+                .exists())
+            return CreateReturnInfo(wasSuccessful = false, errMsg = "Goal does not exist in the database")
+        return try {
+            val contributions = contributions(uid)
+            val contribution = SavingsContribution(
+                goalId = goal.id,
+                amount = amount,
+                date = date.toString(),
+                createdAt = LocalDateTime.now().toString()
+            )
+            val ref = contributions.add(contribution).await()
+            CreateReturnInfo(wasSuccessful = true, value = contribution.copy(id = ref.id))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            CreateReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not create contribution")
+        }
     }
 
     /**
      * Retrieves every contribution made against the goal
      *
      * @param goal The [SavingsGoal] to retrieve contributions for
-     * @return A [FindAllContributionsReturnInfo] indicating what happened with the retrieval
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
      */
-    suspend fun retrieveAllContributionsForGoal(goal: SavingsGoal): FindAllContributionsReturnInfo =
-        FindAllContributionsReturnInfo(wasSuccessful = true, contributions = savingsContributionDao.retrieveAllContributionsForGoal(goal.id))
+    suspend fun retrieveAllContributionsForGoal(goal: SavingsGoal): FindAllReturnInfo<SavingsContribution> {
+        if (goal.id.isBlank()) return FindAllReturnInfo(wasSuccessful = false, errMsg = "Goal id is empty")
+        val uid = auth.uid ?: return FindAllReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        if (!db .collection("users")
+                .document(uid)
+                .collection("savingsGoals")
+                .document(goal.id)
+                .get()
+                .await()
+                .exists())
+            return FindAllReturnInfo(wasSuccessful = false, errMsg = "Goal does not exist in the database")
+        return try {
+            val contributions = contributions(uid)
+            val allContributions = contributions(uid)
+                .whereEqualTo("goalId", goal.id)
+                .get()
+                .await()
+                .toObjects<SavingsContribution>()
+            FindAllReturnInfo(wasSuccessful = true, values = allContributions)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindAllReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not load contributions")
+        }
+    }
 
     /**
      * Deletes the contribution from the database
      *
      * @param contribution The [SavingsContribution] to delete
-     * @return A status reflection from [ContributionDeleteReturnStatus]
+     * @return A status reflection from [DeleteReturnStatus]
      */
-    suspend fun deleteContribution(contribution: SavingsContribution): ContributionDeleteReturnStatus {
-        val status = if (savingsContributionDao.deleteContribution(contribution) == 1) ContributionDeleteReturnStatus.Deleted else ContributionDeleteReturnStatus.DoesNotExist
-        if (status == ContributionDeleteReturnStatus.Deleted) Log.i(TAG, "Successfully deleted contribution ${contribution.id}")
-        else Log.w(TAG, "Failed to delete contribution ${contribution.id}: does not exist")
-        return status
+    suspend fun deleteContribution(contribution: SavingsContribution): DeleteReturnStatus {
+        val result = deleteDocument(
+            auth = auth,
+            db = db,
+            collectionName = "savingsContributions",
+            id = contribution.id,
+            subCollections = emptyList(),
+            relatedCollections = emptyList(),
+            batchSize = 0L
+        )
+        val wasSuccessful = result == DeleteReturnStatus.Deleted
+        val errMsg: String? =
+            if (wasSuccessful) null
+            else when (result) {
+                DeleteReturnStatus.DoesNotExist -> "Contribution does not exist"
+                DeleteReturnStatus.ReauthenticationFailed -> "No user currently signed in"
+                else -> "Unknown reason"
+            }
+        logOutcome(
+            tag = TAG,
+            wasSuccessful = wasSuccessful,
+            verbOnSuccess = "deleted",
+            verbOnFailure = "to delete",
+            messageDetails = "contribution '${contribution.id}'",
+            errMsg = errMsg
+        )
+        return result
     }
 }

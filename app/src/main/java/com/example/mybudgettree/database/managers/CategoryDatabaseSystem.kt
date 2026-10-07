@@ -126,8 +126,6 @@ class CategoryDatabaseSystem(
             FindReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not find category '$categoryName'")
         }
     }
-
-
     
     /**
      * Retrieves every category belonging to the user
