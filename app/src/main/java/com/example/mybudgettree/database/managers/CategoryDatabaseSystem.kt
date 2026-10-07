@@ -34,6 +34,17 @@ class CategoryDatabaseSystem(
 
     private fun categories(uid: String): CollectionReference = db.collection("users").document(uid).collection("categories")
 
+    suspend fun isCategoryNameTaken(uid: String, categoryName: String): Boolean {
+        if (uid.isBlank() || categoryName.isBlank() || auth.currentUser?.uid != uid) return false
+        return !categories(uid)
+            .whereEqualTo("categoryName", categoryName)
+            .limit(1)
+            .get().await()
+            .isEmpty
+    }
+
+    suspend fun isCategoryNameTaken(user: User, categoryName: String): Boolean = isCategoryNameTaken(user.uid, categoryName)
+
     /**
      * Creates a new category for the user after validating the name and confirming it isn't already in use
      *
@@ -58,9 +69,8 @@ class CategoryDatabaseSystem(
         if (categoryName.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Category name is empty")
         if (auth.currentUser?.uid != user.uid) return CreateReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
         return try {
+            if (isCategoryNameTaken(user, categoryName)) return CreateReturnInfo(wasSuccessful = false, errMsg = "User already has a category with name \"$categoryName\"")
             val categories = categories(user.uid)
-            val nameInUse = !categories.whereEqualTo("categoryName", categoryName).limit(1).get().await().isEmpty
-            if (nameInUse) return CreateReturnInfo(wasSuccessful = false, errMsg = "User already has a category with name \"$categoryName\"")
             val category = Category(categoryName = categoryName)
             val ref = categories.add(category).await()
             CreateReturnInfo(wasSuccessful = true, value = category.copy(id = ref.id))
@@ -69,24 +79,6 @@ class CategoryDatabaseSystem(
         } catch (e: Exception) {
             CreateReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not create category")
         }
-    }
-
-    suspend fun isCategoryNameTaken(user: User, categoryName: String): Boolean {
-        if (categoryName.isBlank() || auth.currentUser?.uid != user.uid) return false
-        return !categories(user.uid)
-            .whereEqualTo("categoryName", categoryName)
-            .limit(1)
-            .get().await()
-            .isEmpty
-    }
-
-    suspend fun isCategoryNameTaken(uid: String, categoryName: String): Boolean {
-        if (categoryName.isBlank() || auth.currentUser?.uid != uid) return false
-        return !categories(uid)
-            .whereEqualTo("categoryName", categoryName)
-            .limit(1)
-            .get().await()
-            .isEmpty
     }
 
     /**

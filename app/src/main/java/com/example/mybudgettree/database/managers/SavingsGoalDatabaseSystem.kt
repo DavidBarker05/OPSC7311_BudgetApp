@@ -33,6 +33,17 @@ class SavingsGoalDatabaseSystem(
 
     private fun goals(uid: String): CollectionReference = db.collection("users").document(uid).collection("savingsGoals")
 
+    suspend fun isGoalNameTaken(uid: String, goalName: String): Boolean {
+        if (uid.isBlank() || goalName.isBlank() || auth.currentUser?.uid != uid) return false
+        return !goals(uid)
+            .whereEqualTo("goalName", goalName)
+            .limit(1)
+            .get().await()
+            .isEmpty
+    }
+
+    suspend fun isGoalNameTaken(user: User, goalName: String): Boolean = isGoalNameTaken(user.uid, goalName)
+
     /**
      * Creates a new savings goal for the user after validating the name and confirming it isn't already in use
      *
@@ -59,9 +70,8 @@ class SavingsGoalDatabaseSystem(
         if (goalName.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Goal name is empty")
         if (auth.currentUser?.uid != user.uid) return CreateReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
         return try {
+            if (isGoalNameTaken(user, goalName)) return CreateReturnInfo(wasSuccessful = false, errMsg = "User already has a category with name \"$goalName\"")
             val goals = goals(user.uid)
-            val nameInUse = !goals.whereEqualTo("goalName", goalName).limit(1).get().await().isEmpty
-            if (nameInUse) return CreateReturnInfo(wasSuccessful = false, errMsg = "User already has a category with name \"$goalName\"")
             val goal = SavingsGoal(
                 goalName = goalName,
                 iconKey = iconKey,
@@ -74,24 +84,6 @@ class SavingsGoalDatabaseSystem(
         } catch (e: Exception) {
             CreateReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not create category")
         }
-    }
-
-    suspend fun isGoalNameTaken(user: User, goalName: String): Boolean {
-        if (goalName.isBlank() || auth.currentUser?.uid != user.uid) return false
-        return !goals(user.uid)
-            .whereEqualTo("goalName", goalName)
-            .limit(1)
-            .get().await()
-            .isEmpty
-    }
-
-    suspend fun isGoalNameTaken(uid: String, goalName: String): Boolean {
-        if (goalName.isBlank() || auth.currentUser?.uid != uid) return false
-        return !goals(uid)
-            .whereEqualTo("goalName", goalName)
-            .limit(1)
-            .get().await()
-            .isEmpty
     }
 
     suspend fun findGoal(goalId: String): FindReturnInfo<SavingsGoal> {
