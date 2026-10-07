@@ -93,6 +93,24 @@ class CategoryDatabaseSystem(
         }
     }
 
+    suspend fun isCategoryNameTaken(user: User, categoryName: String): Boolean {
+        if (categoryName.isBlank() || auth.currentUser?.uid != user.uid) return false
+        return !categories(user.uid)
+            .whereEqualTo("categoryName", categoryName)
+            .limit(1)
+            .get().await()
+            .isEmpty
+    }
+
+    suspend fun isCategoryNameTaken(uid: String, categoryName: String): Boolean {
+        if (categoryName.isBlank() || auth.currentUser?.uid != uid) return false
+        return !categories(uid)
+            .whereEqualTo("categoryName", categoryName)
+            .limit(1)
+            .get().await()
+            .isEmpty
+    }
+
     /**
      * Find the user's category by name if it exists
      *
@@ -118,6 +136,8 @@ class CategoryDatabaseSystem(
             FindReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not find category '$categoryName'")
         }
     }
+
+
     
     /**
      * Retrieves every category belonging to the user
@@ -149,15 +169,16 @@ class CategoryDatabaseSystem(
         logOutcome(
             tag = TAG,
             status = result.status,
-            messageDetails = "name for category '${category.categoryName}'",
+            messageDetails = "name for category '${category.id}'",
             errMsg = result.errMsg
         )
         return result
     }
 
     private suspend fun tryUpdateCategoryName(category: Category, newCategoryName: String): UpdateReturnInfo<Category> {
-
         if (newCategoryName.isBlank()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New category name is empty")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        if (isCategoryNameTaken(uid, newCategoryName)) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Category name is already in use")
         return updateDocumentField(
             auth = auth,
             db = db,
