@@ -1,7 +1,7 @@
 package com.example.mybudgettree.database.entries
 
-import java.time.LocalDate
 import com.google.firebase.firestore.DocumentId
+import java.time.LocalDate
 
 /**
  * A user's profile, stored in Firestore at `users/{uid}`. The account itself (email and

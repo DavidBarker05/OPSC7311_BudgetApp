@@ -2,13 +2,13 @@ package com.example.mybudgettree.database.managers
 
 import com.example.mybudgettree.database.entries.MonthlyGoal
 import com.example.mybudgettree.database.entries.User
+import com.example.mybudgettree.database.managers.shared.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import java.time.YearMonth
-import com.example.mybudgettree.database.managers.shared.*
 import com.google.firebase.firestore.toObject
-import kotlinx.coroutines.tasks.await
+import java.time.YearMonth
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.tasks.await
 
 /**
  * This system manages the user's overall monthly minimum/maximum spending goal,

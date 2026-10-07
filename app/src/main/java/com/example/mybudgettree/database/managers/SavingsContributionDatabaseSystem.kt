@@ -1,17 +1,17 @@
 package com.example.mybudgettree.database.managers
 
-import com.example.mybudgettree.database.entries.SavingsGoal
 import com.example.mybudgettree.database.entries.SavingsContribution
-import java.time.LocalDate
-import java.time.LocalDateTime
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
-import kotlin.coroutines.cancellation.CancellationException
+import com.example.mybudgettree.database.entries.SavingsGoal
 import com.example.mybudgettree.database.managers.shared.*
 import com.example.mybudgettree.database.managers.shared.firebase.*
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObjects
+import java.time.LocalDate
+import java.time.LocalDateTime
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.tasks.await
 
 /**
  * This system manages savings contribution creation, discovery, and removal

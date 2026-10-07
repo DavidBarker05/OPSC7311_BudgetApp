@@ -1,7 +1,7 @@
 package com.example.mybudgettree.database.entries
 
-import java.time.YearMonth
 import com.google.firebase.firestore.DocumentId
+import java.time.YearMonth
 
 data class MonthlyGoal(
     @DocumentId val id: String = "",

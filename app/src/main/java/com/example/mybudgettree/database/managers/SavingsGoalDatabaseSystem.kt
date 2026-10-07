@@ -1,16 +1,16 @@
 package com.example.mybudgettree.database.managers
 
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
-import kotlin.coroutines.cancellation.CancellationException
-import com.google.firebase.firestore.toObject
-import com.google.firebase.firestore.CollectionReference
+import com.example.mybudgettree.database.entries.SavingsGoal
+import com.example.mybudgettree.database.entries.User
 import com.example.mybudgettree.database.managers.shared.*
 import com.example.mybudgettree.database.managers.shared.firebase.*
-import com.example.mybudgettree.database.entries.User
-import com.example.mybudgettree.database.entries.SavingsGoal
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
 import com.google.firebase.firestore.toObjects
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.tasks.await
 
 /**
  * This system manages savings goal state, uniqueness validation, discovery, updates, and removals

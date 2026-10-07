@@ -1,8 +1,8 @@
 package com.example.mybudgettree.database.entries
 
+import com.google.firebase.firestore.DocumentId
 import java.time.LocalDate
 import java.time.LocalDateTime
-import com.google.firebase.firestore.DocumentId
 
 /**
  * A single deposit against a savings goal, stored in Firestore at `users/{uid}/savingsContributions/{id}`.

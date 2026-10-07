@@ -2,10 +2,10 @@ package com.example.mybudgettree.database.managers
 
 import android.util.Log
 import android.util.Patterns
-import com.google.firebase.FirebaseNetworkException
-import com.google.firebase.FirebaseTooManyRequestsException
-import java.time.LocalDate
-import java.time.YearMonth
+import com.example.mybudgettree.database.entries.PhoneNumberLookup
+import com.example.mybudgettree.database.entries.User
+import com.example.mybudgettree.database.entries.UserTree
+import com.example.mybudgettree.database.managers.shared.*
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
@@ -14,19 +14,18 @@ import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.toObject
+import java.time.LocalDate
+import java.time.YearMonth
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-
-import com.example.mybudgettree.database.entries.PhoneNumberLookup
-import com.example.mybudgettree.database.entries.User
-import com.example.mybudgettree.database.entries.UserTree
-import com.example.mybudgettree.database.managers.shared.*
 
 /**
  * This system manages user state, credentials validation, account discovery, updates, and removals

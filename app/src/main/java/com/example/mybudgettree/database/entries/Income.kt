@@ -1,8 +1,8 @@
 package com.example.mybudgettree.database.entries
 
+import com.google.firebase.firestore.DocumentId
 import java.time.LocalDate
 import java.time.LocalTime
-import com.google.firebase.firestore.DocumentId
 
 /**
  * A single income record, stored in Firestore at `users/{uid}/incomes/{id}`. The owning user is identified by the
