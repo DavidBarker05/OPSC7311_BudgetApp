@@ -96,7 +96,6 @@ class SavingsContributionDatabaseSystem(
                 .exists())
             return FindAllReturnInfo(wasSuccessful = false, errMsg = "Goal does not exist in the database")
         return try {
-            val contributions = contributions(uid)
             val allContributions = contributions(uid)
                 .whereEqualTo("goalId", goal.id)
                 .get()
