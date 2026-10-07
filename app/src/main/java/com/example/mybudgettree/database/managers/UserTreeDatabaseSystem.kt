@@ -5,6 +5,7 @@ import com.example.mybudgettree.database.entries.User
 import com.example.mybudgettree.database.entries.UserTree
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.tasks.await
 import java.time.YearMonth
 
@@ -60,5 +61,5 @@ class UserTreeDatabaseSystem(private val db: FirebaseFirestore = FirebaseFiresto
      * @param user The [User] to search for
      * @return The [UserTree] record, or null if not found
      */
-    suspend fun findUserTree(user: User): UserTree? = treeRef(user).get().await().toObject(UserTree::class.java)
+    suspend fun findUserTree(user: User): UserTree? = treeRef(user).get().await().toObject<UserTree>()
 }

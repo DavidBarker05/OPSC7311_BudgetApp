@@ -3,16 +3,14 @@ package com.example.mybudgettree.database.managers
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.cancellation.CancellationException
-
-
 import com.example.mybudgettree.database.entries.User
 import com.example.mybudgettree.database.entries.Category
 import com.example.mybudgettree.database.managers.shared.*
 import com.example.mybudgettree.database.managers.shared.firebase.*
 import com.google.firebase.firestore.toObject
+import com.google.firebase.firestore.toObjects
 
 /**
  * This system manages category state, uniqueness validation, discovery, updates, and removals
@@ -73,26 +71,6 @@ class CategoryDatabaseSystem(
         }
     }
 
-    /**
-     * Find the category in the database if it exists
-     *
-     * @param categoryId The id to search for
-     * @return A [FindReturnInfo] indicating what happened with the search
-     */
-    suspend fun findCategory(categoryId: String): FindReturnInfo<Category> {
-        if (categoryId.isBlank()) return FindReturnInfo(wasSuccessful = false, errMsg = "Category id is empty")
-        val uid = auth.uid ?: return FindReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
-        return try {
-            val category = categories(uid).document(categoryId).get().await().toObject(Category::class.java)
-            if (category != null) FindReturnInfo(wasSuccessful = true, value = category)
-            else FindReturnInfo(wasSuccessful = false, errMsg = "Could not find category '$categoryId' for current auth user")
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            FindReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not find category '$categoryId' for current auth user")
-        }
-    }
-
     suspend fun isCategoryNameTaken(user: User, categoryName: String): Boolean {
         if (categoryName.isBlank() || auth.currentUser?.uid != user.uid) return false
         return !categories(user.uid)
@@ -109,6 +87,26 @@ class CategoryDatabaseSystem(
             .limit(1)
             .get().await()
             .isEmpty
+    }
+
+    /**
+     * Find the category in the database if it exists
+     *
+     * @param categoryId The id to search for
+     * @return A [FindReturnInfo] indicating what happened with the search
+     */
+    suspend fun findCategory(categoryId: String): FindReturnInfo<Category> {
+        if (categoryId.isBlank()) return FindReturnInfo(wasSuccessful = false, errMsg = "Category id is empty")
+        val uid = auth.uid ?: return FindReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        return try {
+            val category = categories(uid).document(categoryId).get().await().toObject<Category>()
+            if (category != null) FindReturnInfo(wasSuccessful = true, value = category)
+            else FindReturnInfo(wasSuccessful = false, errMsg = "Could not find category '$categoryId' for current auth user")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not find category '$categoryId' for current auth user")
+        }
     }
 
     /**
@@ -148,7 +146,7 @@ class CategoryDatabaseSystem(
     suspend fun getAllCategoriesForUser(user: User): FindAllReturnInfo<Category> {
         if (auth.currentUser?.uid != user.uid) return FindAllReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
         return try {
-            val allCategories = categories(user.uid).get().await().toObjects(Category::class.java)
+            val allCategories = categories(user.uid).get().await().toObjects<Category>()
             FindAllReturnInfo(wasSuccessful = true, values = allCategories)
         } catch (e: CancellationException) {
             throw e
@@ -204,7 +202,7 @@ class CategoryDatabaseSystem(
         logOutcome(
             tag = TAG,
             status = result.status,
-            messageDetails = "budget for category '${category.categoryName}'",
+            messageDetails = "budget for category '${category.id}'",
             errMsg = result.errMsg
         )
         return result
@@ -287,7 +285,7 @@ class CategoryDatabaseSystem(
             wasSuccessful = wasSuccessful,
             verbOnSuccess = "deleted",
             verbOnFailure = "to delete",
-            messageDetails = "category '${category.categoryName}'",
+            messageDetails = "category '${category.id}'",
             errMsg = errMsg
         )
         return result

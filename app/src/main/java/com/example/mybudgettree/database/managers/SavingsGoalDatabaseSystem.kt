@@ -167,7 +167,7 @@ class SavingsGoalDatabaseSystem(
         )
     }
 
-    suspend fun updateGoalIcon(goal: SavingsGoal, newIconKey: String?): UpdateGoalReturnInfo {
+    suspend fun updateGoalIcon(goal: SavingsGoal, newIconKey: String?): UpdateReturnInfo<SavingsGoal> {
         val result = tryUpdateGoalIcon(goal, newIconKey)
         logOutcome(
             tag = TAG,
