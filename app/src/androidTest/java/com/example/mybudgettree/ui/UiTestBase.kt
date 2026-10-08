@@ -43,7 +43,7 @@ abstract class UiTestBase {
      * [com.example.mybudgettree.CategoriesActivity] seeding default categories from Room) has
      * actually finished and updated the UI
      */
-    protected fun waitForText(text: String, timeoutMs: Long = 15000, intervalMs: Long = 200) {
+    protected fun waitForText(text: String, timeoutMs: Long = 15000, intervalMs: Long = 50) {
         eventually(timeoutMs, intervalMs) { onView(withText(text)).check(matches(isDisplayed())) }
     }
 
@@ -53,7 +53,7 @@ abstract class UiTestBase {
      * Room, or a new Activity being launched after a click) rather than assuming it has
      * already happened by the time Espresso looks.
      */
-    protected fun eventually(timeoutMs: Long = 15000, intervalMs: Long = 200, block: () -> Unit) {
+    protected fun eventually(timeoutMs: Long = 15000, intervalMs: Long = 50, block: () -> Unit) {
         val deadline = System.currentTimeMillis() + timeoutMs
         var lastError: Throwable? = null
         while (System.currentTimeMillis() < deadline) {
