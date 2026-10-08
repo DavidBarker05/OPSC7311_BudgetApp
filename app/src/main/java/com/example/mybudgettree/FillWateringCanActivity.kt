@@ -71,13 +71,13 @@ class FillWateringCanActivity : AppCompatActivity() {
         val user = UserSession.currentUser ?: return
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
-            goals = app.savingsGoalDatabaseSystem.getAllGoalsForUser(user).goals.orEmpty()
+            goals = app.savingsGoalDatabaseSystem.getAllGoalsForUser(user).values.orEmpty()
             val names = goals.map { it.goalName }
             val dropdown = findViewById<AutoCompleteTextView>(R.id.actFillCategory)
             dropdown.threshold = 0
             dropdown.setAdapter(ArrayAdapter(this@FillWateringCanActivity, android.R.layout.simple_dropdown_item_1line, names))
             dropdown.setOnClickListener { dropdown.showDropDown() }
-            val preselectId = intent.getLongExtra(EXTRA_GOAL_ID, -1L)
+            val preselectId = intent.getStringExtra(EXTRA_GOAL_ID).orEmpty()
             val preselected = goals.firstOrNull { it.id == preselectId }
             if (preselected != null) dropdown.setText(preselected.goalName, false)
         }

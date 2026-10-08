@@ -11,6 +11,7 @@ import com.example.mybudgettree.database.managers.shared.firebase.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
 import com.google.firebase.firestore.toObjects
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.tasks.await
@@ -122,6 +123,26 @@ class IncomeDatabaseSystem(
             throw e
         } catch (e: Exception) {
             CreateReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not create income")
+        }
+    }
+
+    /**
+     * Find the signed-in user's income by its ID if it exists
+     *
+     * @param incomeId The id to search for
+     * @return A [FindReturnInfo] indicating what happened with the search
+     */
+    suspend fun findIncome(incomeId: String): FindReturnInfo<Income> {
+        if (incomeId.isBlank()) return FindReturnInfo(wasSuccessful = false, errMsg = "Income id is empty")
+        val uid = auth.uid ?: return FindReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        return try {
+            val income = incomes(uid).document(incomeId).get().await().toObject<Income>()
+            if (income != null) FindReturnInfo(wasSuccessful = true, value = income)
+            else FindReturnInfo(wasSuccessful = false, errMsg = "Could not find income '${incomeId}' for current auth user")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not find income '${incomeId}' for current auth user")
         }
     }
 

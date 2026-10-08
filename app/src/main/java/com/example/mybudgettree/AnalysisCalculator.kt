@@ -46,13 +46,13 @@ object AnalysisCalculator {
         val budgetGoal = monthlyGoal?.maxGoal ?: 0.0
         val minGoal = monthlyGoal?.minGoal ?: 0.0
         val anchorMonth = YearMonth.from(anchorDate)
-        val monthExpense = expenses.filter { YearMonth.from(it.date) == anchorMonth }.sumOf { it.amount }
+        val monthExpense = expenses.filter { YearMonth.from(it.dateAsLocalDate()) == anchorMonth }.sumOf { it.amount }
         val ranges = ranges(weekLabels, period, anchorDate)
         val buckets = ranges.map { range ->
             AnalysisBucket(
                 label = range.label,
-                income = incomes.filter { it.date in range.start..range.end }.sumOf { it.amount },
-                expense = expenses.filter { it.date in range.start..range.end }.sumOf { it.amount }
+                income = incomes.filter { it.dateAsLocalDate() in range.start..range.end }.sumOf { it.amount },
+                expense = expenses.filter { it.dateAsLocalDate() in range.start..range.end }.sumOf { it.amount }
             )
         }
         val periodIncome = buckets.sumOf { it.income }

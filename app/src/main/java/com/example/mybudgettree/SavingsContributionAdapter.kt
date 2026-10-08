@@ -39,7 +39,7 @@ class SavingsContributionAdapter(
         private val remove = view.findViewById<ImageButton>(R.id.btnRemoveContribution)
 
         fun bind(contribution: SavingsContribution) {
-            date.text = dateFormatter.format(contribution.date)
+            date.text = dateFormatter.format(contribution.dateAsLocalDate())
             amount.text = MoneyFormatter.format(contribution.amount)
             remove.setOnClickListener { onRemove(contribution) }
         }

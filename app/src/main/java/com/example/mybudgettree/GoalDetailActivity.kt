@@ -81,10 +81,10 @@ class GoalDetailActivity : AppCompatActivity() {
     }
 
     private fun loadGoal() {
-        val goalId = intent.getLongExtra(EXTRA_GOAL_ID, -1L)
+        val goalId = intent.getStringExtra(EXTRA_GOAL_ID).orEmpty()
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
-            val found = app.savingsGoalDatabaseSystem.findGoal(goalId).goal
+            val found = app.savingsGoalDatabaseSystem.findGoal(goalId).value
             if (found == null) {
                 finish()
                 return@launch
@@ -97,7 +97,7 @@ class GoalDetailActivity : AppCompatActivity() {
                 setColorFilter(getColor(R.color.green_text))
             }
 
-            val contributions = app.savingsContributionDatabaseSystem.retrieveAllContributionsForGoal(found).contributions.orEmpty()
+            val contributions = app.savingsContributionDatabaseSystem.retrieveAllContributionsForGoal(found).values.orEmpty()
             val saved = contributions.sumOf { it.amount }
             val target = found.targetAmount ?: 0.0
             val percent = if (target <= 0.0) 0 else ((saved / target) * 100.0).toInt().coerceIn(0, 100)
@@ -117,7 +117,7 @@ class GoalDetailActivity : AppCompatActivity() {
                 else -> getString(R.string.expenses_status_watch, percent)
             }
 
-            val sorted = contributions.sortedByDescending { it.date }
+            val sorted = contributions.sortedByDescending { it.dateAsLocalDate() }
             adapter.submit(sorted)
             findViewById<TextView>(R.id.tvEmptyGoal).visibility =
                 if (sorted.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE

@@ -45,8 +45,8 @@ object NotificationFeed {
             iconRes = R.drawable.ic_notif_star
         )
 
-        val recentExpenses = expenses.filter { !it.date.isBefore(cutoff) }
-        val recentIncomes = incomes.filter { !it.date.isBefore(cutoff) }
+        val recentExpenses = expenses.filter { !it.dateAsLocalDate().isBefore(cutoff) }
+        val recentIncomes = incomes.filter { !it.dateAsLocalDate().isBefore(cutoff) }
         val transactions = (
             recentIncomes.map { income ->
                 transactionNotification(
@@ -56,8 +56,8 @@ object NotificationFeed {
                     description = income.description,
                     amount = income.amount,
                     isIncome = true,
-                    date = income.date,
-                    time = income.startTime
+                    date = income.dateAsLocalDate(),
+                    time = income.startTimeAsLocalTime()
                 )
             } + recentExpenses.map { expense ->
                 transactionNotification(
@@ -67,8 +67,8 @@ object NotificationFeed {
                     description = expense.description,
                     amount = expense.amount,
                     isIncome = false,
-                    date = expense.date,
-                    time = expense.startTime
+                    date = expense.dateAsLocalDate(),
+                    time = expense.startTimeAsLocalTime()
                 )
             }
             ).sortedWith(compareByDescending<WalletNotification> { it.date }.thenByDescending { it.time })

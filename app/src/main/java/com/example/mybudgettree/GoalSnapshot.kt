@@ -24,7 +24,7 @@ data class GoalSnapshot(
             val budgetGoal = monthlyGoal?.maxGoal ?: 0.0
             val minGoal = monthlyGoal?.minGoal ?: 0.0
             val currentMonth = YearMonth.from(today)
-            val spentThisMonth = expenses.filter { YearMonth.from(it.date) == currentMonth }.sumOf { it.amount }
+            val spentThisMonth = expenses.filter { YearMonth.from(it.dateAsLocalDate()) == currentMonth }.sumOf { it.amount }
             val goalPercent = if (budgetGoal <= 0.0) {
                 0
             } else {

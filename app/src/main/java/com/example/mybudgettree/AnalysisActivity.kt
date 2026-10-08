@@ -95,9 +95,9 @@ class AnalysisActivity : AppCompatActivity() {
         val user = UserSession.currentUser ?: return
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
-            categories = app.categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty()
-            expenses = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
-            incomes = app.incomeDatabaseSystem.retrieveAllIncomes(user).incomes.orEmpty()
+            categories = app.categoryDatabaseSystem.getAllCategoriesForUser(user).values.orEmpty()
+            expenses = app.expenseDatabaseSystem.retrieveAllExpenses(user).values.orEmpty()
+            incomes = app.incomeDatabaseSystem.retrieveAllIncomes(user).values.orEmpty()
             bindSnapshot()
         }
     }

@@ -65,7 +65,7 @@ class LoginActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val result = app.userDatabaseSystem.login(identifier, password)
             loginButton.isEnabled = true
-            val user = result.user
+            val user = result.value
             if (result.wasSuccessful && user != null) {
                 Log.i(TAG, "Login succeeded, navigating to HomeActivity")
                 UserSession.login(user)

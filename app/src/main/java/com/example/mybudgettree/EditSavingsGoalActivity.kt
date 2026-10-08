@@ -18,6 +18,7 @@ import androidx.lifecycle.lifecycleScope
 import com.example.mybudgettree.database.entries.SavingsGoal
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
+import com.example.mybudgettree.database.managers.shared.UpdateReturnStatus
 
 class EditSavingsGoalActivity : AppCompatActivity() {
 
@@ -56,10 +57,10 @@ class EditSavingsGoalActivity : AppCompatActivity() {
     }
 
     private fun loadGoal() {
-        val goalId = intent.getLongExtra(EXTRA_GOAL_ID, -1L)
+        val goalId = intent.getStringExtra(EXTRA_GOAL_ID).orEmpty()
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
-            val found = app.savingsGoalDatabaseSystem.findGoal(goalId).goal
+            val found = app.savingsGoalDatabaseSystem.findGoal(goalId).value
             if (found == null) {
                 finish()
                 return@launch
@@ -88,17 +89,17 @@ class EditSavingsGoalActivity : AppCompatActivity() {
             var working = current
             if (working.goalName != newName) {
                 val renameResult = app.savingsGoalDatabaseSystem.updateGoalName(working, newName)
-                if (renameResult.status == com.example.mybudgettree.database.managers.SavingsGoalDatabaseSystem.UpdateGoalReturnStatus.Failed) {
+                if (renameResult.status == UpdateReturnStatus.Failed) {
                     Toast.makeText(this@EditSavingsGoalActivity, renameResult.errMsg, Toast.LENGTH_SHORT).show()
                     return@launch
                 }
-                renameResult.goal?.let { working = it }
+                renameResult.value?.let { working = it }
             }
             if (working.iconKey != selectedIconKey) {
-                app.savingsGoalDatabaseSystem.updateGoalIcon(working, selectedIconKey).goal?.let { working = it }
+                app.savingsGoalDatabaseSystem.updateGoalIcon(working, selectedIconKey).value?.let { working = it }
             }
             if (working.targetAmount != newTarget) {
-                app.savingsGoalDatabaseSystem.updateGoalTarget(working, newTarget).goal?.let { working = it }
+                app.savingsGoalDatabaseSystem.updateGoalTarget(working, newTarget).value?.let { working = it }
             }
             goal = working
             Log.i(TAG, "Updated savings goal '${working.goalName}'")

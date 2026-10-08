@@ -78,7 +78,7 @@ class CategoriesActivity : AppCompatActivity() {
         val user = UserSession.currentUser ?: return
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
-            var categories = app.categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty()
+            var categories = app.categoryDatabaseSystem.getAllCategoriesForUser(user).values.orEmpty()
             val hasAnyDefaultCategory = categories.any { existing ->
                 CategoryGarden.defaultNames.any { it.equals(existing.categoryName, ignoreCase = true) }
             }
@@ -86,13 +86,13 @@ class CategoriesActivity : AppCompatActivity() {
                 CategoryGarden.defaultNames.forEach { name ->
                     app.categoryDatabaseSystem.createCategory(user, name)
                 }
-                categories = app.categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty()
+                categories = app.categoryDatabaseSystem.getAllCategoriesForUser(user).values.orEmpty()
             }
             val currentMonth = YearMonth.now()
-            val expensesThisMonth = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
-                .filter { YearMonth.from(it.date) == currentMonth }
-            val incomesThisMonth = app.incomeDatabaseSystem.retrieveAllIncomes(user).incomes.orEmpty()
-                .filter { YearMonth.from(it.date) == currentMonth }
+            val expensesThisMonth = app.expenseDatabaseSystem.retrieveAllExpenses(user).values.orEmpty()
+                .filter { YearMonth.from(it.dateAsLocalDate()) == currentMonth }
+            val incomesThisMonth = app.incomeDatabaseSystem.retrieveAllIncomes(user).values.orEmpty()
+                .filter { YearMonth.from(it.dateAsLocalDate()) == currentMonth }
             val spentThisMonth = expensesThisMonth.sumOf { it.amount }
             val monthlyGoal = app.monthlyGoalDatabaseSystem.getGoal(user, currentMonth)
             BudgetOverview.bind(

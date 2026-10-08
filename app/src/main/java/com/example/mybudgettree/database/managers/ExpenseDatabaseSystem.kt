@@ -10,6 +10,7 @@ import com.example.mybudgettree.database.managers.shared.firebase.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
 import com.google.firebase.firestore.toObjects
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.tasks.await
@@ -122,6 +123,26 @@ class ExpenseDatabaseSystem(
             throw e
         } catch (e: Exception) {
             CreateReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not create expense")
+        }
+    }
+
+    /**
+     * Find the signed-in user's expense by its ID if it exists
+     *
+     * @param expenseId The id to search for
+     * @return A [FindReturnInfo] indicating what happened with the search
+     */
+    suspend fun findExpense(expenseId: String): FindReturnInfo<Expense> {
+        if (expenseId.isBlank()) return FindReturnInfo(wasSuccessful = false, errMsg = "Expense id is empty")
+        val uid = auth.uid ?: return FindReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        return try {
+            val expense = expenses(uid).document(expenseId).get().await().toObject<Expense>()
+            if (expense != null) FindReturnInfo(wasSuccessful = true, value = expense)
+            else FindReturnInfo(wasSuccessful = false, errMsg = "Could not find expense '${expenseId}' for current auth user")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not find expense '${expenseId}' for current auth user")
         }
     }
 

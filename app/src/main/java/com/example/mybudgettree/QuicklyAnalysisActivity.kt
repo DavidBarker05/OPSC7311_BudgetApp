@@ -71,10 +71,10 @@ class QuicklyAnalysisActivity : AppCompatActivity() {
         val app = application as BudgetTreeApplication
         val today = LocalDate.now()
         lifecycleScope.launch {
-            val categories = app.categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty()
+            val categories = app.categoryDatabaseSystem.getAllCategoriesForUser(user).values.orEmpty()
             val categoryNames = categories.associate { it.id to it.categoryName }
-            val expenses = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
-            val incomes = app.incomeDatabaseSystem.retrieveAllIncomes(user).incomes.orEmpty()
+            val expenses = app.expenseDatabaseSystem.retrieveAllExpenses(user).values.orEmpty()
+            val incomes = app.incomeDatabaseSystem.retrieveAllIncomes(user).values.orEmpty()
             val monthlyGoal = app.monthlyGoalDatabaseSystem.getGoal(user, YearMonth.from(today))
 
             val savingsSnapshot = SavingsSnapshot.compute(app, user, today)
@@ -114,9 +114,9 @@ class QuicklyAnalysisActivity : AppCompatActivity() {
                         categoryName = categoryNames[income.categoryId] ?: "",
                         amount = income.amount,
                         isIncome = true,
-                        date = income.date,
-                        time = income.startTime,
-                        imagePath = income.imagePath
+                        date = income.dateAsLocalDate(),
+                        time = income.startTimeAsLocalTime(),
+                        imagePath = income.imagePathFor(DeviceId.get(app))
                     )
                 } + expenses.map { expense ->
                     TransactionRow(
@@ -124,9 +124,9 @@ class QuicklyAnalysisActivity : AppCompatActivity() {
                         categoryName = categoryNames[expense.categoryId] ?: "",
                         amount = expense.amount,
                         isIncome = false,
-                        date = expense.date,
-                        time = expense.startTime,
-                        imagePath = expense.imagePath
+                        date = expense.dateAsLocalDate(),
+                        time = expense.startTimeAsLocalTime(),
+                        imagePath = expense.imagePathFor(DeviceId.get(app))
                     )
                 }
                 ).filter { YearMonth.from(it.date) == month }

@@ -58,9 +58,9 @@ class NotificationsActivity : AppCompatActivity() {
         val user = UserSession.currentUser ?: return
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
-            val categories = app.categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty()
-            val expenses = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
-            val incomes = app.incomeDatabaseSystem.retrieveAllIncomes(user).incomes.orEmpty()
+            val categories = app.categoryDatabaseSystem.getAllCategoriesForUser(user).values.orEmpty()
+            val expenses = app.expenseDatabaseSystem.retrieveAllExpenses(user).values.orEmpty()
+            val incomes = app.incomeDatabaseSystem.retrieveAllIncomes(user).values.orEmpty()
             val rows = NotificationFeed.build(this@NotificationsActivity, categories, expenses, incomes)
             adapter.submit(rows)
             findViewById<TextView>(R.id.tvEmptyNotifications).visibility =

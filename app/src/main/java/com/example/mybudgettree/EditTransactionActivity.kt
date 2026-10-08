@@ -35,6 +35,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.example.mybudgettree.database.managers.shared.UpdateReturnStatus
 
 class EditTransactionActivity : AppCompatActivity() {
 
@@ -115,33 +116,33 @@ class EditTransactionActivity : AppCompatActivity() {
     }
 
     private fun loadTransaction() {
-        val id = intent.getLongExtra(EXTRA_TRANSACTION_ID, -1L)
+        val id = intent.getStringExtra(EXTRA_TRANSACTION_ID).orEmpty()
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
             if (isIncome) {
-                val income = app.incomeDatabaseSystem.findIncome(id).income
+                val income = app.incomeDatabaseSystem.findIncome(id).value
                 if (income == null) {
                     finish()
                     return@launch
                 }
                 findViewById<EditText>(R.id.etTransactionTitle).setText(income.description)
                 findViewById<EditText>(R.id.etTransactionAmount).setText(plainAmount(income.amount))
-                selectedDate = income.date
-                selectedStartTime = income.startTime
-                selectedEndTime = income.endTime
-                imagePath = income.imagePath
+                selectedDate = income.dateAsLocalDate()
+                selectedStartTime = income.startTimeAsLocalTime()
+                selectedEndTime = income.endTimeAsLocalTime()
+                imagePath = income.imagePathFor(DeviceId.get(app))
             } else {
-                val expense = app.expenseDatabaseSystem.findExpense(id).expense
+                val expense = app.expenseDatabaseSystem.findExpense(id).value
                 if (expense == null) {
                     finish()
                     return@launch
                 }
                 findViewById<EditText>(R.id.etTransactionTitle).setText(expense.description)
                 findViewById<EditText>(R.id.etTransactionAmount).setText(plainAmount(expense.amount))
-                selectedDate = expense.date
-                selectedStartTime = expense.startTime
-                selectedEndTime = expense.endTime
-                imagePath = expense.imagePath
+                selectedDate = expense.dateAsLocalDate()
+                selectedStartTime = expense.startTimeAsLocalTime()
+                selectedEndTime = expense.endTimeAsLocalTime()
+                imagePath = expense.imagePathFor(DeviceId.get(app))
             }
             bindDate()
             bindTimes()
@@ -150,7 +151,7 @@ class EditTransactionActivity : AppCompatActivity() {
     }
 
     private fun saveChanges() {
-        val id = intent.getLongExtra(EXTRA_TRANSACTION_ID, -1L)
+        val id = intent.getStringExtra(EXTRA_TRANSACTION_ID).orEmpty()
         val title = findViewById<EditText>(R.id.etTransactionTitle).text?.toString()?.trim().orEmpty()
         val amountText = findViewById<EditText>(R.id.etTransactionAmount).text?.toString()?.trim().orEmpty()
             .replace("R", "", ignoreCase = true)
@@ -167,52 +168,52 @@ class EditTransactionActivity : AppCompatActivity() {
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
             if (isIncome) {
-                val income = app.incomeDatabaseSystem.findIncome(id).income ?: return@launch
+                val income = app.incomeDatabaseSystem.findIncome(id).value ?: return@launch
                 var working = income
-                if (working.description != title) app.incomeDatabaseSystem.updateIncomeDescription(working, title).income?.let { working = it }
-                if (working.amount != amount) app.incomeDatabaseSystem.updateIncomeAmount(working, amount).income?.let { working = it }
-                if (working.date != selectedDate) app.incomeDatabaseSystem.updateIncomeDate(working, selectedDate).income?.let { working = it }
-                if (working.startTime != selectedStartTime) {
+                if (working.description != title) app.incomeDatabaseSystem.updateIncomeDescription(working, title).value?.let { working = it }
+                if (working.amount != amount) app.incomeDatabaseSystem.updateIncomeAmount(working, amount).value?.let { working = it }
+                if (working.dateAsLocalDate() != selectedDate) app.incomeDatabaseSystem.updateIncomeDate(working, selectedDate).value?.let { working = it }
+                if (working.startTimeAsLocalTime() != selectedStartTime) {
                     val result = app.incomeDatabaseSystem.updateIncomeStartTime(working, selectedStartTime)
-                    if (result.status == com.example.mybudgettree.database.managers.IncomeDatabaseSystem.UpdateIncomeReturnStatus.Failed) {
+                    if (result.status == UpdateReturnStatus.Failed) {
                         Toast.makeText(this@EditTransactionActivity, result.errMsg, Toast.LENGTH_SHORT).show()
                         return@launch
                     }
-                    result.income?.let { working = it }
+                    result.value?.let { working = it }
                 }
-                if (working.endTime != selectedEndTime) {
+                if (working.endTimeAsLocalTime() != selectedEndTime) {
                     val result = app.incomeDatabaseSystem.updateIncomeEndTime(working, selectedEndTime)
-                    if (result.status == com.example.mybudgettree.database.managers.IncomeDatabaseSystem.UpdateIncomeReturnStatus.Failed) {
+                    if (result.status == UpdateReturnStatus.Failed) {
                         Toast.makeText(this@EditTransactionActivity, result.errMsg, Toast.LENGTH_SHORT).show()
                         return@launch
                     }
-                    result.income?.let { working = it }
+                    result.value?.let { working = it }
                 }
-                if (imageCleared || working.imagePath != imagePath) app.incomeDatabaseSystem.updateIncomeImage(working, imagePath)
+                if (working.imagePathFor(DeviceId.get(app)) != imagePath) app.incomeDatabaseSystem.updateIncomeImage(working, DeviceId.get(app), imagePath)
                 Toast.makeText(this@EditTransactionActivity, R.string.income_updated, Toast.LENGTH_SHORT).show()
             } else {
-                val expense = app.expenseDatabaseSystem.findExpense(id).expense ?: return@launch
+                val expense = app.expenseDatabaseSystem.findExpense(id).value ?: return@launch
                 var working = expense
-                if (working.description != title) app.expenseDatabaseSystem.updateExpenseDescription(working, title).expense?.let { working = it }
-                if (working.amount != amount) app.expenseDatabaseSystem.updateExpenseAmount(working, amount).expense?.let { working = it }
-                if (working.date != selectedDate) app.expenseDatabaseSystem.updateExpenseDate(working, selectedDate).expense?.let { working = it }
-                if (working.startTime != selectedStartTime) {
+                if (working.description != title) app.expenseDatabaseSystem.updateExpenseDescription(working, title).value?.let { working = it }
+                if (working.amount != amount) app.expenseDatabaseSystem.updateExpenseAmount(working, amount).value?.let { working = it }
+                if (working.dateAsLocalDate() != selectedDate) app.expenseDatabaseSystem.updateExpenseDate(working, selectedDate).value?.let { working = it }
+                if (working.startTimeAsLocalTime() != selectedStartTime) {
                     val result = app.expenseDatabaseSystem.updateExpenseStartTime(working, selectedStartTime)
-                    if (result.status == com.example.mybudgettree.database.managers.ExpenseDatabaseSystem.UpdateExpenseReturnStatus.Failed) {
+                    if (result.status == UpdateReturnStatus.Failed) {
                         Toast.makeText(this@EditTransactionActivity, result.errMsg, Toast.LENGTH_SHORT).show()
                         return@launch
                     }
-                    result.expense?.let { working = it }
+                    result.value?.let { working = it }
                 }
-                if (working.endTime != selectedEndTime) {
+                if (working.endTimeAsLocalTime() != selectedEndTime) {
                     val result = app.expenseDatabaseSystem.updateExpenseEndTime(working, selectedEndTime)
-                    if (result.status == com.example.mybudgettree.database.managers.ExpenseDatabaseSystem.UpdateExpenseReturnStatus.Failed) {
+                    if (result.status == UpdateReturnStatus.Failed) {
                         Toast.makeText(this@EditTransactionActivity, result.errMsg, Toast.LENGTH_SHORT).show()
                         return@launch
                     }
-                    result.expense?.let { working = it }
+                    result.value?.let { working = it }
                 }
-                if (imageCleared || working.imagePath != imagePath) app.expenseDatabaseSystem.updateExpenseImage(working, imagePath)
+                if (working.imagePathFor(DeviceId.get(app)) != imagePath) app.expenseDatabaseSystem.updateExpenseImage(working, DeviceId.get(app), imagePath)
                 Toast.makeText(this@EditTransactionActivity, R.string.expense_updated, Toast.LENGTH_SHORT).show()
             }
             finish()
@@ -231,15 +232,15 @@ class EditTransactionActivity : AppCompatActivity() {
     }
 
     private fun deleteTransaction() {
-        val id = intent.getLongExtra(EXTRA_TRANSACTION_ID, -1L)
+        val id = intent.getStringExtra(EXTRA_TRANSACTION_ID).orEmpty()
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
             if (isIncome) {
-                val income = app.incomeDatabaseSystem.findIncome(id).income
+                val income = app.incomeDatabaseSystem.findIncome(id).value
                 if (income != null) app.incomeDatabaseSystem.deleteIncome(income)
                 Toast.makeText(this@EditTransactionActivity, R.string.income_deleted, Toast.LENGTH_SHORT).show()
             } else {
-                val expense = app.expenseDatabaseSystem.findExpense(id).expense
+                val expense = app.expenseDatabaseSystem.findExpense(id).value
                 if (expense != null) app.expenseDatabaseSystem.deleteExpense(expense)
                 Toast.makeText(this@EditTransactionActivity, R.string.expense_deleted, Toast.LENGTH_SHORT).show()
             }

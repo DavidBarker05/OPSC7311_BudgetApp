@@ -290,4 +290,8 @@
     <string name="start_time">Start Time</string>
     <string name="end_time">End Time</string>
     <string name="time_invalid">Start time must be before end time.</string>
+    <string name="email_verification_sent">We sent a verification link to your new email. Your email changes once you open it.</string>
+    <string name="delete_account_password_hint">Enter your password to confirm</string>
+    <string name="delete_account_wrong_password">That password is incorrect, so your account was not deleted</string>
+    <string name="delete_account_failed">Could not delete your account, please check your connection and try again</string>
 </resources>

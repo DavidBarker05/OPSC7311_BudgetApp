@@ -34,7 +34,7 @@ class IncomeImageIntegrationTest : DatabaseTestBase() {
     }
 
     private fun saveSampleImage(size: Int = 4): String =
-        runBlocking { imageStorageSystem.saveImage(samplePngBytes(size, size), "${UUID.randomUUID()}.png") }
+        runBlocking { imageStorageSystem.saveImage(samplePngBytes(size, size), "${UUID.randomUUID()}.png")!! }
 
     private suspend fun createIncomeWithImage(imagePath: String?, deviceId: String?) =
         incomeDatabaseSystem.createIncome(

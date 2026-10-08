@@ -83,10 +83,10 @@ class CategoryDetailActivity : AppCompatActivity() {
 
     private fun loadCategory() {
         val user = UserSession.currentUser ?: return
-        val categoryId = intent.getLongExtra(EXTRA_CATEGORY_ID, -1L)
+        val categoryId = intent.getStringExtra(EXTRA_CATEGORY_ID).orEmpty()
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
-            val found = app.categoryDatabaseSystem.findCategory(categoryId).category
+            val found = app.categoryDatabaseSystem.findCategory(categoryId).value
             if (found == null) {
                 finish()
                 return@launch
@@ -94,15 +94,15 @@ class CategoryDetailActivity : AppCompatActivity() {
             category = found
             findViewById<TextView>(R.id.tvCategoryTitle).text = found.categoryName
             val currentMonth = YearMonth.now()
-            val expensesThisMonth = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
-                .filter { YearMonth.from(it.date) == currentMonth }
-            val incomesThisMonth = app.incomeDatabaseSystem.retrieveAllIncomes(user).incomes.orEmpty()
-                .filter { YearMonth.from(it.date) == currentMonth }
+            val expensesThisMonth = app.expenseDatabaseSystem.retrieveAllExpenses(user).values.orEmpty()
+                .filter { YearMonth.from(it.dateAsLocalDate()) == currentMonth }
+            val incomesThisMonth = app.incomeDatabaseSystem.retrieveAllIncomes(user).values.orEmpty()
+                .filter { YearMonth.from(it.dateAsLocalDate()) == currentMonth }
 
             val icon = CategoryGarden.iconRes(found)
-            val categoryExpenses = app.expenseDatabaseSystem.retrieveAllExpensesForCategory(found).expenses.orEmpty()
-            val categoryIncomes = app.incomeDatabaseSystem.retrieveAllIncomesForCategory(found).incomes.orEmpty()
-            val spentThisMonth = categoryExpenses.filter { YearMonth.from(it.date) == currentMonth }.sumOf { it.amount }
+            val categoryExpenses = app.expenseDatabaseSystem.retrieveAllExpensesForCategory(found).values.orEmpty()
+            val categoryIncomes = app.incomeDatabaseSystem.retrieveAllIncomesForCategory(found).values.orEmpty()
+            val spentThisMonth = categoryExpenses.filter { YearMonth.from(it.dateAsLocalDate()) == currentMonth }.sumOf { it.amount }
             BudgetOverview.bind(this@CategoryDetailActivity, incomesThisMonth, expensesThisMonth, spentThisMonth, found.budgetAmount ?: 0.0)
             val expenseRows = categoryExpenses.map { expense ->
                 TransactionRow(
@@ -111,9 +111,9 @@ class CategoryDetailActivity : AppCompatActivity() {
                     categoryName = found.categoryName,
                     amount = expense.amount,
                     isIncome = false,
-                    date = expense.date,
-                    time = expense.startTime,
-                    imagePath = expense.imagePath,
+                    date = expense.dateAsLocalDate(),
+                    time = expense.startTimeAsLocalTime(),
+                    imagePath = expense.imagePathFor(DeviceId.get(app)),
                     iconRes = icon
                 )
             }
@@ -124,9 +124,9 @@ class CategoryDetailActivity : AppCompatActivity() {
                     categoryName = found.categoryName,
                     amount = income.amount,
                     isIncome = true,
-                    date = income.date,
-                    time = income.startTime,
-                    imagePath = income.imagePath,
+                    date = income.dateAsLocalDate(),
+                    time = income.startTimeAsLocalTime(),
+                    imagePath = income.imagePathFor(DeviceId.get(app)),
                     iconRes = icon
                 )
             }

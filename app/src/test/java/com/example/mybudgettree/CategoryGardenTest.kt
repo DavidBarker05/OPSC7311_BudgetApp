@@ -7,7 +7,7 @@ import org.junit.Test
 class CategoryGardenTest {
 
     private fun category(name: String, iconKey: String? = null) =
-        Category(username = "user", categoryName = name, iconKey = iconKey)
+        Category(categoryName = name, iconKey = iconKey)
 
     @Test
     fun defaultNames_doesNotContainSavings() {

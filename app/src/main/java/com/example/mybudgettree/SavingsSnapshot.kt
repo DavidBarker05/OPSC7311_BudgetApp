@@ -24,15 +24,15 @@ data class SavingsSnapshot(
 ) {
     companion object {
         suspend fun compute(app: BudgetTreeApplication, user: User, today: LocalDate = LocalDate.now()): SavingsSnapshot {
-            val goals = app.savingsGoalDatabaseSystem.getAllGoalsForUser(user).goals.orEmpty()
+            val goals = app.savingsGoalDatabaseSystem.getAllGoalsForUser(user).values.orEmpty()
             val contributions = goals.flatMap { goal ->
-                app.savingsContributionDatabaseSystem.retrieveAllContributionsForGoal(goal).contributions.orEmpty()
+                app.savingsContributionDatabaseSystem.retrieveAllContributionsForGoal(goal).values.orEmpty()
             }
             val targetSum = goals.mapNotNull { it.targetAmount }.sum()
             val currentMonth = YearMonth.from(today)
             val weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-            val savedThisMonth = contributions.filter { YearMonth.from(it.date) == currentMonth }.sumOf { it.amount }
-            val savedThisWeek = contributions.filter { it.date in weekStart..today }.sumOf { it.amount }
+            val savedThisMonth = contributions.filter { YearMonth.from(it.dateAsLocalDate()) == currentMonth }.sumOf { it.amount }
+            val savedThisWeek = contributions.filter { it.dateAsLocalDate() in weekStart..today }.sumOf { it.amount }
             val percent = if (targetSum <= 0.0) 0 else ((savedThisMonth / targetSum) * 100.0).toInt().coerceIn(0, 100)
             val filledDrops = if (targetSum <= 0.0) 0 else (percent / 20.0).roundToInt().coerceIn(0, 5)
             return SavingsSnapshot(percent, savedThisMonth, savedThisWeek, filledDrops)

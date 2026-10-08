@@ -34,7 +34,7 @@ class ExpenseImageIntegrationTest : DatabaseTestBase() {
     }
 
     private fun saveSampleImage(size: Int = 4): String =
-        runBlocking { imageStorageSystem.saveImage(samplePngBytes(size, size), "${UUID.randomUUID()}.png") }
+        runBlocking { imageStorageSystem.saveImage(samplePngBytes(size, size), "${UUID.randomUUID()}.png")!! }
 
     private suspend fun createExpenseWithImage(imagePath: String?, deviceId: String?) =
         expenseDatabaseSystem.createExpense(
