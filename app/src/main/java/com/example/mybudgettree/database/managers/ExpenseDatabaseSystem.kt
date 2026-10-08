@@ -33,6 +33,8 @@ class ExpenseDatabaseSystem(
 
     companion object {
         private const val TAG = "ExpenseDatabaseSystem"
+
+        private const val BATCH_SIZE = 400L
     }
 
     private fun expenses(uid: String): CollectionReference = db.collection("users").document(uid).collection("expenses")
@@ -264,7 +266,7 @@ class ExpenseDatabaseSystem(
             return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category does not exist in the database")
         return try {
             val allExpenses = expenses(uid)
-                .whereEqualTo("categoryID", category.id)
+                .whereEqualTo("categoryId", category.id)
                 .whereEqualTo("date", date.toString())
                 .get()
                 .await()
@@ -299,7 +301,7 @@ class ExpenseDatabaseSystem(
             return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category does not exist in the database")
         return try {
             val allExpenses = expenses(uid)
-                .whereEqualTo("categoryID", category.id)
+                .whereEqualTo("categoryId", category.id)
                 .whereGreaterThanOrEqualTo("date", startDate.toString())
                 .whereLessThanOrEqualTo("date", endDate.toString())
                 .get()
@@ -516,7 +518,7 @@ class ExpenseDatabaseSystem(
                 id = expense.id,
                 subcollections = emptyList(),
                 relatedCollections = emptyList(),
-                batchSize = 0L
+                batchSize = BATCH_SIZE
             )
         val wasSuccessful = result == DeleteReturnStatus.Deleted
         val errMsg: String? =

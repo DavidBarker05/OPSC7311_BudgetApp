@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,7 +35,7 @@ class SavingsContributionDatabaseSystemTest : DatabaseTestBase() {
         assertTrue(result.wasSuccessful)
         assertTrue(result.value!!.createdAt.isNotBlank())
         // Reading it back as a date-time proves it was stored in a parseable format
-        result.value!!.createdAtAsLocalDateTime()
+        assertNotNull(result.value!!.createdAtAsLocalDateTime())
     }
 
     @Test

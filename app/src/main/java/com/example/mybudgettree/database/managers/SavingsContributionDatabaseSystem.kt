@@ -29,6 +29,8 @@ class SavingsContributionDatabaseSystem(
 
     companion object {
         private const val TAG = "SavingsContributionDatabaseSystem"
+
+        private const val BATCH_SIZE = 400L
     }
 
     private fun contributions(uid: String): CollectionReference = db.collection("users").document(uid).collection("savingsContributions")
@@ -130,7 +132,7 @@ class SavingsContributionDatabaseSystem(
                 id = contribution.id,
                 subcollections = emptyList(),
                 relatedCollections = emptyList(),
-                batchSize = 0L
+                batchSize = BATCH_SIZE
             )
         val wasSuccessful = result == DeleteReturnStatus.Deleted
         val errMsg: String? =

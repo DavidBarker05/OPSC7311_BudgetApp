@@ -22,7 +22,8 @@ class WateringCanActivityUiTest : UiTestBase() {
         UserSession.login(createTestUser(username = "wateringuser"))
 
         ActivityScenario.launch(WateringCanActivity::class.java).use {
-            onView(withId(R.id.rvGoals)).check(matches(isDisplayed()))
+            // the goals are loaded from Firestore asynchronously, so the grid is empty until they arrive
+            eventually { onView(withId(R.id.rvGoals)).check(matches(isDisplayed())) }
             onView(withId(R.id.btnSaveMore)).check(matches(isDisplayed()))
         }
     }

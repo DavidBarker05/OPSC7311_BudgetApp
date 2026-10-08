@@ -35,6 +35,8 @@ class IncomeDatabaseSystem(
 
     companion object {
         private const val TAG = "IncomeDatabaseSystem"
+
+        private const val BATCH_SIZE = 400L
     }
 
     /**
@@ -232,7 +234,7 @@ class IncomeDatabaseSystem(
             return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category does not exist in the database")
         return try {
             val allIncomes = incomes(uid)
-                .whereEqualTo("categoryID", category.id)
+                .whereEqualTo("categoryId", category.id)
                 .get()
                 .await()
                 .toObjects<Income>()
@@ -264,7 +266,7 @@ class IncomeDatabaseSystem(
             return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category does not exist in the database")
         return try {
             val allIncomes = incomes(uid)
-                .whereEqualTo("categoryID", category.id)
+                .whereEqualTo("categoryId", category.id)
                 .whereEqualTo("date", date.toString())
                 .get()
                 .await()
@@ -299,7 +301,7 @@ class IncomeDatabaseSystem(
             return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category does not exist in the database")
         return try {
             val allIncomes = incomes(uid)
-                .whereEqualTo("categoryID", category.id)
+                .whereEqualTo("categoryId", category.id)
                 .whereGreaterThanOrEqualTo("date", startDate.toString())
                 .whereLessThanOrEqualTo("date", endDate.toString())
                 .get()
@@ -516,7 +518,7 @@ class IncomeDatabaseSystem(
                 id = income.id,
                 subcollections = emptyList(),
                 relatedCollections = emptyList(),
-                batchSize = 0L
+                batchSize = BATCH_SIZE
             )
         val wasSuccessful = result == DeleteReturnStatus.Deleted
         val errMsg: String? =

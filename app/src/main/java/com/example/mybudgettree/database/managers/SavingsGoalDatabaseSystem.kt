@@ -92,6 +92,7 @@ class SavingsGoalDatabaseSystem(
 
     private suspend fun tryCreateGoal(user: User, goalName: String, iconKey: String? = null, targetAmount: Double? = null): CreateReturnInfo<SavingsGoal> {
         if (goalName.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Goal name is empty")
+        if (targetAmount != null && targetAmount < 0.0) return CreateReturnInfo(wasSuccessful = false, errMsg = "Target amount cannot be negative")
         if (auth.currentUser?.uid != user.uid) return CreateReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
         return try {
             if (isGoalNameTaken(user, goalName)) return CreateReturnInfo(wasSuccessful = false, errMsg = "User already has a goal with name \"$goalName\"")
@@ -284,7 +285,7 @@ class SavingsGoalDatabaseSystem(
                 id = goal.id,
                 subcollections = emptyList(),
                 relatedCollections = relatedCollections(uid),
-                batchSize = 0L
+                batchSize = BATCH_SIZE
             )
         val wasSuccessful = result == DeleteReturnStatus.Deleted
         val errMsg: String? =

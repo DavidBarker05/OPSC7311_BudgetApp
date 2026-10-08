@@ -150,10 +150,13 @@ class UserDatabaseSystem(
                     false
                 }
             }.await()
-            if (isPhoneNumberTaken) CreateReturnInfo<User>(wasSuccessful = false, errMsg = "Phone number is already in use")
-            wasCreated = true
-            // The uid is not stored as a field, so add it back for the caller
-            CreateReturnInfo(wasSuccessful = true, value = profile.copy(uid = uid))
+            if (isPhoneNumberTaken) {
+                CreateReturnInfo(wasSuccessful = false, errMsg = "Phone number is already in use")
+            } else {
+                wasCreated = true
+                // The uid is not stored as a field, so add it back for the caller
+                CreateReturnInfo(wasSuccessful = true, value = profile.copy(uid = uid))
+            }
         } catch (_: FirebaseAuthUserCollisionException) {
             CreateReturnInfo(wasSuccessful = false, errMsg = "Email is already in use")
         } catch (_: FirebaseAuthWeakPasswordException) {
