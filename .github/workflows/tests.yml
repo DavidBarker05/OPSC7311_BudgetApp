@@ -30,7 +30,16 @@ jobs:
         run: ./gradlew testDebugUnitTest --console=plain
 
   instrumented-test:
+    name: ${{ matrix.suite }} tests
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: database
+            packages: com.example.mybudgettree.database,com.example.mybudgettree.imagestorage
+          - suite: ui
+            packages: com.example.mybudgettree.ui
     steps:
       - uses: actions/checkout@v5
 
@@ -49,7 +58,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Run instrumented tests
+      - name: Run ${{ matrix.suite }} instrumented tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -62,13 +71,13 @@ jobs:
             adb shell svc power stayon true
             adb shell input keyevent KEYCODE_WAKEUP
             adb shell wm dismiss-keyguard
-            ./gradlew connectedDebugAndroidTest --console=plain
+            ./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.package=${{ matrix.packages }} --console=plain
 
-      - name: Upload instrumented test report
+      - name: Upload ${{ matrix.suite }} test report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: instrumented-test-report
+          name: ${{ matrix.suite }}-test-report
           path: |
             app/build/reports/androidTests/connected
             app/build/outputs/androidTest-results/connected
