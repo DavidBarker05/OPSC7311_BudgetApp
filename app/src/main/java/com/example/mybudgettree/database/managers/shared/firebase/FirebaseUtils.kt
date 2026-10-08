@@ -14,11 +14,38 @@ import kotlin.reflect.full.companionObject
 import kotlin.reflect.full.companionObjectInstance
 import kotlin.reflect.full.memberProperties
 
+/**
+ * Describes a collection whose documents point at another document by ID, and so must be deleted along with it.
+ * Firestore has no cascading deletes, so these have to be removed by hand (see [deleteDocument])
+ *
+ * @property collection The collection holding the documents that point at the deleted one (e.g. the user's expenses)
+ * @property referenceField The field in those documents that holds the deleted document's ID (e.g. "categoryId")
+ */
 data class RelatedCollection(
     val collection: CollectionReference,
     val referenceField: String
 )
 
+/**
+ * Updates one field of a document and reports the result, so the managers don't each repeat the same checks and
+ * error handling
+ *
+ * The document's ID is found by reflection: the entity's `id` property, otherwise its `uid`, otherwise the
+ * `DOCUMENT_ID` constant in its companion object (e.g. [com.example.mybudgettree.database.entries.UserTree.DOCUMENT_ID]).
+ * The field written is named after [property], so a property must have the same name as its stored field
+ *
+ * @param T The kind of entity being updated
+ * @param V The type of the field being updated
+ * @param collection The collection the document is in
+ * @param entityTypeDisplayName A readable name for the kind of entity being updated, used in errors
+ * @param entity The entity being updated, as it currently is
+ * @param property The property of [entity] to update (e.g. `Category::categoryName`)
+ * @param newValue The value to write to the field
+ * @param updatedEntity The entity with [newValue] applied, returned when the update succeeds
+ * @return An [UpdateReturnInfo]: [UpdateReturnStatus.NoChange] if the field already holds [newValue],
+ * [UpdateReturnStatus.Succeeded] with [updatedEntity] if it was written, or [UpdateReturnStatus.Failed] if the entity
+ * has no usable ID, the document no longer exists, or the write failed
+ */
 suspend fun <T: Any, V> updateDocumentField(
     collection: CollectionReference,
     entityTypeDisplayName: String,
@@ -99,6 +126,14 @@ suspend fun <T : Any> updateDeviceImagePath(
     }
 }
 
+/**
+ * Deletes every document a query matches, a batch at a time, since Firestore can't delete a collection in one call.
+ * Pass a whole collection to empty it, or a filtered query to delete only the documents that match
+ *
+ * @param db The Firestore instance holding the documents
+ * @param query The documents to delete. A [CollectionReference] is a query that matches everything in it
+ * @param batchSize How many documents to delete per batch, at most 500 and above 0 (a batch size of 0 deletes nothing)
+ */
 private suspend fun deleteCollection(
     db: FirebaseFirestore,
     query: Query,
@@ -111,6 +146,24 @@ private suspend fun deleteCollection(
     }
 }
 
+/**
+ * Deletes a document along with everything that belongs to it
+ *
+ * Firestore has no cascading deletes, so everything that belongs to the document is removed by hand first:
+ * - each collection in [subcollections], since deleting a document does not delete its subcollections
+ * - every document in the [relatedCollections] that points at it by ID, such as the expenses and incomes of a category
+ *
+ * These are cleared before the document itself so that, if something fails part way, the document still exists and
+ * the delete can simply be tried again. Failures are not caught here, so they propagate to the caller
+ *
+ * @param db The Firestore instance holding the document
+ * @param collection The collection the document is in
+ * @param id The ID of the document to delete
+ * @param subcollections The collections stored under the document that must be deleted with it
+ * @param relatedCollections The other collections whose documents point at this one by ID, and the field they use
+ * @param batchSize How many documents to delete per batch when clearing the other collections, at most 500 and above 0
+ * @return [DeleteReturnStatus.DoesNotExist] if the ID is blank or the document isn't there, otherwise [DeleteReturnStatus.Deleted]
+ */
 suspend fun deleteDocument(
     db: FirebaseFirestore,
     collection: CollectionReference,

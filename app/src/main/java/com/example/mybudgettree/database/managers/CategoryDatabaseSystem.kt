@@ -15,6 +15,12 @@ import kotlinx.coroutines.tasks.await
 /**
  * This system manages category state, uniqueness validation, discovery, updates, and removals
  *
+ * Categories are stored in Firestore at `users/{uid}/categories/{id}`. Only the signed-in user's data can be reached,
+ * so each function checks that the user it's given is the one signed in. Category names are unique per user, which
+ * Firestore can't enforce, so it's checked in code. Deleting a category also deletes the expenses and incomes in it
+ *
+ * @property auth The Firebase Authentication instance used to find the signed-in user
+ * @property db The Firestore instance that holds the categories
  */
 class CategoryDatabaseSystem(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
@@ -39,6 +45,13 @@ class CategoryDatabaseSystem(
     }
 
 
+    /**
+     * Checks whether a user already has a category with the given name. Names are compared exactly, so "Food" and "food" are different
+     *
+     * @param uid The ID of the user to check, who must be the one signed in
+     * @param categoryName The name to look for
+     * @return True if the user has a category with that name. False if the name is free, or if the name is blank or [uid] isn't the signed-in user
+     */
     suspend fun isCategoryNameTaken(uid: String, categoryName: String): Boolean {
         if (uid.isBlank() || categoryName.isBlank() || auth.currentUser?.uid != uid) return false
         return !categories(uid)
@@ -48,6 +61,13 @@ class CategoryDatabaseSystem(
             .isEmpty
     }
 
+    /**
+     * Checks whether the user already has a category with the given name
+     *
+     * @param user The [User] to check
+     * @param categoryName The name to look for
+     * @return True if the user has a category with that name, see the overload that takes a user ID
+     */
     suspend fun isCategoryNameTaken(user: User, categoryName: String): Boolean = isCategoryNameTaken(user.uid, categoryName)
 
     /**
@@ -245,7 +265,7 @@ class CategoryDatabaseSystem(
     }
 
     /**
-     * Deletes the category from the database
+     * Deletes the category from the database, along with every expense and income in it
      *
      * @param category The [Category] to delete
      * @return A status reflection from [DeleteReturnStatus]

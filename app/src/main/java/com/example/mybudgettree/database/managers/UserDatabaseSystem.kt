@@ -33,9 +33,10 @@ import kotlinx.coroutines.withContext
  * This system manages user state, credentials validation, account discovery, updates, and removals
  *
  * Accounts (email and password) live in Firebase Authentication, and each user's profile lives in Firestore at
- * `users/{uid}`. A lookup collection, `phoneNumbers/{phoneNumber}`, makes phone numbers unique. The security
- * rules only let a signed-in user read and write their own profile, so these functions can only act on the user
- * who is currently signed in
+ * `users/{uid}`. Anything bigger that belongs to the user is stored beneath it, such as the profile photo at
+ * `users/{uid}/profilePhoto/photo` and the money tree at `users/{uid}/userTree/tree`. A lookup collection,
+ * `phoneNumbers/{phoneNumber}`, makes phone numbers unique. The security rules only let a signed-in user read and
+ * write their own data, so these functions can only act on the user who is currently signed in
  *
  * @property auth The Firebase Authentication instance that owns the accounts
  * @property db The Firestore instance that holds the profiles and lookups
@@ -360,6 +361,10 @@ class UserDatabaseSystem(
     /**
      * Updates the phone number for the user
      *
+     * Phone numbers are unique, so the number is only changed if nobody else has it. The old number is freed, the
+     * new one claimed and the profile updated in one transaction, so a failure can't leave a number claimed twice
+     * or not at all
+     *
      * @param user The [User] being updated
      * @param newPhoneNumber The new phone number
      * @return An [UpdateReturnInfo] indicating what happened with the update
@@ -526,7 +531,8 @@ class UserDatabaseSystem(
      * Deleting an account is sensitive, so the password is checked again first. The data is deleted before the
      * account, because once the account is gone the user is signed out and the security rules would no longer let
      * their data be removed. Firestore does not remove a document's subcollections along with it, so each one in
-     * [USER_SUBCOLLECTIONS] is cleared explicitly
+     * [USER_SUBCOLLECTIONS] is cleared explicitly. The phone number lookup is removed too, so the number can be
+     * used by someone else
      *
      * @param user The [User] to delete
      * @param password The user's current password, to confirm it is really them

@@ -11,9 +11,13 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.tasks.await
 
 /**
- * This system manages the user's overall monthly minimum/maximum spending goal,
- * distinct from per-category budgets
+ * This system manages the user's overall monthly minimum/maximum spending goal, distinct from per-category budgets
  *
+ * Goals are stored in Firestore at `users/{uid}/monthlyGoals/{yyyy-MM}`. The document ID is the month, so saving a goal
+ * for a month that already has one replaces it
+ *
+ * @property auth The Firebase Authentication instance used to find the signed-in user
+ * @property db The Firestore instance that holds the goals
  */
 class MonthlyGoalDatabaseSystem(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),

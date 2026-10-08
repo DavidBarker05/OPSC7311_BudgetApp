@@ -16,6 +16,11 @@ import kotlinx.coroutines.tasks.await
 /**
  * This system manages savings contribution creation, discovery, and removal
  *
+ * Contributions are stored in Firestore at `users/{uid}/savingsContributions/{id}` and point at their goal by `goalId`.
+ * Only the signed-in user's data can be reached. Contributions can't be edited, only added and deleted
+ *
+ * @property auth The Firebase Authentication instance used to find the signed-in user
+ * @property db The Firestore instance that holds the contributions
  */
 class SavingsContributionDatabaseSystem(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),

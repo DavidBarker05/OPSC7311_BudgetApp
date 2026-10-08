@@ -15,6 +15,12 @@ import kotlinx.coroutines.tasks.await
 /**
  * This system manages savings goal state, uniqueness validation, discovery, updates, and removals
  *
+ * Goals are stored in Firestore at `users/{uid}/savingsGoals/{id}`. Only the signed-in user's data can be reached, so
+ * each function checks that the user it's given is the one signed in. Goal names are unique per user, which Firestore
+ * can't enforce, so it's checked in code. Deleting a goal also deletes its contributions
+ *
+ * @property auth The Firebase Authentication instance used to find the signed-in user
+ * @property db The Firestore instance that holds the goals
  */
 class SavingsGoalDatabaseSystem(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
@@ -37,6 +43,13 @@ class SavingsGoalDatabaseSystem(
 
 
 
+    /**
+     * Checks whether a user already has a savings goal with the given name. Names are compared exactly, so "Car" and "car" are different
+     *
+     * @param uid The ID of the user to check, who must be the one signed in
+     * @param goalName The name to look for
+     * @return True if the user has a goal with that name. False if the name is free, or if the name is blank or [uid] isn't the signed-in user
+     */
     suspend fun isGoalNameTaken(uid: String, goalName: String): Boolean {
         if (uid.isBlank() || goalName.isBlank() || auth.currentUser?.uid != uid) return false
         return !goals(uid)
@@ -46,6 +59,13 @@ class SavingsGoalDatabaseSystem(
             .isEmpty
     }
 
+    /**
+     * Checks whether the user already has a savings goal with the given name
+     *
+     * @param user The [User] to check
+     * @param goalName The name to look for
+     * @return True if the user has a goal with that name, see the overload that takes a user ID
+     */
     suspend fun isGoalNameTaken(user: User, goalName: String): Boolean = isGoalNameTaken(user.uid, goalName)
 
     /**
@@ -90,6 +110,12 @@ class SavingsGoalDatabaseSystem(
         }
     }
 
+    /**
+     * Find the signed-in user's savings goal by its ID if it exists
+     *
+     * @param goalId The id to search for
+     * @return A [FindReturnInfo] indicating what happened with the search
+     */
     suspend fun findGoal(goalId: String): FindReturnInfo<SavingsGoal> {
         if (goalId.isBlank()) return FindReturnInfo(wasSuccessful = false, errMsg = "Goal id is empty")
         val uid = auth.uid ?: return FindReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
@@ -104,6 +130,13 @@ class SavingsGoalDatabaseSystem(
         }
     }
 
+    /**
+     * Find the user's savings goal by name if it exists
+     *
+     * @param user The [User] the goal should belong to
+     * @param goalName The goal name to search for
+     * @return A [FindReturnInfo] indicating what happened with the search
+     */
     suspend fun findGoal(user: User, goalName: String): FindReturnInfo<SavingsGoal> {
         if (goalName.isBlank()) return FindReturnInfo(wasSuccessful = false, errMsg = "Goal name is empty")
         if (auth.currentUser?.uid != user.uid) return FindReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
@@ -123,6 +156,12 @@ class SavingsGoalDatabaseSystem(
         }
     }
 
+    /**
+     * Retrieves every savings goal belonging to the user
+     *
+     * @param user The [User] to retrieve goals for
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
+     */
     suspend fun getAllGoalsForUser(user: User): FindAllReturnInfo<SavingsGoal> {
         if (auth.currentUser?.uid != user.uid) return FindAllReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
         return try {
@@ -135,6 +174,13 @@ class SavingsGoalDatabaseSystem(
         }
     }
 
+    /**
+     * Modifies the name for the goal
+     *
+     * @param goal The [SavingsGoal] being updated
+     * @param newGoalName The new goal name, must not already be used by another of the user's goals
+     * @return An [UpdateReturnInfo] indicating what happened with the update
+     */
     suspend fun updateGoalName(goal: SavingsGoal, newGoalName: String): UpdateReturnInfo<SavingsGoal> {
         val result = tryUpdateGoalName(goal, newGoalName)
         logOutcome(
@@ -160,6 +206,13 @@ class SavingsGoalDatabaseSystem(
         )
     }
 
+    /**
+     * Modifies the icon for the goal
+     *
+     * @param goal The [SavingsGoal] being updated
+     * @param newIconKey The new [com.example.mybudgettree.IconCatalog] key, or null to fall back to the default
+     * @return An [UpdateReturnInfo] indicating what happened with the update
+     */
     suspend fun updateGoalIcon(goal: SavingsGoal, newIconKey: String?): UpdateReturnInfo<SavingsGoal> {
         val result = tryUpdateGoalIcon(goal, newIconKey)
         logOutcome(
@@ -184,6 +237,13 @@ class SavingsGoalDatabaseSystem(
         )
     }
 
+    /**
+     * Modifies the target amount for the goal
+     *
+     * @param goal The [SavingsGoal] being updated
+     * @param newTargetAmount The new amount to aim to save, or null to remove the target, cannot be negative
+     * @return An [UpdateReturnInfo] indicating what happened with the update
+     */
     suspend fun updateGoalTarget(goal: SavingsGoal, newTargetAmount: Double?): UpdateReturnInfo<SavingsGoal> {
         val result = tryUpdateGoalTarget(goal, newTargetAmount)
         logOutcome(
@@ -208,6 +268,12 @@ class SavingsGoalDatabaseSystem(
         )
     }
 
+    /**
+     * Deletes the goal from the database, along with every contribution made to it
+     *
+     * @param goal The [SavingsGoal] to delete
+     * @return A status reflection from [DeleteReturnStatus]
+     */
     suspend fun deleteGoal(goal: SavingsGoal): DeleteReturnStatus {
         val uid = auth.uid
         val result =

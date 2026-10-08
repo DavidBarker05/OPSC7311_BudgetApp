@@ -17,6 +17,14 @@ import kotlinx.coroutines.tasks.await
 
 /**
  * This system manages income state, validation, discovery, updates, and removals
+ *
+ * Incomes are stored in Firestore at `users/{uid}/incomes/{id}` and point at their category by `categoryId`. Only the
+ * signed-in user's data can be reached. Dates and times are stored as ISO-8601 strings, which sort the same way as the
+ * dates they represent, so they can be filtered with range queries. Combining a category or description filter with a
+ * date range needs a Firestore composite index
+ *
+ * @property auth The Firebase Authentication instance used to find the signed-in user
+ * @property db The Firestore instance that holds the incomes
  */
 class IncomeDatabaseSystem(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
