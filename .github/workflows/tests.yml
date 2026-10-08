@@ -20,10 +20,14 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      # Caches the Gradle distribution, the downloaded dependencies and the build cache between runs. Only runs on
-      # master save it, pull requests read it, so the first run after a merge fills it for everyone
+      # Caches the downloaded dependencies and the build cache between runs. By default only runs on master save it and
+      # pull requests just read it. cache-read-only is turned off so a pull request also saves its own cache, which makes
+      # the re-runs of that pull request fast. Each pull request keeps its own copy, so this can fill the 10 GB of cache
+      # storage. Once the pipeline is stable, remove the line to go back to master being the only one that saves it
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -59,10 +63,14 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      # Caches the Gradle distribution, the downloaded dependencies and the build cache between runs. Only runs on
-      # master save it, pull requests read it, so the first run after a merge fills it for everyone
+      # Caches the downloaded dependencies and the build cache between runs. By default only runs on master save it and
+      # pull requests just read it. cache-read-only is turned off so a pull request also saves its own cache, which makes
+      # the re-runs of that pull request fast. Each pull request keeps its own copy, so this can fill the 10 GB of cache
+      # storage. Once the pipeline is stable, remove the line to go back to master being the only one that saves it
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -97,6 +105,7 @@ jobs:
       - name: Build the test APKs
         run: ./gradlew assembleDebug assembleDebugAndroidTest --console=plain
 
+      # The key ends in a version so the snapshot can be thrown away: bump it if a bad emulator state ever gets saved into it
       # The AVD and its boot snapshot are kept between runs, so the emulator starts in seconds instead of cold booting.
       # The three instrumented jobs share one cache entry. Change the key when the api-level, target, arch or profile do
       - name: Cache the Android emulator
@@ -106,7 +115,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ runner.os }}-api34-google_apis-x86_64-pixel_6
+          key: avd-${{ runner.os }}-api34-google_apis-x86_64-pixel_6-v2
 
       # Only when there is no cache yet: boots the emulator once so its snapshot is saved into the cache
       - name: Create the emulator snapshot for the cache
@@ -120,7 +129,9 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
-          script: echo "Generated the emulator snapshot for caching"
+          script: |
+            adb shell settings put global hide_error_dialogs 1
+            echo "Generated the emulator snapshot for caching"
 
       - name: Run ${{ matrix.suite }} instrumented tests
         uses: reactivecircus/android-emulator-runner@v2
@@ -133,10 +144,13 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
+            adb shell settings put global hide_error_dialogs 1
+            adb shell am force-stop com.google.android.apps.nexuslauncher
             adb shell settings put system screen_off_timeout 2147483647
             adb shell svc power stayon true
             adb shell input keyevent KEYCODE_WAKEUP
             adb shell wm dismiss-keyguard
+            adb shell input keyevent KEYCODE_HOME
             bash .github/scripts/run-instrumented-tests.sh "${{ matrix.packages }}" "${{ matrix.firebase }}"
 
       - name: Upload ${{ matrix.suite }} test report
