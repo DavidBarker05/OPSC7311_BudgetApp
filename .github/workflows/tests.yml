@@ -20,14 +20,10 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      # Caches the downloaded dependencies and the build cache between runs. By default only runs on master save it and
-      # pull requests just read it. cache-read-only is turned off so a pull request also saves its own cache, which makes
-      # the re-runs of that pull request fast. Each pull request keeps its own copy, so this can fill the 10 GB of cache
-      # storage. Once the pipeline is stable, remove the line to go back to master being the only one that saves it
+      # Caches the downloaded dependencies and the build cache between runs. Only runs on master save it. Pull requests
+      # just read master's copy, so they don't each fill the 10 GB of cache storage with their own
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-read-only: false
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -63,14 +59,10 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      # Caches the downloaded dependencies and the build cache between runs. By default only runs on master save it and
-      # pull requests just read it. cache-read-only is turned off so a pull request also saves its own cache, which makes
-      # the re-runs of that pull request fast. Each pull request keeps its own copy, so this can fill the 10 GB of cache
-      # storage. Once the pipeline is stable, remove the line to go back to master being the only one that saves it
+      # Caches the downloaded dependencies and the build cache between runs. Only runs on master save it. Pull requests
+      # just read master's copy, so they don't each fill the 10 GB of cache storage with their own
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-read-only: false
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -161,5 +153,4 @@ jobs:
           path: |
             app/build/reports/androidTests/connected
             app/build/outputs/androidTest-results/connected
-            ci-diagnostics
           retention-days: 14
