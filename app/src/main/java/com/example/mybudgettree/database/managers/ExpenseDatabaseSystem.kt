@@ -286,18 +286,30 @@ class ExpenseDatabaseSystem(
      *
      * @param expense The [Expense] being updated
      * @param newDescription The new description
-     * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateExpenseDescription(expense: Expense, newDescription: String): UpdateExpenseReturnInfo {
-        val result = run {
-            if (expense.description == newDescription) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-            if (newDescription.isBlank()) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Description is empty")
-            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-            expenseDao.updateExpenseDescription(expense.id, newDescription)
-            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(description = newDescription))
-        }
-        logUpdateOutcome("update description for expense id ${expense.id}", result.status, result.errMsg)
+    suspend fun updateExpenseDescription(expense: Expense, newDescription: String): UpdateReturnInfo<Expense> {
+        val result = tryUpdateExpenseDescription(expense, newDescription)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "description for expense '${expense.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateExpenseDescription(expense: Expense, newDescription: String): UpdateReturnInfo<Expense> {
+        if (newDescription.isBlank()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Description is empty")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = expenses(uid),
+            entityTypeDisplayName = "Expense",
+            entity = expense,
+            property = Expense::description,
+            newValue = newDescription,
+            updatedEntity = expense.copy(description = newDescription)
+        )
     }
 
     /**
@@ -305,18 +317,30 @@ class ExpenseDatabaseSystem(
      *
      * @param expense The [Expense] being updated
      * @param newAmount The new amount, cannot be negative
-     * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateExpenseAmount(expense: Expense, newAmount: Double): UpdateExpenseReturnInfo {
-        val result = run {
-            if (expense.amount == newAmount) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-            if (newAmount < 0.0) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "New amount cannot be less than 0")
-            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-            expenseDao.updateExpenseAmount(expense.id, newAmount)
-            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(amount = newAmount))
-        }
-        logUpdateOutcome("update amount for expense id ${expense.id}", result.status, result.errMsg)
+    suspend fun updateExpenseAmount(expense: Expense, newAmount: Double): UpdateReturnInfo<Expense> {
+        val result = tryUpdateExpenseAmount(expense, newAmount)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "amount for expense '${expense.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateExpenseAmount(expense: Expense, newAmount: Double): UpdateReturnInfo<Expense> {
+        if (newAmount < 0.0) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New amount cannot be negative")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = expenses(uid),
+            entityTypeDisplayName = "Expense",
+            entity = expense,
+            property = Expense::amount,
+            newValue = newAmount,
+            updatedEntity = expense.copy(amount = newAmount)
+        )
     }
 
     /**
@@ -324,17 +348,29 @@ class ExpenseDatabaseSystem(
      *
      * @param expense The [Expense] being updated
      * @param newDate The new date
-     * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateExpenseDate(expense: Expense, newDate: LocalDate): UpdateExpenseReturnInfo {
-        val result = run {
-            if (expense.date == newDate) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-            expenseDao.updateExpenseDate(expense.id, newDate)
-            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(date = newDate))
-        }
-        logUpdateOutcome("update date for expense id ${expense.id}", result.status, result.errMsg)
+    suspend fun updateExpenseDate(expense: Expense, newDate: LocalDate): UpdateReturnInfo<Expense> {
+        val result = tryUpdateExpenseDate(expense, newDate)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "date for expense '${expense.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateExpenseDate(expense: Expense, newDate: LocalDate): UpdateReturnInfo<Expense> {
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = expenses(uid),
+            entityTypeDisplayName = "Expense",
+            entity = expense,
+            property = Expense::date,
+            newValue = newDate.toString(),
+            updatedEntity = expense.copy(date = newDate.toString())
+        )
     }
 
     /**
@@ -342,18 +378,30 @@ class ExpenseDatabaseSystem(
      *
      * @param expense The [Expense] being updated
      * @param newStartTime The new start time, cannot be after the expense's current end time
-     * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateExpenseStartTime(expense: Expense, newStartTime: LocalTime): UpdateExpenseReturnInfo {
-        val result = run {
-            if (expense.startTime == newStartTime) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-            if (expense.endTime < newStartTime) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Start time is after end time")
-            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-            expenseDao.updateExpenseStartTime(expense.id, newStartTime)
-            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(startTime = newStartTime))
-        }
-        logUpdateOutcome("update start time for expense id ${expense.id}", result.status, result.errMsg)
+    suspend fun updateExpenseStartTime(expense: Expense, newStartTime: LocalTime): UpdateReturnInfo<Expense> {
+        val result = tryUpdateExpenseStartTime(expense, newStartTime)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "start time for expense '${expense.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateExpenseStartTime(expense: Expense, newStartTime: LocalTime): UpdateReturnInfo<Expense> {
+        if (expense.endTimeAsLocalTime() < newStartTime) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Start time cannot be after end time")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = expenses(uid),
+            entityTypeDisplayName = "Expense",
+            entity = expense,
+            property = Expense::startTime,
+            newValue = newStartTime.toString(),
+            updatedEntity = expense.copy(date = newStartTime.toString())
+        )
     }
 
     /**
@@ -361,18 +409,30 @@ class ExpenseDatabaseSystem(
      *
      * @param expense The [Expense] being updated
      * @param newEndTime The new end time, cannot be before the expense's current start time
-     * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateExpenseEndTime(expense: Expense, newEndTime: LocalTime): UpdateExpenseReturnInfo {
-        val result = run {
-            if (expense.endTime == newEndTime) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-            if (newEndTime < expense.startTime) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "End time is before start time")
-            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-            expenseDao.updateExpenseEndTime(expense.id, newEndTime)
-            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(endTime = newEndTime))
-        }
-        logUpdateOutcome("update end time for expense id ${expense.id}", result.status, result.errMsg)
+    suspend fun updateExpenseEndTime(expense: Expense, newEndTime: LocalTime): UpdateReturnInfo<Expense> {
+        val result = tryUpdateExpenseEndTime(expense, newEndTime)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "end time for expense '${expense.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateExpenseEndTime(expense: Expense, newEndTime: LocalTime): UpdateReturnInfo<Expense> {
+        if (newEndTime < expense.startTimeAsLocalTime()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "End time cannot be before start time")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = expenses(uid),
+            entityTypeDisplayName = "Expense",
+            entity = expense,
+            property = Expense::endTime,
+            newValue = newEndTime.toString(),
+            updatedEntity = expense.copy(date = newEndTime.toString())
+        )
     }
 
     /**
@@ -380,30 +440,66 @@ class ExpenseDatabaseSystem(
      *
      * @param expense The [Expense] being updated
      * @param newImagePath The new image path, or null to remove it
-     * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateExpenseImage(expense: Expense, newImagePath: String?): UpdateExpenseReturnInfo {
-        val result = run {
-            if (expense.imagePath == newImagePath) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-            if (newImagePath?.isBlank() ?: false) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Image path cannot be blank")
-            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-            expenseDao.updateExpenseImage(expense.id, newImagePath)
-            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(imagePath = newImagePath))
-        }
-        logUpdateOutcome("update image for expense id ${expense.id}", result.status, result.errMsg)
+    suspend fun updateExpenseImage(expense: Expense, newImagePath: String?): UpdateReturnInfo<Expense> {
+        val result = tryUpdateExpenseImage(expense, newImagePath)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "image for expense '${expense.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateExpenseImage(expense: Expense, newImagePath: String?): UpdateReturnInfo<Expense> {
+        if (newImagePath?.isBlank() ?: false) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Image path cannot be blank")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = expenses(uid),
+            entityTypeDisplayName = "Expense",
+            entity = expense,
+            property = Expense::imagePath,
+            newValue = newImagePath,
+            updatedEntity = expense.copy(imagePath = newImagePath)
+        )
     }
 
     /**
      * Deletes the expense from the database
      *
      * @param expense The [Expense] to delete
-     * @return A status reflection from [ExpenseDeleteReturnStatus]
+     * @return A status reflection from [DeleteReturnStatus]
      */
-    suspend fun deleteExpense(expense: Expense): ExpenseDeleteReturnStatus {
-        val status = if (expenseDao.deleteExpense(expense) == 1) ExpenseDeleteReturnStatus.Deleted else ExpenseDeleteReturnStatus.DoesNotExist
-        if (status == ExpenseDeleteReturnStatus.Deleted) Log.i(TAG, "Successfully deleted expense '${expense.description}'")
-        else Log.w(TAG, "Failed to delete expense '${expense.description}': expense does not exist")
-        return status
+    suspend fun deleteExpense(expense: Expense): DeleteReturnStatus {
+        val uid = auth.uid
+        val result =
+            if (uid == null) DeleteReturnStatus.ReauthenticationFailed
+            else deleteDocument(
+                db = db,
+                collection = expenses(uid),
+                id = expense.id,
+                subCollections = emptyList(),
+                relatedCollections = emptyList(),
+                batchSize = 0L
+            )
+        val wasSuccessful = result == DeleteReturnStatus.Deleted
+        val errMsg: String? =
+            if (wasSuccessful) null
+            else when (result) {
+                DeleteReturnStatus.DoesNotExist -> "Contribution does not exist"
+                DeleteReturnStatus.ReauthenticationFailed -> "No user currently signed in"
+                else -> "Unknown reason"
+            }
+        logOutcome(
+            tag = TAG,
+            wasSuccessful = wasSuccessful,
+            verbOnSuccess = "deleted",
+            verbOnFailure = "to delete",
+            messageDetails = "expense '${expense.id}'",
+            errMsg = errMsg
+        )
+        return result
     }
 }
