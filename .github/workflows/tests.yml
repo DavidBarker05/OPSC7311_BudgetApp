@@ -20,6 +20,11 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      # Caches the Gradle distribution, the downloaded dependencies and the build cache between runs. Only runs on
+      # master save it, pull requests read it, so the first run after a merge fills it for everyone
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
@@ -54,6 +59,11 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      # Caches the Gradle distribution, the downloaded dependencies and the build cache between runs. Only runs on
+      # master save it, pull requests read it, so the first run after a merge fills it for everyone
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
@@ -81,6 +91,31 @@ jobs:
         if: matrix.firebase
         run: npm install -g firebase-tools
 
+      # The AVD and its boot snapshot are kept between runs, so the emulator starts in seconds instead of cold booting.
+      # The three instrumented jobs share one cache entry. Change the key when the api-level, target, arch or profile do
+      - name: Cache the Android emulator
+        id: avd-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ runner.os }}-api34-google_apis-x86_64-pixel_6
+
+      # Only when there is no cache yet: boots the emulator once so its snapshot is saved into the cache
+      - name: Create the emulator snapshot for the cache
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated the emulator snapshot for caching"
+
       - name: Run ${{ matrix.suite }} instrumented tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -88,6 +123,8 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
             adb shell settings put system screen_off_timeout 2147483647
