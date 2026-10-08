@@ -37,7 +37,9 @@ jobs:
       matrix:
         include:
           - suite: database
-            packages: com.example.mybudgettree.database,com.example.mybudgettree.imagestorage
+            packages: com.example.mybudgettree.database
+          - suite: image storage
+            packages: com.example.mybudgettree.imagestorage
           - suite: ui
             packages: com.example.mybudgettree.ui
     steps:
