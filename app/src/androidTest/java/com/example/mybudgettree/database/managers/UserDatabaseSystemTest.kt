@@ -1,6 +1,7 @@
 package com.example.mybudgettree.database.managers
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.mybudgettree.FirebaseEmulator
 import com.example.mybudgettree.database.DatabaseTestBase
 import com.example.mybudgettree.database.managers.shared.DeleteReturnStatus
 import com.example.mybudgettree.database.managers.shared.UpdateReturnStatus
@@ -19,10 +20,12 @@ import java.time.YearMonth
 @RunWith(AndroidJUnit4::class)
 class UserDatabaseSystemTest : DatabaseTestBase() {
 
+    // The emulators are not wiped between tests, so every sign up gets its own email and phone number unless the test
+    // passes one in on purpose (e.g. to try a duplicate)
     private suspend fun signUp(
-        email: String = "david@example.com",
+        email: String = FirebaseEmulator.uniqueEmail("david"),
         password: String = "password123",
-        phoneNumber: String = "0821111111",
+        phoneNumber: String = FirebaseEmulator.nextPhoneNumber(),
         displayName: String = "David",
         currency: String = "ZAR"
     ) = userDatabaseSystem.createUser(
@@ -34,13 +37,23 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
         currency = currency
     )
 
+    // "0821200001" -> "082 120-0001"
+    private fun withSpacesAndDashes(number: String) = "${number.take(3)} ${number.substring(3, 6)}-${number.drop(6)}"
+
+    // "0821200001" -> "(082) 120 0001"
+    private fun withParentheses(number: String) = "(${number.take(3)}) ${number.substring(3, 6)} ${number.drop(6)}"
+
+    // "0821200001" -> "+27 82 1200001", which normalizes to "+27821200001"
+    private fun withCountryCode(number: String) = "+27 ${number.substring(1, 3)} ${number.drop(3)}"
+
     // ---- createUser
 
     @Test
     fun createUser_success() = runBlocking {
-        val result = signUp()
+        val email = FirebaseEmulator.uniqueEmail("david")
+        val result = signUp(email = email)
         assertTrue(result.wasSuccessful)
-        assertEquals("david@example.com", result.value?.email)
+        assertEquals(email, result.value?.email)
         assertEquals("David", result.value?.displayName)
         assertEquals("2000-01-01", result.value?.dateOfBirth)
         assertTrue(result.value!!.uid.isNotBlank())
@@ -62,34 +75,35 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
 
     @Test
     fun createUser_duplicateEmail_fails() = runBlocking {
-        signUp()
-        val result = signUp(phoneNumber = "0823333333")
+        val first = signUp().value!!
+        val result = signUp(email = first.email)
         assertFalse(result.wasSuccessful)
     }
 
     @Test
     fun createUser_duplicatePhoneNumber_fails() = runBlocking {
-        signUp()
+        val first = signUp().value!!
         userDatabaseSystem.logout()
-        val result = signUp(email = "other@example.com")
+        val result = signUp(phoneNumber = first.phoneNumber)
         assertFalse(result.wasSuccessful)
     }
 
     @Test
     fun createUser_duplicatePhoneNumber_rollsBackTheAccount() = runBlocking {
-        signUp()
+        val first = signUp().value!!
         userDatabaseSystem.logout()
-        signUp(email = "other@example.com")
+        val otherEmail = FirebaseEmulator.uniqueEmail("other")
+        signUp(email = otherEmail, phoneNumber = first.phoneNumber)
         userDatabaseSystem.logout()
         // The half-created account must have been deleted again, so it can't be logged in to
-        assertFalse(userDatabaseSystem.login("other@example.com", "password123").wasSuccessful)
+        assertFalse(userDatabaseSystem.login(otherEmail, "password123").wasSuccessful)
     }
 
     @Test
     fun createUser_duplicatePhoneNumber_unnormalizedFormatAlsoFails() = runBlocking {
-        signUp(phoneNumber = "0821111111")
+        val first = signUp().value!!
         userDatabaseSystem.logout()
-        val result = signUp(email = "other@example.com", phoneNumber = "082 111-1111")
+        val result = signUp(phoneNumber = withSpacesAndDashes(first.phoneNumber))
         assertFalse(result.wasSuccessful)
     }
 
@@ -116,23 +130,26 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
 
     @Test
     fun createUser_phoneNumberWithSpacesAndDashes_isNormalized() = runBlocking {
-        val result = signUp(phoneNumber = "082 111-1111")
+        val number = FirebaseEmulator.nextPhoneNumber()
+        val result = signUp(phoneNumber = withSpacesAndDashes(number))
         assertTrue(result.wasSuccessful)
-        assertEquals("0821111111", result.value?.phoneNumber)
+        assertEquals(number, result.value?.phoneNumber)
     }
 
     @Test
     fun createUser_phoneNumberWithParentheses_isNormalized() = runBlocking {
-        val result = signUp(phoneNumber = "(082) 111 1111")
+        val number = FirebaseEmulator.nextPhoneNumber()
+        val result = signUp(phoneNumber = withParentheses(number))
         assertTrue(result.wasSuccessful)
-        assertEquals("0821111111", result.value?.phoneNumber)
+        assertEquals(number, result.value?.phoneNumber)
     }
 
     @Test
     fun createUser_phoneNumberWithCountryCode_isKeptWithPlus() = runBlocking {
-        val result = signUp(phoneNumber = "+27 82 111 1111")
+        val number = FirebaseEmulator.nextPhoneNumber()
+        val result = signUp(phoneNumber = withCountryCode(number))
         assertTrue(result.wasSuccessful)
-        assertEquals("+27821111111", result.value?.phoneNumber)
+        assertEquals("+27" + number.drop(1), result.value?.phoneNumber)
     }
 
     @Test
@@ -151,34 +168,36 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
     fun login_correctCredentials_succeeds() = runBlocking {
         val created = signUp().value!!
         userDatabaseSystem.logout()
-        val result = userDatabaseSystem.login("david@example.com", "password123")
+        val result = userDatabaseSystem.login(created.email, "password123")
         assertTrue(result.wasSuccessful)
         assertEquals(created, result.value)
     }
 
     @Test
     fun login_wrongPassword_fails() = runBlocking {
-        signUp()
+        val created = signUp().value!!
         userDatabaseSystem.logout()
-        val result = userDatabaseSystem.login("david@example.com", "wrongpassword")
+        val result = userDatabaseSystem.login(created.email, "wrongpassword")
         assertFalse(result.wasSuccessful)
         assertNull(auth.currentUser)
     }
 
     @Test
     fun login_unknownEmail_givesTheSameErrorAsAWrongPassword() = runBlocking {
-        signUp()
+        val created = signUp().value!!
         userDatabaseSystem.logout()
-        val wrongPassword = userDatabaseSystem.login("david@example.com", "wrongpassword")
-        val unknownEmail = userDatabaseSystem.login("nobody@example.com", "password123")
+        val wrongPassword = userDatabaseSystem.login(created.email, "wrongpassword")
+        val unknownEmail = userDatabaseSystem.login(FirebaseEmulator.uniqueEmail("nobody"), "password123")
         assertFalse(unknownEmail.wasSuccessful)
         assertEquals(wrongPassword.errMsg, unknownEmail.errMsg)
     }
 
     @Test
     fun login_blankFields_fail() = runBlocking {
+        val created = signUp().value!!
+        userDatabaseSystem.logout()
         assertFalse(userDatabaseSystem.login("", "password123").wasSuccessful)
-        assertFalse(userDatabaseSystem.login("david@example.com", "").wasSuccessful)
+        assertFalse(userDatabaseSystem.login(created.email, "").wasSuccessful)
     }
 
     @Test
@@ -192,15 +211,16 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
 
     @Test
     fun isPhoneNumberInUse_takenNumber_isTrue_evenWhenFormattedDifferently() = runBlocking {
-        signUp(phoneNumber = "0821111111")
-        assertTrue(userDatabaseSystem.isPhoneNumberInUse("0821111111"))
-        assertTrue(userDatabaseSystem.isPhoneNumberInUse("082 111-1111"))
+        val number = FirebaseEmulator.nextPhoneNumber()
+        signUp(phoneNumber = number)
+        assertTrue(userDatabaseSystem.isPhoneNumberInUse(number))
+        assertTrue(userDatabaseSystem.isPhoneNumberInUse(withSpacesAndDashes(number)))
     }
 
     @Test
     fun isPhoneNumberInUse_freeNumber_isFalse() = runBlocking {
-        signUp(phoneNumber = "0821111111")
-        assertFalse(userDatabaseSystem.isPhoneNumberInUse("0829999999"))
+        signUp()
+        assertFalse(userDatabaseSystem.isPhoneNumberInUse(FirebaseEmulator.nextPhoneNumber()))
         assertFalse(userDatabaseSystem.isPhoneNumberInUse(""))
     }
 
@@ -240,34 +260,36 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
     @Test
     fun updatePhoneNumber_withSpacesAndDashes_isNormalized() = runBlocking {
         val user = signUp().value!!
-        val result = userDatabaseSystem.updatePhoneNumber(user, "083 222-2222")
+        val newNumber = FirebaseEmulator.nextPhoneNumber()
+        val result = userDatabaseSystem.updatePhoneNumber(user, withSpacesAndDashes(newNumber))
         assertEquals(UpdateReturnStatus.Succeeded, result.status)
-        assertEquals("0832222222", result.value?.phoneNumber)
-        assertEquals("0832222222", userDatabaseSystem.getCurrentUser()?.phoneNumber)
+        assertEquals(newNumber, result.value?.phoneNumber)
+        assertEquals(newNumber, userDatabaseSystem.getCurrentUser()?.phoneNumber)
     }
 
     @Test
     fun updatePhoneNumber_freesTheOldNumber_andClaimsTheNewOne() = runBlocking {
-        val user = signUp(phoneNumber = "0821111111").value!!
-        userDatabaseSystem.updatePhoneNumber(user, "0832222222")
-        assertFalse(userDatabaseSystem.isPhoneNumberInUse("0821111111"))
-        assertTrue(userDatabaseSystem.isPhoneNumberInUse("0832222222"))
+        val user = signUp().value!!
+        val newNumber = FirebaseEmulator.nextPhoneNumber()
+        userDatabaseSystem.updatePhoneNumber(user, newNumber)
+        assertFalse(userDatabaseSystem.isPhoneNumberInUse(user.phoneNumber))
+        assertTrue(userDatabaseSystem.isPhoneNumberInUse(newNumber))
     }
 
     @Test
     fun updatePhoneNumber_numberTakenByAnotherUser_fails() = runBlocking {
-        signUp(email = "first@example.com", phoneNumber = "0821111111")
-        val second = signUp(email = "second@example.com", phoneNumber = "0832222222").value!!
-        val result = userDatabaseSystem.updatePhoneNumber(second, "0821111111")
+        val first = signUp().value!!
+        val second = signUp().value!!
+        val result = userDatabaseSystem.updatePhoneNumber(second, first.phoneNumber)
         assertEquals(UpdateReturnStatus.Failed, result.status)
-        assertEquals("0832222222", userDatabaseSystem.getCurrentUser()?.phoneNumber)
+        assertEquals(second.phoneNumber, userDatabaseSystem.getCurrentUser()?.phoneNumber)
     }
 
     @Test
     fun updatePhoneNumber_invalid_fails_andSame_noChange() = runBlocking {
         val user = signUp().value!!
         assertEquals(UpdateReturnStatus.Failed, userDatabaseSystem.updatePhoneNumber(user, "12345").status)
-        assertEquals(UpdateReturnStatus.NoChange, userDatabaseSystem.updatePhoneNumber(user, "082 111 1111").status)
+        assertEquals(UpdateReturnStatus.NoChange, userDatabaseSystem.updatePhoneNumber(user, withSpacesAndDashes(user.phoneNumber)).status)
     }
 
     @Test
@@ -276,8 +298,8 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
         val result = userDatabaseSystem.updatePassword(user, "newpassword456")
         assertEquals(UpdateReturnStatus.Succeeded, result.status)
         userDatabaseSystem.logout()
-        assertFalse(userDatabaseSystem.login("david@example.com", "password123").wasSuccessful)
-        assertTrue(userDatabaseSystem.login("david@example.com", "newpassword456").wasSuccessful)
+        assertFalse(userDatabaseSystem.login(user.email, "password123").wasSuccessful)
+        assertTrue(userDatabaseSystem.login(user.email, "newpassword456").wasSuccessful)
     }
 
     @Test
@@ -290,10 +312,10 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
     @Test
     fun updateEmail_isPendingUntilTheLinkIsClicked_soTheUserIsUnchanged() = runBlocking {
         val user = signUp().value!!
-        val result = userDatabaseSystem.updateEmail(user, "new@example.com")
+        val result = userDatabaseSystem.updateEmail(user, FirebaseEmulator.uniqueEmail("new"))
         assertEquals(UpdateReturnStatus.PendingVerification, result.status)
-        assertEquals("david@example.com", result.value?.email)
-        assertEquals("david@example.com", userDatabaseSystem.getCurrentUser()?.email)
+        assertEquals(user.email, result.value?.email)
+        assertEquals(user.email, userDatabaseSystem.getCurrentUser()?.email)
     }
 
     @Test
@@ -361,14 +383,14 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
         val status = userDatabaseSystem.deleteUser(user, "password123")
         assertEquals(DeleteReturnStatus.Deleted, status)
         assertNull(auth.currentUser)
-        assertFalse(userDatabaseSystem.login("david@example.com", "password123").wasSuccessful)
+        assertFalse(userDatabaseSystem.login(user.email, "password123").wasSuccessful)
     }
 
     @Test
     fun deleteUser_freesThePhoneNumberForSomeoneElse() = runBlocking {
-        val user = signUp(phoneNumber = "0821111111").value!!
+        val user = signUp().value!!
         userDatabaseSystem.deleteUser(user, "password123")
-        val result = signUp(email = "other@example.com", phoneNumber = "0821111111")
+        val result = signUp(phoneNumber = user.phoneNumber)
         assertTrue(result.wasSuccessful)
     }
 
@@ -380,15 +402,15 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
         userDatabaseSystem.deleteUser(user, "password123")
 
         // Signing back in as a brand new account, nothing from the old one can be reached: the old uid is gone
-        val newUser = signUp(email = "other@example.com", phoneNumber = "0829999999").value!!
+        val newUser = signUp().value!!
         assertTrue(categoryDatabaseSystem.getAllCategoriesForUser(newUser).values!!.isEmpty())
         assertFalse(categoryDatabaseSystem.findCategory(category.id).wasSuccessful)
     }
 
     @Test
     fun deleteUser_forSomeoneWhoIsNotSignedIn_doesNotExist() = runBlocking {
-        val first = signUp(email = "first@example.com", phoneNumber = "0821111111").value!!
-        signUp(email = "second@example.com", phoneNumber = "0832222222")
+        val first = signUp().value!!
+        signUp()
         assertEquals(DeleteReturnStatus.DoesNotExist, userDatabaseSystem.deleteUser(first, "password123"))
     }
 }

@@ -17,7 +17,7 @@ import java.time.LocalDate
 /**
  * Base class for Espresso UI tests that drive real Activities. They run against the Firebase Emulator Suite instead of
  * the real project (see [FirebaseEmulator]), so `firebase emulators:start` must be running before the tests start.
- * Both emulators are wiped before and after each test, so tests start from a clean slate and never touch real data
+ * The emulators are wiped once per run, not per test, so every test must use a user no other test uses
  */
 abstract class UiTestBase {
     protected lateinit var app: BudgetTreeApplication
@@ -26,7 +26,6 @@ abstract class UiTestBase {
     fun setUpApp() {
         FirebaseEmulator.connect()
         app = ApplicationProvider.getApplicationContext()
-        FirebaseEmulator.wipe()
         app.userDatabaseSystem.logout()
         UserSession.logout()
     }
@@ -35,7 +34,6 @@ abstract class UiTestBase {
     fun tearDownApp() {
         UserSession.logout()
         app.userDatabaseSystem.logout()
-        FirebaseEmulator.wipe()
     }
 
     /**
@@ -73,21 +71,18 @@ abstract class UiTestBase {
     /**
      * Creates a real account in the emulator and leaves it signed in
      *
-     * @param username Only used to make the email address (`<username>@example.com`), since people log in with their email now
+     * @param username Only used to make the email address (`<username>@example.com`), since people log in with their email
+     * now. Every test must pass a name no other test uses, because the emulators are not wiped between tests
      */
     protected fun createTestUser(username: String = "testuser", password: String = "password123"): User = runBlocking {
         val result = app.userDatabaseSystem.createUser(
             email = "$username@example.com",
             password = password,
-            phoneNumber = "08212%05d".format(userCounter.incrementAndGet()),
+            phoneNumber = FirebaseEmulator.nextPhoneNumber(),
             displayName = "Test User",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR"
         )
         checkNotNull(result.value) { "Could not create the test user: ${result.errMsg}" }
-    }
-
-    private companion object {
-        val userCounter = java.util.concurrent.atomic.AtomicInteger()
     }
 }

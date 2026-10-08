@@ -21,13 +21,13 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import java.time.LocalDate
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Base class for database tests. They run against the Firebase Emulator Suite instead of the real project (see
  * [FirebaseEmulator]), so `firebase emulators:start` must be running before the tests start
  *
- * Each test starts and ends with both emulators wiped, so tests can't affect each other
+ * The emulators are wiped once per run, not per test (see [FirebaseEmulator]). Tests can't affect each other because
+ * each one makes its own user, and all data is stored under the user that owns it
  */
 abstract class DatabaseTestBase {
     protected val auth: FirebaseAuth = FirebaseAuth.getInstance()
@@ -42,10 +42,6 @@ abstract class DatabaseTestBase {
     protected val monthlyGoalDatabaseSystem = MonthlyGoalDatabaseSystem(auth, firestore)
     protected val imageStorageSystem: ImageStorageSystem = LocalImageStorageSystem(ApplicationProvider.getApplicationContext())
 
-    companion object {
-        private val userCounter = AtomicInteger()
-    }
-
     init {
         FirebaseEmulator.connect()
     }
@@ -53,26 +49,25 @@ abstract class DatabaseTestBase {
     @Before
     fun setUpDatabase() {
         auth.signOut()
-        FirebaseEmulator.wipe()
     }
 
     @After
     fun tearDownDatabase() {
         auth.signOut()
-        FirebaseEmulator.wipe()
     }
 
     /**
      * Creates a user and leaves them signed in. Creating a second user signs the first one out, because Firebase only
      * keeps one user signed in at a time
      *
-     * @param name Used to make the email address, so tests can create several different users
+     * @param name The start of the email address, to make the emulator dashboard easier to read. A random part is
+     * added, so the same name can be used in many tests
      */
     protected fun createTestUser(name: String = "testuser"): User = runBlocking {
         val result = userDatabaseSystem.createUser(
-            email = "$name@example.com",
+            email = FirebaseEmulator.uniqueEmail(name),
             password = "password123",
-            phoneNumber = "08212%05d".format(userCounter.incrementAndGet()),
+            phoneNumber = FirebaseEmulator.nextPhoneNumber(),
             displayName = "Test User",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR"

@@ -20,6 +20,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Wipes the Firebase emulators once at the start and end of a run (see WipeEmulatorsListener)
+        testInstrumentationRunnerArguments["listener"] = "com.example.mybudgettree.WipeEmulatorsListener"
     }
 
     buildTypes {
