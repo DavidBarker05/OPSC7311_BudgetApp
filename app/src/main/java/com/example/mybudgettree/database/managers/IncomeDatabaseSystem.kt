@@ -1,124 +1,31 @@
 package com.example.mybudgettree.database.managers
 
-import android.util.Log
-import com.example.mybudgettree.database.daos.IncomeDao
 import com.example.mybudgettree.database.entries.User
 import com.example.mybudgettree.database.entries.Category
+import com.example.mybudgettree.database.entries.Expense
 import com.example.mybudgettree.database.entries.Income
 import java.time.LocalDate
 import java.time.LocalTime
+import com.example.mybudgettree.database.managers.shared.*
+import com.example.mybudgettree.database.managers.shared.firebase.*
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObjects
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.tasks.await
 
 /**
  * This system manages income state, validation, discovery, updates, and removals
- *
- * @property incomeDao The underlying Data Access Object managing RoomDB operations
- * @property userDatabaseSystem Used to validate that the owning user exists before user-scoped income operations proceed
- * @property categoryDatabaseSystem Used to validate that the owning category exists before income operations proceed
  */
 class IncomeDatabaseSystem(
-    private val incomeDao: IncomeDao,
-    private val userDatabaseSystem: UserDatabaseSystem,
-    private val categoryDatabaseSystem: CategoryDatabaseSystem
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
+    private fun incomes(uid: String): CollectionReference = db.collection("users").document(uid).collection("incomes")
 
     companion object {
         private const val TAG = "IncomeDatabaseSystem"
-
-        private fun logUpdateOutcome(action: String, status: UpdateIncomeReturnStatus, errMsg: String?) {
-            when (status) {
-                UpdateIncomeReturnStatus.Succeeded -> Log.i(TAG, "Successfully $action")
-                UpdateIncomeReturnStatus.Failed -> Log.w(TAG, "Failed to $action: $errMsg")
-                UpdateIncomeReturnStatus.NoChange -> Log.d(TAG, "No change $action")
-            }
-        }
-
-        private fun logCreateOutcome(action: String, wasSuccessful: Boolean, errMsg: String?) {
-            if (wasSuccessful) Log.i(TAG, "Successfully $action") else Log.w(TAG, "Failed to $action: $errMsg")
-        }
-    }
-
-    /**
-     * Wraps the income creation return in a detailed form
-     *
-     * @property wasSuccessful True if the income was created without error, false otherwise
-     * @property income The newly created [Income] record if successful, or null on execution failure
-     * @property errMsg The explanatory message detailing why creation failed, or null if successful
-     */
-    data class CreateIncomeReturnInfo(
-        val wasSuccessful: Boolean,
-        val income: Income? = null,
-        val errMsg: String? = null
-    )
-
-    /**
-     * Wraps the search request return in a detailed form
-     *
-     * @property wasSuccessful True if the target record was found, false otherwise
-     * @property income The retrieved [Income] entity if located, or null if the record doesn't exist
-     * @property errMsg The diagnostic message stating the cause of failure, or null if found
-     */
-    data class FindIncomeReturnInfo(
-        val wasSuccessful: Boolean,
-        val income: Income? = null,
-        val errMsg: String? = null
-    )
-
-    /**
-     * Wraps the bulk retrieval return in a detailed form
-     *
-     * @property wasSuccessful True if the incomes were retrieved without error, false otherwise
-     * @property incomes The retrieved list of [Income] entities if successful, or null on execution failure
-     * @property errMsg The diagnostic message stating the cause of failure, or null if successful
-     */
-    data class RetrieveIncomesReturnInfo(
-        val wasSuccessful: Boolean,
-        val incomes: List<Income>? = null,
-        val errMsg: String? = null
-    )
-
-    /**
-     * Identifies exactly what happened when updating an income
-     */
-    enum class UpdateIncomeReturnStatus {
-        /**
-         * The update failed
-         */
-        Failed,
-        /**
-         * The update did not change any data, but did not fail
-         */
-        NoChange,
-        /**
-         * The update successfully changed data
-         */
-        Succeeded
-    }
-
-    /**
-     * Wraps the update request return in a detailed form
-     *
-     * @property status A [UpdateIncomeReturnStatus] specifying the operation outcome
-     * @property income The modified [Income] record containing updated fields, or null if the task failed
-     * @property errMsg The error message, only set if the [status] is [UpdateIncomeReturnStatus.Failed]
-     */
-    data class UpdateIncomeReturnInfo(
-        val status: UpdateIncomeReturnStatus,
-        val income: Income? = null,
-        val errMsg: String? = null
-    )
-
-    /**
-     * Indicates what happened when trying to delete an income
-     */
-    enum class IncomeDeleteReturnStatus {
-        /**
-         * The income couldn't be deleted because it doesn't exist in the database
-         */
-        DoesNotExist,
-        /**
-         * The income was successfully deleted
-         */
-        Deleted
     }
 
     /**
@@ -131,7 +38,7 @@ class IncomeDatabaseSystem(
      * @param startTime The time the income started
      * @param endTime The time the income ended, cannot be before [startTime]
      * @param imagePath The path to the income's proof image, or null if none is set
-     * @return A [CreateIncomeReturnInfo] indicating what happened with the creation
+     * @return A [CreateReturnInfo] indicating what happened with the creation
      */
     suspend fun createIncome(
         category: Category,
@@ -141,78 +48,86 @@ class IncomeDatabaseSystem(
         startTime: LocalTime,
         endTime: LocalTime,
         imagePath: String? = null
-    ): CreateIncomeReturnInfo {
-        val result = run {
-            val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-            if (!categoryStatus.wasSuccessful) return@run CreateIncomeReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-            if (description.isBlank()) return@run CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Description is blank")
-            if (amount < 0.0) return@run CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Amount cannot be negative")
-            if (endTime < startTime) return@run CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Start time is after end time")
-            if (imagePath?.isBlank() ?: false) return@run CreateIncomeReturnInfo(wasSuccessful = false, errMsg = "Image path is empty")
-            val income = Income(
-                categoryId = category.id,
-                description = description,
-                amount = amount,
-                date = date,
-                startTime = startTime,
-                endTime = endTime,
-                imagePath = imagePath
-            )
-            val id = incomeDao.insertIncome(income)
-            CreateIncomeReturnInfo(wasSuccessful = true, income = income.copy(id = id))
-        }
-        logCreateOutcome("create income '$description' for category id ${category.id}", result.wasSuccessful, result.errMsg)
+    ): CreateReturnInfo<Income> {
+        val result = tryCreateIncome(
+            category = category,
+            description = description,
+            amount = amount,
+            date = date,
+            startTime = startTime,
+            endTime = endTime,
+            imagePath = imagePath
+        )
+        logOutcome(
+            tag = TAG,
+            wasSuccessful = result.wasSuccessful,
+            verbOnSuccess = "created",
+            verbOnFailure = "to create",
+            messageDetails = "income for category '${category.id}'",
+            errMsg = result.errMsg
+        )
         return result
     }
 
-    /**
-     * Find the income in the database if it exists
-     *
-     * @param incomeId The id to search for
-     * @return A [FindIncomeReturnInfo] indicating what happened with the search
-     */
-    suspend fun findIncome(incomeId: Long): FindIncomeReturnInfo {
-        val income = incomeDao.findIncome(incomeId) ?: return FindIncomeReturnInfo(wasSuccessful = false, errMsg = "Income does not exist")
-        return FindIncomeReturnInfo(wasSuccessful = true, income = income)
+    private suspend fun tryCreateIncome(
+        category: Category,
+        description: String,
+        amount: Double,
+        date: LocalDate,
+        startTime: LocalTime,
+        endTime: LocalTime,
+        imagePath: String? = null
+    ): CreateReturnInfo<Income> {
+        if (category.id.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Category id is empty")
+        if (description.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Description is blank")
+        if (amount < 0.0) return CreateReturnInfo(wasSuccessful = false, errMsg = "Amount cannot be negative")
+        if (endTime < startTime) return CreateReturnInfo(wasSuccessful = false, errMsg = "Start time is after end time")
+        if (imagePath?.isBlank() ?: false) return CreateReturnInfo(wasSuccessful = false, errMsg = "Image path is empty")
+        val uid = auth.uid ?: return CreateReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        if (!db .collection("users")
+                .document(uid)
+                .collection("categories")
+                .document(category.id)
+                .get()
+                .await()
+                .exists())
+            return CreateReturnInfo(wasSuccessful = false, errMsg = "Category does not exist in the database")
+        return try {
+            val expenses = incomes(uid)
+            val expense = Income(
+                categoryId = category.id,
+                description = description,
+                amount = amount,
+                date = date.toString(),
+                startTime = startTime.toString(),
+                endTime = endTime.toString(),
+                imagePath = imagePath
+            )
+            val ref = expenses.add(expense).await()
+            CreateReturnInfo(wasSuccessful = true, value = expense.copy(id = ref.id))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            CreateReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not create income")
+        }
     }
-
-    /**
-     * Check if the income still exists in the database
-     *
-     * @param income The [Income] to validate
-     * @return True if the income still exists, false otherwise
-     */
-    suspend fun isIncomeStillValid(income: Income): Boolean = findIncome(income.id).wasSuccessful
 
     /**
      * Retrieves every income belonging to the user
      *
      * @param user The [User] to retrieve incomes for
-     * @return A [RetrieveIncomesReturnInfo] indicating what happened with the retrieval
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
      */
-    suspend fun retrieveAllIncomes(user: User): RetrieveIncomesReturnInfo {
-        val userStatus = userDatabaseSystem.findUser(user.username)
-        if (!userStatus.wasSuccessful) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
-        return RetrieveIncomesReturnInfo(
-            wasSuccessful = true,
-            incomes = incomeDao.retrieveAllIncomes(user.username)
-        )
-    }
-
-    /**
-     * Retrieves every income belonging to the user with a matching description
-     *
-     * @param user The [User] to retrieve incomes for
-     * @param description The description to filter by
-     * @return A [RetrieveIncomesReturnInfo] indicating what happened with the retrieval
-     */
-    suspend fun retrieveAllIncomesByDescription(user: User, description: String): RetrieveIncomesReturnInfo {
-        val userStatus = userDatabaseSystem.findUser(user.username)
-        if (!userStatus.wasSuccessful) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
-        return RetrieveIncomesReturnInfo(
-            wasSuccessful = true,
-            incomes = incomeDao.retrieveAllIncomesByDescription(user.username, description)
-        )
+    suspend fun retrieveAllIncomes(user: User): FindAllReturnInfo<Income> {
+        if (auth.currentUser?.uid != user.uid) return FindAllReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
+        return try {
+            val allIncomes = incomes(user.uid).get().await().toObjects<Income>()
+            FindAllReturnInfo(wasSuccessful = true, values = allIncomes)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindAllReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not load incomes")
+        }
     }
 
     /**
@@ -220,32 +135,22 @@ class IncomeDatabaseSystem(
      *
      * @param user The [User] to retrieve incomes for
      * @param date The date to filter by
-     * @return A [RetrieveIncomesReturnInfo] indicating what happened with the retrieval
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
      */
-    suspend fun retrieveAllIncomesOnDate(user: User, date: LocalDate): RetrieveIncomesReturnInfo {
-        val userStatus = userDatabaseSystem.findUser(user.username)
-        if (!userStatus.wasSuccessful) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
-        return RetrieveIncomesReturnInfo(
-            wasSuccessful = true,
-            incomes = incomeDao.retrieveAllIncomesOnDate(user.username, date)
-        )
-    }
-
-    /**
-     * Retrieves every income belonging to the user that occurred on the given date with a matching description
-     *
-     * @param user The [User] to retrieve incomes for
-     * @param date The date to filter by
-     * @param description The description to filter by
-     * @return A [RetrieveIncomesReturnInfo] indicating what happened with the retrieval
-     */
-    suspend fun retrieveAllIncomesByDescriptionOnDate(user: User, date: LocalDate, description: String): RetrieveIncomesReturnInfo {
-        val userStatus = userDatabaseSystem.findUser(user.username)
-        if (!userStatus.wasSuccessful) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
-        return RetrieveIncomesReturnInfo(
-            wasSuccessful = true,
-            incomes = incomeDao.retrieveAllIncomesByDescriptionOnDate(user.username, date, description)
-        )
+    suspend fun retrieveAllIncomesOnDate(user: User, date: LocalDate): FindAllReturnInfo<Income> {
+        if (auth.currentUser?.uid != user.uid) return FindAllReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
+        return try {
+            val allIncomes = incomes(user.uid)
+                .whereEqualTo("date", date.toString())
+                .get()
+                .await()
+                .toObjects<Income>()
+            FindAllReturnInfo(wasSuccessful = true, values = allIncomes)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindAllReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not load incomes")
+        }
     }
 
     /**
@@ -254,77 +159,55 @@ class IncomeDatabaseSystem(
      * @param user The [User] to retrieve incomes for
      * @param startDate The earliest date to include
      * @param endDate The latest date to include, cannot be before [startDate]
-     * @return A [RetrieveIncomesReturnInfo] indicating what happened with the retrieval
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
      */
-    suspend fun retrieveAllIncomesBetweenDates(user: User, startDate: LocalDate, endDate: LocalDate): RetrieveIncomesReturnInfo {
-        val userStatus = userDatabaseSystem.findUser(user.username)
-        if (!userStatus.wasSuccessful) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
-        if (startDate > endDate) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = "Start date is after end date")
-        return RetrieveIncomesReturnInfo(
-            wasSuccessful = true,
-            incomes = incomeDao.retrieveAllIncomesBetweenDates(user.username, startDate, endDate)
-        )
-    }
-
-    /**
-     * Retrieves every income belonging to the user that occurred between the given dates, inclusive, with a matching description
-     *
-     * @param user The [User] to retrieve incomes for
-     * @param startDate The earliest date to include
-     * @param endDate The latest date to include, cannot be before [startDate]
-     * @param description The description to filter by
-     * @return A [RetrieveIncomesReturnInfo] indicating what happened with the retrieval
-     */
-    suspend fun retrieveAllIncomesByDescriptionBetweenDates(
-        user: User,
-        startDate: LocalDate,
-        endDate: LocalDate,
-        description: String
-    ): RetrieveIncomesReturnInfo {
-        val userStatus = userDatabaseSystem.findUser(user.username)
-        if (!userStatus.wasSuccessful) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
-        if (startDate > endDate) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = "Start date is after end date")
-        return RetrieveIncomesReturnInfo(
-            wasSuccessful = true,
-            incomes = incomeDao.retrieveAllIncomesByDescriptionBetweenDates(
-                user.username,
-                startDate,
-                endDate,
-                description
-            )
-        )
+    suspend fun retrieveAllIncomesBetweenDates(user: User, startDate: LocalDate, endDate: LocalDate): FindAllReturnInfo<Income> {
+        if (auth.currentUser?.uid != user.uid) return FindAllReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
+        if (startDate > endDate) return FindAllReturnInfo(wasSuccessful = false, errMsg = "Start date is after end date")
+        return try {
+            val allIncomes = incomes(user.uid)
+                .whereGreaterThanOrEqualTo("date", startDate.toString())
+                .whereLessThanOrEqualTo("date", endDate.toString())
+                .get()
+                .await()
+                .toObjects<Income>()
+            FindAllReturnInfo(wasSuccessful = true, values = allIncomes)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindAllReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not load incomes")
+        }
     }
 
     /**
      * Retrieves every income belonging to the category
      *
      * @param category The [Category] to retrieve incomes for
-     * @return A [RetrieveIncomesReturnInfo] indicating what happened with the retrieval
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
      */
-    suspend fun retrieveAllIncomesForCategory(category: Category): RetrieveIncomesReturnInfo {
-        val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-        if (!categoryStatus.wasSuccessful) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-        return RetrieveIncomesReturnInfo(
-            wasSuccessful = true,
-            incomes = incomeDao.retrieveAllIncomesForCategory(category.id)
-        )
-    }
-
-    /**
-     * Retrieves every income belonging to the category with a matching description
-     *
-     * @param category The [Category] to retrieve incomes for
-     * @param description The description to filter by
-     * @return A [RetrieveIncomesReturnInfo] indicating what happened with the retrieval
-     */
-    suspend fun retrieveAllIncomesByDescriptionForCategory(category: Category, description: String): RetrieveIncomesReturnInfo {
-        if (description.isBlank()) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = "Description is empty")
-        val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-        if (!categoryStatus.wasSuccessful) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-        return RetrieveIncomesReturnInfo(
-            wasSuccessful = true,
-            incomes = incomeDao.retrieveAllIncomesByDescriptionForCategory(category.id, description)
-        )
+    suspend fun retrieveAllIncomesForCategory(category: Category): FindAllReturnInfo<Income> {
+        if (category.id.isBlank()) return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category id is empty")
+        val uid = auth.uid ?: return FindAllReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        if (!db .collection("users")
+                .document(uid)
+                .collection("categories")
+                .document(category.id)
+                .get()
+                .await()
+                .exists())
+            return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category does not exist in the database")
+        return try {
+            val allIncomes = incomes(uid)
+                .whereEqualTo("categoryID", category.id)
+                .get()
+                .await()
+                .toObjects<Income>()
+            FindAllReturnInfo(wasSuccessful = true, values = allIncomes)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindAllReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not load incomes")
+        }
     }
 
     /**
@@ -332,33 +215,32 @@ class IncomeDatabaseSystem(
      *
      * @param category The [Category] to retrieve incomes for
      * @param date The date to filter by
-     * @return A [RetrieveIncomesReturnInfo] indicating what happened with the retrieval
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
      */
-    suspend fun retrieveAllIncomesOnDateForCategory(category: Category, date: LocalDate): RetrieveIncomesReturnInfo {
-        val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-        if (!categoryStatus.wasSuccessful) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-        return RetrieveIncomesReturnInfo(
-            wasSuccessful = true,
-            incomes = incomeDao.retrieveAllIncomesOnDateForCategory(category.id, date)
-        )
-    }
-
-    /**
-     * Retrieves every income belonging to the category that occurred on the given date with a matching description
-     *
-     * @param category The [Category] to retrieve incomes for
-     * @param description The description to filter by
-     * @param date The date to filter by
-     * @return A [RetrieveIncomesReturnInfo] indicating what happened with the retrieval
-     */
-    suspend fun retrieveAllIncomesByDescriptionOnDateForCategory(category: Category, description: String, date: LocalDate): RetrieveIncomesReturnInfo {
-        if (description.isBlank()) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = "Description is empty")
-        val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-        if (!categoryStatus.wasSuccessful) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-        return RetrieveIncomesReturnInfo(
-            wasSuccessful = true,
-            incomes = incomeDao.retrieveAllIncomesByDescriptionOnDateForCategory(category.id, description, date)
-        )
+    suspend fun retrieveAllIncomesOnDateForCategory(category: Category, date: LocalDate): FindAllReturnInfo<Income> {
+        if (category.id.isBlank()) return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category id is empty")
+        val uid = auth.uid ?: return FindAllReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        if (!db .collection("users")
+                .document(uid)
+                .collection("categories")
+                .document(category.id)
+                .get()
+                .await()
+                .exists())
+            return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category does not exist in the database")
+        return try {
+            val allIncomes = incomes(uid)
+                .whereEqualTo("categoryID", category.id)
+                .whereEqualTo("date", date.toString())
+                .get()
+                .await()
+                .toObjects<Income>()
+            FindAllReturnInfo(wasSuccessful = true, values = allIncomes)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindAllReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not load incomes")
+        }
     }
 
     /**
@@ -367,46 +249,34 @@ class IncomeDatabaseSystem(
      * @param category The [Category] to retrieve incomes for
      * @param startDate The earliest date to include
      * @param endDate The latest date to include, cannot be before [startDate]
-     * @return A [RetrieveIncomesReturnInfo] indicating what happened with the retrieval
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
      */
-    suspend fun retrieveAllIncomesBetweenDatesForCategory(category: Category, startDate: LocalDate, endDate: LocalDate): RetrieveIncomesReturnInfo {
-        val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-        if (!categoryStatus.wasSuccessful) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-        if (startDate > endDate) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = "Start date is after end date")
-        return RetrieveIncomesReturnInfo(
-            wasSuccessful = true,
-            incomes = incomeDao.retrieveAllIncomesBetweenDatesForCategory(category.id, startDate, endDate)
-        )
-    }
-
-    /**
-     * Retrieves every income belonging to the category that occurred between the given dates, inclusive, with a matching description
-     *
-     * @param category The [Category] to retrieve incomes for
-     * @param description The description to filter by
-     * @param startDate The earliest date to include
-     * @param endDate The latest date to include, cannot be before [startDate]
-     * @return A [RetrieveIncomesReturnInfo] indicating what happened with the retrieval
-     */
-    suspend fun retrieveAllIncomesByDescriptionBetweenDatesForCategory(
-        category: Category,
-        description: String,
-        startDate: LocalDate,
-        endDate: LocalDate
-    ): RetrieveIncomesReturnInfo {
-        if (description.isBlank()) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = "Description is empty")
-        val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-        if (!categoryStatus.wasSuccessful) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-        if (startDate > endDate) return RetrieveIncomesReturnInfo(wasSuccessful = false, errMsg = "Start date is after end date")
-        return RetrieveIncomesReturnInfo(
-            wasSuccessful = true,
-            incomes = incomeDao.retrieveAllIncomesByDescriptionBetweenDatesForCategory(
-                category.id,
-                description,
-                startDate,
-                endDate
-            )
-        )
+    suspend fun retrieveAllIncomesBetweenDatesForCategory(category: Category, startDate: LocalDate, endDate: LocalDate): FindAllReturnInfo<Income> {
+        if (category.id.isBlank()) return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category id is empty")
+        if (startDate > endDate) return FindAllReturnInfo(wasSuccessful = false, errMsg = "Start date is after end date")
+        val uid = auth.uid ?: return FindAllReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        if (!db .collection("users")
+                .document(uid)
+                .collection("categories")
+                .document(category.id)
+                .get()
+                .await()
+                .exists())
+            return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category does not exist in the database")
+        return try {
+            val allIncomes = incomes(uid)
+                .whereEqualTo("categoryID", category.id)
+                .whereGreaterThanOrEqualTo("date", startDate.toString())
+                .whereLessThanOrEqualTo("date", endDate.toString())
+                .get()
+                .await()
+                .toObjects<Income>()
+            FindAllReturnInfo(wasSuccessful = true, values = allIncomes)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindAllReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not load incomes")
+        }
     }
 
     /**
@@ -414,18 +284,30 @@ class IncomeDatabaseSystem(
      *
      * @param income The [Income] being updated
      * @param newDescription The new description
-     * @return An [UpdateIncomeReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateIncomeDescription(income: Income, newDescription: String): UpdateIncomeReturnInfo {
-        val result = run {
-            if (income.description == newDescription) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
-            if (newDescription.isBlank()) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Description is empty")
-            if (!isIncomeStillValid(income)) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
-            incomeDao.updateIncomeDescription(income.id, newDescription)
-            UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(description = newDescription))
-        }
-        logUpdateOutcome("update description for income id ${income.id}", result.status, result.errMsg)
+    suspend fun updateIncomeDescription(income: Income, newDescription: String): UpdateReturnInfo<Income> {
+        val result = tryUpdateIncomeDescription(income, newDescription)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "description for income '${income.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateIncomeDescription(income: Income, newDescription: String): UpdateReturnInfo<Income> {
+        if (newDescription.isBlank()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Description is empty")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = incomes(uid),
+            entityTypeDisplayName = "Income",
+            entity = income,
+            property = Income::description,
+            newValue = newDescription,
+            updatedEntity = income.copy(description = newDescription)
+        )
     }
 
     /**
@@ -433,18 +315,30 @@ class IncomeDatabaseSystem(
      *
      * @param income The [Income] being updated
      * @param newAmount The new amount, cannot be negative
-     * @return An [UpdateIncomeReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateIncomeAmount(income: Income, newAmount: Double): UpdateIncomeReturnInfo {
-        val result = run {
-            if (income.amount == newAmount) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
-            if (newAmount < 0.0) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "New amount cannot be less than 0")
-            if (!isIncomeStillValid(income)) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
-            incomeDao.updateIncomeAmount(income.id, newAmount)
-            UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(amount = newAmount))
-        }
-        logUpdateOutcome("update amount for income id ${income.id}", result.status, result.errMsg)
+    suspend fun updateIncomeAmount(income: Income, newAmount: Double): UpdateReturnInfo<Income> {
+        val result = tryUpdateIncomeAmount(income, newAmount)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "amount for income '${income.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateIncomeAmount(income: Income, newAmount: Double): UpdateReturnInfo<Income> {
+        if (newAmount < 0.0) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New amount cannot be negative")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = incomes(uid),
+            entityTypeDisplayName = "Income",
+            entity = income,
+            property = Income::amount,
+            newValue = newAmount,
+            updatedEntity = income.copy(amount = newAmount)
+        )
     }
 
     /**
@@ -452,17 +346,29 @@ class IncomeDatabaseSystem(
      *
      * @param income The [Income] being updated
      * @param newDate The new date
-     * @return An [UpdateIncomeReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateIncomeDate(income: Income, newDate: LocalDate): UpdateIncomeReturnInfo {
-        val result = run {
-            if (income.date == newDate) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
-            if (!isIncomeStillValid(income)) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
-            incomeDao.updateIncomeDate(income.id, newDate)
-            UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(date = newDate))
-        }
-        logUpdateOutcome("update date for income id ${income.id}", result.status, result.errMsg)
+    suspend fun updateIncomeDate(income: Income, newDate: LocalDate): UpdateReturnInfo<Income> {
+        val result = tryUpdateIncomeDate(income, newDate)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "date for income '${income.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateIncomeDate(income: Income, newDate: LocalDate): UpdateReturnInfo<Income> {
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = incomes(uid),
+            entityTypeDisplayName = "Income",
+            entity = income,
+            property = Income::date,
+            newValue = newDate.toString(),
+            updatedEntity = income.copy(date = newDate.toString())
+        )
     }
 
     /**
@@ -470,18 +376,30 @@ class IncomeDatabaseSystem(
      *
      * @param income The [Income] being updated
      * @param newStartTime The new start time, cannot be after the income's current end time
-     * @return An [UpdateIncomeReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateIncomeStartTime(income: Income, newStartTime: LocalTime): UpdateIncomeReturnInfo {
-        val result = run {
-            if (income.startTime == newStartTime) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
-            if (income.endTime < newStartTime) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Start time is after end time")
-            if (!isIncomeStillValid(income)) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
-            incomeDao.updateIncomeStartTime(income.id, newStartTime)
-            UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(startTime = newStartTime))
-        }
-        logUpdateOutcome("update start time for income id ${income.id}", result.status, result.errMsg)
+    suspend fun updateIncomeStartTime(income: Income, newStartTime: LocalTime): UpdateReturnInfo<Income> {
+        val result = tryUpdateIncomeStartTime(income, newStartTime)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "start time for income '${income.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateIncomeStartTime(income: Income, newStartTime: LocalTime): UpdateReturnInfo<Income> {
+        if (income.endTimeAsLocalTime() < newStartTime) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Start time cannot be after end time")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = incomes(uid),
+            entityTypeDisplayName = "Income",
+            entity = income,
+            property = Income::startTime,
+            newValue = newStartTime.toString(),
+            updatedEntity = income.copy(date = newStartTime.toString())
+        )
     }
 
     /**
@@ -489,18 +407,30 @@ class IncomeDatabaseSystem(
      *
      * @param income The [Income] being updated
      * @param newEndTime The new end time, cannot be before the income's current start time
-     * @return An [UpdateIncomeReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateIncomeEndTime(income: Income, newEndTime: LocalTime): UpdateIncomeReturnInfo {
-        val result = run {
-            if (income.endTime == newEndTime) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
-            if (newEndTime < income.startTime) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "End time is before start time")
-            if (!isIncomeStillValid(income)) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
-            incomeDao.updateIncomeEndTime(income.id, newEndTime)
-            UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(endTime = newEndTime))
-        }
-        logUpdateOutcome("update end time for income id ${income.id}", result.status, result.errMsg)
+    suspend fun updateIncomeEndTime(income: Income, newEndTime: LocalTime): UpdateReturnInfo<Income> {
+        val result = tryUpdateIncomeEndTime(income, newEndTime)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "end time for income '${income.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateIncomeEndTime(income: Income, newEndTime: LocalTime): UpdateReturnInfo<Income> {
+        if (newEndTime < income.startTimeAsLocalTime()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "End time cannot be before start time")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = incomes(uid),
+            entityTypeDisplayName = "Income",
+            entity = income,
+            property = Income::endTime,
+            newValue = newEndTime.toString(),
+            updatedEntity = income.copy(date = newEndTime.toString())
+        )
     }
 
     /**
@@ -508,30 +438,66 @@ class IncomeDatabaseSystem(
      *
      * @param income The [Income] being updated
      * @param newImagePath The new image path, or null to remove it
-     * @return An [UpdateIncomeReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateIncomeImage(income: Income, newImagePath: String?): UpdateIncomeReturnInfo {
-        val result = run {
-            if (income.imagePath == newImagePath) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.NoChange, income = income)
-            if (newImagePath?.isBlank() ?: false) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Image path cannot be blank")
-            if (!isIncomeStillValid(income)) return@run UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Failed, errMsg = "Income is not valid")
-            incomeDao.updateIncomeImage(income.id, newImagePath)
-            UpdateIncomeReturnInfo(status = UpdateIncomeReturnStatus.Succeeded, income = income.copy(imagePath = newImagePath))
-        }
-        logUpdateOutcome("update image for income id ${income.id}", result.status, result.errMsg)
+    suspend fun updateIncomeImage(income: Income, newImagePath: String?): UpdateReturnInfo<Income> {
+        val result = tryUpdateIncomeImage(income, newImagePath)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "image for income '${income.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateIncomeImage(income: Income, newImagePath: String?): UpdateReturnInfo<Income> {
+        if (newImagePath?.isBlank() ?: false) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Image path cannot be blank")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = incomes(uid),
+            entityTypeDisplayName = "Income",
+            entity = income,
+            property = Income::imagePath,
+            newValue = newImagePath,
+            updatedEntity = income.copy(imagePath = newImagePath)
+        )
     }
 
     /**
      * Deletes the income from the database
      *
      * @param income The [Income] to delete
-     * @return A status reflection from [IncomeDeleteReturnStatus]
+     * @return A status reflection from [DeleteReturnStatus]
      */
-    suspend fun deleteIncome(income: Income): IncomeDeleteReturnStatus {
-        val status = if (incomeDao.deleteIncome(income) == 1) IncomeDeleteReturnStatus.Deleted else IncomeDeleteReturnStatus.DoesNotExist
-        if (status == IncomeDeleteReturnStatus.Deleted) Log.i(TAG, "Successfully deleted income '${income.description}'")
-        else Log.w(TAG, "Failed to delete income '${income.description}': income does not exist")
-        return status
+    suspend fun deleteIncome(income: Income): DeleteReturnStatus {
+        val uid = auth.uid
+        val result =
+            if (uid == null) DeleteReturnStatus.ReauthenticationFailed
+            else deleteDocument(
+                db = db,
+                collection = incomes(uid),
+                id = income.id,
+                subcollections = emptyList(),
+                relatedCollections = emptyList(),
+                batchSize = 0L
+            )
+        val wasSuccessful = result == DeleteReturnStatus.Deleted
+        val errMsg: String? =
+            if (wasSuccessful) null
+            else when (result) {
+                DeleteReturnStatus.DoesNotExist -> "Category does not exist"
+                DeleteReturnStatus.ReauthenticationFailed -> "No user currently signed in"
+                else -> "Unknown reason"
+            }
+        logOutcome(
+            tag = TAG,
+            wasSuccessful = wasSuccessful,
+            verbOnSuccess = "deleted",
+            verbOnFailure = "to delete",
+            messageDetails = "income '${income.id}'",
+            errMsg = errMsg
+        )
+        return result
     }
 }

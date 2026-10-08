@@ -11,8 +11,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObjects
-import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.tasks.await
 
 /**
  * This system manages expense state, validation, discovery, updates, and removals
@@ -20,7 +20,7 @@ import kotlin.coroutines.cancellation.CancellationException
  */
 class ExpenseDatabaseSystem(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
 
     companion object {
@@ -487,7 +487,7 @@ class ExpenseDatabaseSystem(
         val errMsg: String? =
             if (wasSuccessful) null
             else when (result) {
-                DeleteReturnStatus.DoesNotExist -> "Contribution does not exist"
+                DeleteReturnStatus.DoesNotExist -> "Category does not exist"
                 DeleteReturnStatus.ReauthenticationFailed -> "No user currently signed in"
                 else -> "Unknown reason"
             }
