@@ -23,8 +23,10 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
-import com.example.mybudgettree.database.managers.UserDatabaseSystem.UpdateUserReturnInfo
-import com.example.mybudgettree.database.managers.UserDatabaseSystem.UpdateUserReturnStatus
+import com.example.mybudgettree.database.entries.User
+import com.example.mybudgettree.database.managers.shared.DeleteReturnStatus
+import com.example.mybudgettree.database.managers.shared.UpdateReturnInfo
+import com.example.mybudgettree.database.managers.shared.UpdateReturnStatus
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.materialswitch.MaterialSwitch
@@ -32,6 +34,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import android.text.InputType
 
 class EditProfileActivity : AppCompatActivity() {
 
@@ -94,17 +97,17 @@ class EditProfileActivity : AppCompatActivity() {
         findViewById<EditText>(R.id.etEmail).setText(user.email)
         findViewById<TextView>(R.id.tvCurrency).text = user.currency
         findViewById<MaterialSwitch>(R.id.switchPush).isChecked =
-            ProfilePreferences.isPushEnabled(this, user.username)
+            ProfilePreferences.isPushEnabled(this, user.uid)
         bindPhotoAndName()
     }
 
     private fun bindPhotoAndName() {
         val user = UserSession.currentUser ?: return
         findViewById<TextView>(R.id.tvEditName).text = user.displayName
-        findViewById<TextView>(R.id.tvEditId).text = getString(R.string.profile_id, user.username)
+        findViewById<TextView>(R.id.tvEditId).text = getString(R.string.profile_id, user.email)
         val photo = findViewById<ShapeableImageView>(R.id.ivEditPhoto)
         val app = application as BudgetTreeApplication
-        lifecycleScope.launch { ProfilePhoto.bind(photo, user.profilePhotoPath, app) }
+        lifecycleScope.launch { ProfilePhoto.bind(photo, ProfilePhoto.load(app, user)) }
     }
 
     private fun saveProfile() {
@@ -134,24 +137,28 @@ class EditProfileActivity : AppCompatActivity() {
                 val result = app.userDatabaseSystem.updateEmail(current, email)
                 if (!applyUpdate(result)) return@launch
             }
-            ProfilePreferences.setPushEnabled(this@EditProfileActivity, current.username, pushEnabled)
+            ProfilePreferences.setPushEnabled(this@EditProfileActivity, current.uid, pushEnabled)
             Toast.makeText(this@EditProfileActivity, R.string.profile_updated, Toast.LENGTH_SHORT).show()
             finish()
         }
     }
 
-    private fun applyUpdate(result: UpdateUserReturnInfo): Boolean {
+    private fun applyUpdate(result: UpdateReturnInfo<User>): Boolean {
         return when (result.status) {
-            UpdateUserReturnStatus.Succeeded -> {
-                Log.i(TAG, "Profile field updated for user '${result.user?.username}'")
-                result.user?.let { UserSession.login(it) }
+            UpdateReturnStatus.Succeeded -> {
+                Log.i(TAG, "Profile field updated for user '${result.value?.uid}'")
+                result.value?.let { UserSession.login(it) }
                 true
             }
-            UpdateUserReturnStatus.NoChange -> {
-                result.user?.let { UserSession.login(it) }
+            UpdateReturnStatus.NoChange -> {
+                result.value?.let { UserSession.login(it) }
                 true
             }
-            UpdateUserReturnStatus.Failed -> {
+            UpdateReturnStatus.PendingVerification -> {
+                Toast.makeText(this, R.string.email_verification_sent, Toast.LENGTH_LONG).show()
+                true
+            }
+            UpdateReturnStatus.Failed -> {
                 Log.w(TAG, "Failed to update profile field: ${result.errMsg}")
                 Toast.makeText(this, result.errMsg ?: getString(R.string.signup_fields_required), Toast.LENGTH_SHORT).show()
                 false
@@ -164,15 +171,43 @@ class EditProfileActivity : AppCompatActivity() {
             .setTitle(R.string.delete_account)
             .setMessage(R.string.delete_account_confirm)
             .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.delete) { _, _ -> deleteAccount() }
+            .setPositiveButton(R.string.delete) { _, _ -> askForPasswordThenDelete() }
             .show()
     }
 
-    private fun deleteAccount() {
+    // Deleting an account is sensitive, so the password is asked for again
+    private fun askForPasswordThenDelete() {
+        val passwordField = EditText(this).apply {
+            setHint(R.string.delete_account_password_hint)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.delete_account)
+            .setView(passwordField)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.delete) { _, _ -> deleteAccount(passwordField.text?.toString().orEmpty()) }
+            .show()
+    }
+
+    private fun deleteAccount(password: String) {
         val user = UserSession.currentUser ?: return
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
-            app.userDatabaseSystem.deleteUser(user)
+            val status = try {
+                app.userDatabaseSystem.deleteUser(user, password)
+            } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to delete account: ${e.message}")
+                Toast.makeText(this@EditProfileActivity, R.string.delete_account_failed, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            if (status != DeleteReturnStatus.Deleted) {
+                val message = if (status == DeleteReturnStatus.ReauthenticationFailed) R.string.delete_account_wrong_password
+                else R.string.delete_account_failed
+                Toast.makeText(this@EditProfileActivity, message, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
             UserSession.logout()
             Toast.makeText(this@EditProfileActivity, R.string.account_deleted, Toast.LENGTH_SHORT).show()
             startActivity(
@@ -227,16 +262,9 @@ class EditProfileActivity : AppCompatActivity() {
     private suspend fun persistPhoto(bytes: ByteArray?) {
         val user = UserSession.currentUser ?: return
         val app = application as BudgetTreeApplication
-        val newPath = app.imageStorageSystem.saveImage(
-            bytes,
-            "profile_${user.username.filter { it.isLetterOrDigit() }}_${System.currentTimeMillis()}.jpg"
-        )
-        if (newPath == null) return
-        val result = app.userDatabaseSystem.updateProfilePhoto(user, newPath)
+        val photo = bytes?.let { withContext(Dispatchers.Default) { ProfilePhoto.compress(it) } } ?: return
+        val result = app.userDatabaseSystem.updateProfilePhoto(user, photo)
         if (applyUpdate(result)) {
-            user.profilePhotoPath?.let { old ->
-                if (old != newPath) app.imageStorageSystem.deleteImage(old)
-            }
             Toast.makeText(this, R.string.profile_photo_updated, Toast.LENGTH_SHORT).show()
             bindPhotoAndName()
         }

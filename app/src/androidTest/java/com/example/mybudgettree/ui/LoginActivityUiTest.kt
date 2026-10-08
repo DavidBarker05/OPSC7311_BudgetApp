@@ -29,7 +29,7 @@ class LoginActivityUiTest : UiTestBase() {
         createTestUser(username = "loginuser", password = "correctPass1")
 
         ActivityScenario.launch(LoginActivity::class.java).use {
-            onView(withId(R.id.etUsernameOrEmail)).perform(typeText("loginuser"), closeSoftKeyboard())
+            onView(withId(R.id.etUsernameOrEmail)).perform(typeText("loginuser@example.com"), closeSoftKeyboard())
             onView(withId(R.id.etPassword)).perform(typeText("correctPass1"), closeSoftKeyboard())
             onView(withId(R.id.btnLogin)).perform(click())
 
@@ -43,7 +43,7 @@ class LoginActivityUiTest : UiTestBase() {
         createTestUser(username = "loginuser2", password = "correctPass1")
 
         ActivityScenario.launch(LoginActivity::class.java).use {
-            onView(withId(R.id.etUsernameOrEmail)).perform(typeText("loginuser2"), closeSoftKeyboard())
+            onView(withId(R.id.etUsernameOrEmail)).perform(typeText("loginuser2@example.com"), closeSoftKeyboard())
             onView(withId(R.id.etPassword)).perform(typeText("wrongPassword"), closeSoftKeyboard())
             onView(withId(R.id.btnLogin)).perform(click())
 

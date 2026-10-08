@@ -1,125 +1,43 @@
 package com.example.mybudgettree.database.managers
 
-import android.util.Log
-import com.example.mybudgettree.database.daos.ExpenseDao
 import com.example.mybudgettree.database.entries.User
 import com.example.mybudgettree.database.entries.Category
 import com.example.mybudgettree.database.entries.Expense
 import java.time.LocalDate
 import java.time.LocalTime
+import com.example.mybudgettree.database.managers.shared.*
+import com.example.mybudgettree.database.managers.shared.firebase.*
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
+import com.google.firebase.firestore.toObjects
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.tasks.await
 
 /**
  * This system manages expense state, validation, discovery, updates, and removals
  *
- * @property expenseDao The underlying Data Access Object managing RoomDB operations
- * @property userDatabaseSystem Used to validate that the owning user exists before user-scoped expense operations proceed
- * @property categoryDatabaseSystem Used to validate that the owning category exists before expense operations proceed
+ * Expenses are stored in Firestore at `users/{uid}/expenses/{id}` and point at their category by `categoryId`. Only the
+ * signed-in user's data can be reached. Dates and times are stored as ISO-8601 strings, which sort the same way as the
+ * dates they represent, so they can be filtered with range queries. Combining a category or description filter with a
+ * date range needs a Firestore composite index
+ *
+ * @property auth The Firebase Authentication instance used to find the signed-in user
+ * @property db The Firestore instance that holds the expenses
  */
 class ExpenseDatabaseSystem(
-    private val expenseDao: ExpenseDao,
-    private val userDatabaseSystem: UserDatabaseSystem,
-    private val categoryDatabaseSystem: CategoryDatabaseSystem
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
 
     companion object {
         private const val TAG = "ExpenseDatabaseSystem"
 
-        private fun logUpdateOutcome(action: String, status: UpdateExpenseReturnStatus, errMsg: String?) {
-            when (status) {
-                UpdateExpenseReturnStatus.Succeeded -> Log.i(TAG, "Successfully $action")
-                UpdateExpenseReturnStatus.Failed -> Log.w(TAG, "Failed to $action: $errMsg")
-                UpdateExpenseReturnStatus.NoChange -> Log.d(TAG, "No change $action")
-            }
-        }
-
-        private fun logCreateOutcome(action: String, wasSuccessful: Boolean, errMsg: String?) {
-            if (wasSuccessful) Log.i(TAG, "Successfully $action") else Log.w(TAG, "Failed to $action: $errMsg")
-        }
+        private const val BATCH_SIZE = 400L
     }
 
-    /**
-     * Wraps the expense creation return in a detailed form
-     *
-     * @property wasSuccessful True if the expense was created without error, false otherwise
-     * @property expense The newly created [Expense] record if successful, or null on execution failure
-     * @property errMsg The explanatory message detailing why creation failed, or null if successful
-     */
-    data class CreateExpenseReturnInfo(
-        val wasSuccessful: Boolean,
-        val expense: Expense? = null,
-        val errMsg: String? = null
-    )
-
-    /**
-     * Wraps the search request return in a detailed form
-     *
-     * @property wasSuccessful True if the target record was found, false otherwise
-     * @property expense The retrieved [Expense] entity if located, or null if the record doesn't exist
-     * @property errMsg The diagnostic message stating the cause of failure, or null if found
-     */
-    data class FindExpenseReturnInfo(
-        val wasSuccessful: Boolean,
-        val expense: Expense? = null,
-        val errMsg: String? = null
-    )
-
-    /**
-     * Wraps the bulk retrieval return in a detailed form
-     *
-     * @property wasSuccessful True if the expenses were retrieved without error, false otherwise
-     * @property expenses The retrieved list of [Expense] entities if successful, or null on execution failure
-     * @property errMsg The diagnostic message stating the cause of failure, or null if successful
-     */
-    data class RetrieveExpensesReturnInfo(
-        val wasSuccessful: Boolean,
-        val expenses: List<Expense>? = null,
-        val errMsg: String? = null
-    )
-
-    /**
-     * Identifies exactly what happened when updating an expense
-     */
-    enum class UpdateExpenseReturnStatus {
-        /**
-         * The update failed
-         */
-        Failed,
-        /**
-         * The update did not change any data, but did not fail
-         */
-        NoChange,
-        /**
-         * The update successfully changed data
-         */
-        Succeeded
-    }
-
-    /**
-     * Wraps the update request return in a detailed form
-     *
-     * @property status A [UpdateExpenseReturnStatus] specifying the operation outcome
-     * @property expense The modified [Expense] record containing updated fields, or null if the task failed
-     * @property errMsg The error message, only set if the [status] is [UpdateExpenseReturnStatus.Failed]
-     */
-    data class UpdateExpenseReturnInfo(
-        val status: UpdateExpenseReturnStatus,
-        val expense: Expense? = null,
-        val errMsg: String? = null
-    )
-
-    /**
-     * Indicates what happened when trying to delete an expense
-     */
-    enum class ExpenseDeleteReturnStatus {
-        /**
-         * The expense couldn't be deleted because it doesn't exist in the database
-         */
-        DoesNotExist,
-        /**
-         * The expense was successfully deleted
-         */
-        Deleted
-    }
+    private fun expenses(uid: String): CollectionReference = db.collection("users").document(uid).collection("expenses")
 
     /**
      * Creates a new expense for the category after validating the fields
@@ -130,8 +48,9 @@ class ExpenseDatabaseSystem(
      * @param date The date the expense occurred on
      * @param startTime The time the expense started
      * @param endTime The time the expense ended, cannot be before [startTime]
-     * @param imagePath The path to the expense's receipt image, or null if none is set
-     * @return A [CreateExpenseReturnInfo] indicating what happened with the creation
+     * @param imagePath The path to the expense's receipt image on this device, or null if none is set
+     * @param deviceId The ID of the device the image is saved on, required if [imagePath] is set
+     * @return A [CreateReturnInfo] indicating what happened with the creation
      */
     suspend fun createExpense(
         category: Category,
@@ -140,79 +59,111 @@ class ExpenseDatabaseSystem(
         date: LocalDate,
         startTime: LocalTime,
         endTime: LocalTime,
-        imagePath: String? = null
-    ): CreateExpenseReturnInfo {
-        val result = run {
-            val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-            if (!categoryStatus.wasSuccessful) return@run CreateExpenseReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-            if (description.isBlank()) return@run CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Description is blank")
-            if (amount < 0.0) return@run CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Amount cannot be negative")
-            if (endTime < startTime) return@run CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Start time is after end time")
-            if (imagePath?.isBlank() ?: false) return@run CreateExpenseReturnInfo(wasSuccessful = false, errMsg = "Image path is empty")
+        imagePath: String? = null,
+        deviceId: String? = null
+    ): CreateReturnInfo<Expense> {
+        val result = tryCreateExpense(
+            category = category,
+            description = description,
+            amount = amount,
+            date = date,
+            startTime = startTime,
+            endTime = endTime,
+            imagePath = imagePath,
+            deviceId = deviceId
+        )
+        logOutcome(
+            tag = TAG,
+            wasSuccessful = result.wasSuccessful,
+            verbOnSuccess = "created",
+            verbOnFailure = "to create",
+            messageDetails = "expense for category '${category.id}'",
+            errMsg = result.errMsg
+        )
+        return result
+    }
+
+    private suspend fun tryCreateExpense(
+        category: Category,
+        description: String,
+        amount: Double,
+        date: LocalDate,
+        startTime: LocalTime,
+        endTime: LocalTime,
+        imagePath: String? = null,
+        deviceId: String? = null
+    ): CreateReturnInfo<Expense> {
+        if (category.id.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Category id is empty")
+        if (description.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Description is blank")
+        if (amount < 0.0) return CreateReturnInfo(wasSuccessful = false, errMsg = "Amount cannot be negative")
+        if (endTime < startTime) return CreateReturnInfo(wasSuccessful = false, errMsg = "Start time is after end time")
+        if (imagePath?.isBlank() ?: false) return CreateReturnInfo(wasSuccessful = false, errMsg = "Image path is empty")
+        if (imagePath != null && deviceId.isNullOrBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Device id is empty")
+        val uid = auth.uid ?: return CreateReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        if (!db .collection("users")
+                .document(uid)
+                .collection("categories")
+                .document(category.id)
+                .get()
+                .await()
+                .exists())
+            return CreateReturnInfo(wasSuccessful = false, errMsg = "Category does not exist in the database")
+        return try {
+            val expenses = expenses(uid)
             val expense = Expense(
                 categoryId = category.id,
                 description = description,
                 amount = amount,
-                date = date,
-                startTime = startTime,
-                endTime = endTime,
-                imagePath = imagePath
+                date = date.toString(),
+                startTime = startTime.toString(),
+                endTime = endTime.toString(),
+                imagePaths = if (imagePath != null && deviceId != null) mapOf(deviceId to imagePath) else emptyMap()
             )
-            val id = expenseDao.insertExpense(expense)
-            CreateExpenseReturnInfo(wasSuccessful = true, expense = expense.copy(id = id))
+            val ref = expenses.add(expense).await()
+            CreateReturnInfo(wasSuccessful = true, value = expense.copy(id = ref.id))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            CreateReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not create expense")
         }
-        logCreateOutcome("create expense '$description' for category id ${category.id}", result.wasSuccessful, result.errMsg)
-        return result
     }
 
     /**
-     * Find the expense in the database if it exists
+     * Find the signed-in user's expense by its ID if it exists
      *
      * @param expenseId The id to search for
-     * @return A [FindExpenseReturnInfo] indicating what happened with the search
+     * @return A [FindReturnInfo] indicating what happened with the search
      */
-    suspend fun findExpense(expenseId: Long): FindExpenseReturnInfo {
-        val expense = expenseDao.findExpense(expenseId) ?: return FindExpenseReturnInfo(wasSuccessful = false, errMsg = "Expense does not exist")
-        return FindExpenseReturnInfo(wasSuccessful = true, expense = expense)
+    suspend fun findExpense(expenseId: String): FindReturnInfo<Expense> {
+        if (expenseId.isBlank()) return FindReturnInfo(wasSuccessful = false, errMsg = "Expense id is empty")
+        val uid = auth.uid ?: return FindReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        return try {
+            val expense = expenses(uid).document(expenseId).get().await().toObject<Expense>()
+            if (expense != null) FindReturnInfo(wasSuccessful = true, value = expense)
+            else FindReturnInfo(wasSuccessful = false, errMsg = "Could not find expense '${expenseId}' for current auth user")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not find expense '${expenseId}' for current auth user")
+        }
     }
-
-    /**
-     * Check if the expense still exists in the database
-     *
-     * @param expense The [Expense] to validate
-     * @return True if the expense still exists, false otherwise
-     */
-    suspend fun isExpenseStillValid(expense: Expense): Boolean = findExpense(expense.id).wasSuccessful
 
     /**
      * Retrieves every expense belonging to the user
      *
      * @param user The [User] to retrieve expenses for
-     * @return A [RetrieveExpensesReturnInfo] indicating what happened with the retrieval
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
      */
-    suspend fun retrieveAllExpenses(user: User): RetrieveExpensesReturnInfo {
-        val userStatus = userDatabaseSystem.findUser(user.username)
-        if (!userStatus.wasSuccessful) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
-        return RetrieveExpensesReturnInfo(
-            wasSuccessful = true,
-            expenses = expenseDao.retrieveAllExpenses(user.username)
-        )
-    }
-
-    /**
-     * Retrieves every expense belonging to the user with a matching description
-     *
-     * @param user The [User] to retrieve expenses for
-     * @param description The description to filter by
-     * @return A [RetrieveExpensesReturnInfo] indicating what happened with the retrieval
-     */
-    suspend fun retrieveAllExpensesByDescription(user: User, description: String): RetrieveExpensesReturnInfo {
-        val userStatus = userDatabaseSystem.findUser(user.username)
-        if (!userStatus.wasSuccessful) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
-        return RetrieveExpensesReturnInfo(
-            wasSuccessful = true,
-            expenses = expenseDao.retrieveAllExpensesByDescription(user.username, description)
-        )
+    suspend fun retrieveAllExpenses(user: User): FindAllReturnInfo<Expense> {
+        if (auth.currentUser?.uid != user.uid) return FindAllReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
+        return try {
+            val allExpenses = expenses(user.uid).get().await().toObjects<Expense>()
+            FindAllReturnInfo(wasSuccessful = true, values = allExpenses)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindAllReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not load expenses")
+        }
     }
 
     /**
@@ -220,32 +171,22 @@ class ExpenseDatabaseSystem(
      *
      * @param user The [User] to retrieve expenses for
      * @param date The date to filter by
-     * @return A [RetrieveExpensesReturnInfo] indicating what happened with the retrieval
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
      */
-    suspend fun retrieveAllExpensesOnDate(user: User, date: LocalDate): RetrieveExpensesReturnInfo {
-        val userStatus = userDatabaseSystem.findUser(user.username)
-        if (!userStatus.wasSuccessful) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
-        return RetrieveExpensesReturnInfo(
-            wasSuccessful = true,
-            expenses = expenseDao.retrieveAllExpensesOnDate(user.username, date)
-        )
-    }
-
-    /**
-     * Retrieves every expense belonging to the user that occurred on the given date with a matching description
-     *
-     * @param user The [User] to retrieve expenses for
-     * @param date The date to filter by
-     * @param description The description to filter by
-     * @return A [RetrieveExpensesReturnInfo] indicating what happened with the retrieval
-     */
-    suspend fun retrieveAllExpensesByDescriptionOnDate(user: User, date: LocalDate, description: String): RetrieveExpensesReturnInfo {
-        val userStatus = userDatabaseSystem.findUser(user.username)
-        if (!userStatus.wasSuccessful) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
-        return RetrieveExpensesReturnInfo(
-            wasSuccessful = true,
-            expenses = expenseDao.retrieveAllExpensesByDescriptionOnDate(user.username, date, description)
-        )
+    suspend fun retrieveAllExpensesOnDate(user: User, date: LocalDate): FindAllReturnInfo<Expense> {
+        if (auth.currentUser?.uid != user.uid) return FindAllReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
+        return try {
+            val allExpenses = expenses(user.uid)
+                .whereEqualTo("date", date.toString())
+                .get()
+                .await()
+                .toObjects<Expense>()
+            FindAllReturnInfo(wasSuccessful = true, values = allExpenses)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindAllReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not load expenses")
+        }
     }
 
     /**
@@ -254,77 +195,55 @@ class ExpenseDatabaseSystem(
      * @param user The [User] to retrieve expenses for
      * @param startDate The earliest date to include
      * @param endDate The latest date to include, cannot be before [startDate]
-     * @return A [RetrieveExpensesReturnInfo] indicating what happened with the retrieval
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
      */
-    suspend fun retrieveAllExpensesBetweenDates(user: User, startDate: LocalDate, endDate: LocalDate): RetrieveExpensesReturnInfo {
-        val userStatus = userDatabaseSystem.findUser(user.username)
-        if (!userStatus.wasSuccessful) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
-        if (startDate > endDate) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = "Start date is after end date")
-        return RetrieveExpensesReturnInfo(
-            wasSuccessful = true,
-            expenses = expenseDao.retrieveAllExpensesBetweenDates(user.username, startDate, endDate)
-        )
-    }
-
-    /**
-     * Retrieves every expense belonging to the user that occurred between the given dates, inclusive, with a matching description
-     *
-     * @param user The [User] to retrieve expenses for
-     * @param startDate The earliest date to include
-     * @param endDate The latest date to include, cannot be before [startDate]
-     * @param description The description to filter by
-     * @return A [RetrieveExpensesReturnInfo] indicating what happened with the retrieval
-     */
-    suspend fun retrieveAllExpensesByDescriptionBetweenDates(
-        user: User,
-        startDate: LocalDate,
-        endDate: LocalDate,
-        description: String
-    ): RetrieveExpensesReturnInfo {
-        val userStatus = userDatabaseSystem.findUser(user.username)
-        if (!userStatus.wasSuccessful) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
-        if (startDate > endDate) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = "Start date is after end date")
-        return RetrieveExpensesReturnInfo(
-            wasSuccessful = true,
-            expenses = expenseDao.retrieveAllExpensesByDescriptionBetweenDates(
-                user.username,
-                startDate,
-                endDate,
-                description
-            )
-        )
+    suspend fun retrieveAllExpensesBetweenDates(user: User, startDate: LocalDate, endDate: LocalDate): FindAllReturnInfo<Expense> {
+        if (auth.currentUser?.uid != user.uid) return FindAllReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
+        if (startDate > endDate) return FindAllReturnInfo(wasSuccessful = false, errMsg = "Start date is after end date")
+        return try {
+            val allExpenses = expenses(user.uid)
+                .whereGreaterThanOrEqualTo("date", startDate.toString())
+                .whereLessThanOrEqualTo("date", endDate.toString())
+                .get()
+                .await()
+                .toObjects<Expense>()
+            FindAllReturnInfo(wasSuccessful = true, values = allExpenses)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindAllReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not load expenses")
+        }
     }
 
     /**
      * Retrieves every expense belonging to the category
      *
      * @param category The [Category] to retrieve expenses for
-     * @return A [RetrieveExpensesReturnInfo] indicating what happened with the retrieval
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
      */
-    suspend fun retrieveAllExpensesForCategory(category: Category): RetrieveExpensesReturnInfo {
-        val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-        if (!categoryStatus.wasSuccessful) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-        return RetrieveExpensesReturnInfo(
-            wasSuccessful = true,
-            expenses = expenseDao.retrieveAllExpensesForCategory(category.id)
-        )
-    }
-
-    /**
-     * Retrieves every expense belonging to the category with a matching description
-     *
-     * @param category The [Category] to retrieve expenses for
-     * @param description The description to filter by
-     * @return A [RetrieveExpensesReturnInfo] indicating what happened with the retrieval
-     */
-    suspend fun retrieveAllExpensesByDescriptionForCategory(category: Category, description: String): RetrieveExpensesReturnInfo {
-        if (description.isBlank()) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = "Description is empty")
-        val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-        if (!categoryStatus.wasSuccessful) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-        return RetrieveExpensesReturnInfo(
-            wasSuccessful = true,
-            expenses = expenseDao.retrieveAllExpensesByDescriptionForCategory(category.id, description)
-        )
+    suspend fun retrieveAllExpensesForCategory(category: Category): FindAllReturnInfo<Expense> {
+        if (category.id.isBlank()) return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category id is empty")
+        val uid = auth.uid ?: return FindAllReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        if (!db .collection("users")
+                .document(uid)
+                .collection("categories")
+                .document(category.id)
+                .get()
+                .await()
+                .exists())
+            return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category does not exist in the database")
+        return try {
+            val allExpenses = expenses(uid)
+                .whereEqualTo("categoryId", category.id)
+                .get()
+                .await()
+                .toObjects<Expense>()
+            FindAllReturnInfo(wasSuccessful = true, values = allExpenses)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindAllReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not load expenses")
+        }
     }
 
     /**
@@ -332,33 +251,32 @@ class ExpenseDatabaseSystem(
      *
      * @param category The [Category] to retrieve expenses for
      * @param date The date to filter by
-     * @return A [RetrieveExpensesReturnInfo] indicating what happened with the retrieval
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
      */
-    suspend fun retrieveAllExpensesOnDateForCategory(category: Category, date: LocalDate): RetrieveExpensesReturnInfo {
-        val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-        if (!categoryStatus.wasSuccessful) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-        return RetrieveExpensesReturnInfo(
-            wasSuccessful = true,
-            expenses = expenseDao.retrieveAllExpensesOnDateForCategory(category.id, date)
-        )
-    }
-
-    /**
-     * Retrieves every expense belonging to the category that occurred on the given date with a matching description
-     *
-     * @param category The [Category] to retrieve expenses for
-     * @param description The description to filter by
-     * @param date The date to filter by
-     * @return A [RetrieveExpensesReturnInfo] indicating what happened with the retrieval
-     */
-    suspend fun retrieveAllExpensesByDescriptionOnDateForCategory(category: Category, description: String, date: LocalDate): RetrieveExpensesReturnInfo {
-        if (description.isBlank()) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = "Description is empty")
-        val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-        if (!categoryStatus.wasSuccessful) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-        return RetrieveExpensesReturnInfo(
-            wasSuccessful = true,
-            expenses = expenseDao.retrieveAllExpensesByDescriptionOnDateForCategory(category.id, description, date)
-        )
+    suspend fun retrieveAllExpensesOnDateForCategory(category: Category, date: LocalDate): FindAllReturnInfo<Expense> {
+        if (category.id.isBlank()) return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category id is empty")
+        val uid = auth.uid ?: return FindAllReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        if (!db .collection("users")
+                .document(uid)
+                .collection("categories")
+                .document(category.id)
+                .get()
+                .await()
+                .exists())
+            return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category does not exist in the database")
+        return try {
+            val allExpenses = expenses(uid)
+                .whereEqualTo("categoryId", category.id)
+                .whereEqualTo("date", date.toString())
+                .get()
+                .await()
+                .toObjects<Expense>()
+            FindAllReturnInfo(wasSuccessful = true, values = allExpenses)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindAllReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not load expenses")
+        }
     }
 
     /**
@@ -367,46 +285,34 @@ class ExpenseDatabaseSystem(
      * @param category The [Category] to retrieve expenses for
      * @param startDate The earliest date to include
      * @param endDate The latest date to include, cannot be before [startDate]
-     * @return A [RetrieveExpensesReturnInfo] indicating what happened with the retrieval
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
      */
-    suspend fun retrieveAllExpensesBetweenDatesForCategory(category: Category, startDate: LocalDate, endDate: LocalDate): RetrieveExpensesReturnInfo {
-        val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-        if (!categoryStatus.wasSuccessful) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-        if (startDate > endDate) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = "Start date is after end date")
-        return RetrieveExpensesReturnInfo(
-            wasSuccessful = true,
-            expenses = expenseDao.retrieveAllExpensesBetweenDatesForCategory(category.id, startDate, endDate)
-        )
-    }
-
-    /**
-     * Retrieves every expense belonging to the category that occurred between the given dates, inclusive, with a matching description
-     *
-     * @param category The [Category] to retrieve expenses for
-     * @param description The description to filter by
-     * @param startDate The earliest date to include
-     * @param endDate The latest date to include, cannot be before [startDate]
-     * @return A [RetrieveExpensesReturnInfo] indicating what happened with the retrieval
-     */
-    suspend fun retrieveAllExpensesByDescriptionBetweenDatesForCategory(
-        category: Category,
-        description: String,
-        startDate: LocalDate,
-        endDate: LocalDate
-    ): RetrieveExpensesReturnInfo {
-        if (description.isBlank()) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = "Description is empty")
-        val categoryStatus = categoryDatabaseSystem.findCategory(category.id)
-        if (!categoryStatus.wasSuccessful) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = categoryStatus.errMsg)
-        if (startDate > endDate) return RetrieveExpensesReturnInfo(wasSuccessful = false, errMsg = "Start date is after end date")
-        return RetrieveExpensesReturnInfo(
-            wasSuccessful = true,
-            expenses = expenseDao.retrieveAllExpensesByDescriptionBetweenDatesForCategory(
-                category.id,
-                description,
-                startDate,
-                endDate
-            )
-        )
+    suspend fun retrieveAllExpensesBetweenDatesForCategory(category: Category, startDate: LocalDate, endDate: LocalDate): FindAllReturnInfo<Expense> {
+        if (category.id.isBlank()) return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category id is empty")
+        if (startDate > endDate) return FindAllReturnInfo(wasSuccessful = false, errMsg = "Start date is after end date")
+        val uid = auth.uid ?: return FindAllReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        if (!db .collection("users")
+                .document(uid)
+                .collection("categories")
+                .document(category.id)
+                .get()
+                .await()
+                .exists())
+            return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category does not exist in the database")
+        return try {
+            val allExpenses = expenses(uid)
+                .whereEqualTo("categoryId", category.id)
+                .whereGreaterThanOrEqualTo("date", startDate.toString())
+                .whereLessThanOrEqualTo("date", endDate.toString())
+                .get()
+                .await()
+                .toObjects<Expense>()
+            FindAllReturnInfo(wasSuccessful = true, values = allExpenses)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindAllReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not load expenses")
+        }
     }
 
     /**
@@ -414,18 +320,30 @@ class ExpenseDatabaseSystem(
      *
      * @param expense The [Expense] being updated
      * @param newDescription The new description
-     * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateExpenseDescription(expense: Expense, newDescription: String): UpdateExpenseReturnInfo {
-        val result = run {
-            if (expense.description == newDescription) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-            if (newDescription.isBlank()) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Description is empty")
-            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-            expenseDao.updateExpenseDescription(expense.id, newDescription)
-            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(description = newDescription))
-        }
-        logUpdateOutcome("update description for expense id ${expense.id}", result.status, result.errMsg)
+    suspend fun updateExpenseDescription(expense: Expense, newDescription: String): UpdateReturnInfo<Expense> {
+        val result = tryUpdateExpenseDescription(expense, newDescription)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "description for expense '${expense.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateExpenseDescription(expense: Expense, newDescription: String): UpdateReturnInfo<Expense> {
+        if (newDescription.isBlank()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Description is empty")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = expenses(uid),
+            entityTypeDisplayName = "Expense",
+            entity = expense,
+            property = Expense::description,
+            newValue = newDescription,
+            updatedEntity = expense.copy(description = newDescription)
+        )
     }
 
     /**
@@ -433,18 +351,30 @@ class ExpenseDatabaseSystem(
      *
      * @param expense The [Expense] being updated
      * @param newAmount The new amount, cannot be negative
-     * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateExpenseAmount(expense: Expense, newAmount: Double): UpdateExpenseReturnInfo {
-        val result = run {
-            if (expense.amount == newAmount) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-            if (newAmount < 0.0) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "New amount cannot be less than 0")
-            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-            expenseDao.updateExpenseAmount(expense.id, newAmount)
-            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(amount = newAmount))
-        }
-        logUpdateOutcome("update amount for expense id ${expense.id}", result.status, result.errMsg)
+    suspend fun updateExpenseAmount(expense: Expense, newAmount: Double): UpdateReturnInfo<Expense> {
+        val result = tryUpdateExpenseAmount(expense, newAmount)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "amount for expense '${expense.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateExpenseAmount(expense: Expense, newAmount: Double): UpdateReturnInfo<Expense> {
+        if (newAmount < 0.0) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New amount cannot be negative")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = expenses(uid),
+            entityTypeDisplayName = "Expense",
+            entity = expense,
+            property = Expense::amount,
+            newValue = newAmount,
+            updatedEntity = expense.copy(amount = newAmount)
+        )
     }
 
     /**
@@ -452,17 +382,29 @@ class ExpenseDatabaseSystem(
      *
      * @param expense The [Expense] being updated
      * @param newDate The new date
-     * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateExpenseDate(expense: Expense, newDate: LocalDate): UpdateExpenseReturnInfo {
-        val result = run {
-            if (expense.date == newDate) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-            expenseDao.updateExpenseDate(expense.id, newDate)
-            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(date = newDate))
-        }
-        logUpdateOutcome("update date for expense id ${expense.id}", result.status, result.errMsg)
+    suspend fun updateExpenseDate(expense: Expense, newDate: LocalDate): UpdateReturnInfo<Expense> {
+        val result = tryUpdateExpenseDate(expense, newDate)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "date for expense '${expense.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateExpenseDate(expense: Expense, newDate: LocalDate): UpdateReturnInfo<Expense> {
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = expenses(uid),
+            entityTypeDisplayName = "Expense",
+            entity = expense,
+            property = Expense::date,
+            newValue = newDate.toString(),
+            updatedEntity = expense.copy(date = newDate.toString())
+        )
     }
 
     /**
@@ -470,18 +412,30 @@ class ExpenseDatabaseSystem(
      *
      * @param expense The [Expense] being updated
      * @param newStartTime The new start time, cannot be after the expense's current end time
-     * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateExpenseStartTime(expense: Expense, newStartTime: LocalTime): UpdateExpenseReturnInfo {
-        val result = run {
-            if (expense.startTime == newStartTime) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-            if (expense.endTime < newStartTime) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Start time is after end time")
-            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-            expenseDao.updateExpenseStartTime(expense.id, newStartTime)
-            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(startTime = newStartTime))
-        }
-        logUpdateOutcome("update start time for expense id ${expense.id}", result.status, result.errMsg)
+    suspend fun updateExpenseStartTime(expense: Expense, newStartTime: LocalTime): UpdateReturnInfo<Expense> {
+        val result = tryUpdateExpenseStartTime(expense, newStartTime)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "start time for expense '${expense.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateExpenseStartTime(expense: Expense, newStartTime: LocalTime): UpdateReturnInfo<Expense> {
+        if (expense.endTimeAsLocalTime() < newStartTime) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Start time cannot be after end time")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = expenses(uid),
+            entityTypeDisplayName = "Expense",
+            entity = expense,
+            property = Expense::startTime,
+            newValue = newStartTime.toString(),
+            updatedEntity = expense.copy(date = newStartTime.toString())
+        )
     }
 
     /**
@@ -489,49 +443,99 @@ class ExpenseDatabaseSystem(
      *
      * @param expense The [Expense] being updated
      * @param newEndTime The new end time, cannot be before the expense's current start time
-     * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateExpenseEndTime(expense: Expense, newEndTime: LocalTime): UpdateExpenseReturnInfo {
-        val result = run {
-            if (expense.endTime == newEndTime) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-            if (newEndTime < expense.startTime) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "End time is before start time")
-            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-            expenseDao.updateExpenseEndTime(expense.id, newEndTime)
-            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(endTime = newEndTime))
-        }
-        logUpdateOutcome("update end time for expense id ${expense.id}", result.status, result.errMsg)
+    suspend fun updateExpenseEndTime(expense: Expense, newEndTime: LocalTime): UpdateReturnInfo<Expense> {
+        val result = tryUpdateExpenseEndTime(expense, newEndTime)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "end time for expense '${expense.id}'",
+            errMsg = result.errMsg
+        )
         return result
     }
 
+    private suspend fun tryUpdateExpenseEndTime(expense: Expense, newEndTime: LocalTime): UpdateReturnInfo<Expense> {
+        if (newEndTime < expense.startTimeAsLocalTime()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "End time cannot be before start time")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = expenses(uid),
+            entityTypeDisplayName = "Expense",
+            entity = expense,
+            property = Expense::endTime,
+            newValue = newEndTime.toString(),
+            updatedEntity = expense.copy(date = newEndTime.toString())
+        )
+    }
+
     /**
-     * Modifies the receipt image path for the expense
+     * Modifies the receipt image path one device saved for the expense, leaving the other devices' paths untouched
      *
      * @param expense The [Expense] being updated
-     * @param newImagePath The new image path, or null to remove it
-     * @return An [UpdateExpenseReturnInfo] indicating what happened with the update
+     * @param deviceId The ID of the device the image is saved on
+     * @param newImagePath The new local image path, or null to remove this device's image
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateExpenseImage(expense: Expense, newImagePath: String?): UpdateExpenseReturnInfo {
-        val result = run {
-            if (expense.imagePath == newImagePath) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.NoChange, expense = expense)
-            if (newImagePath?.isBlank() ?: false) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Image path cannot be blank")
-            if (!isExpenseStillValid(expense)) return@run UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Failed, errMsg = "Expense is not valid")
-            expenseDao.updateExpenseImage(expense.id, newImagePath)
-            UpdateExpenseReturnInfo(status = UpdateExpenseReturnStatus.Succeeded, expense = expense.copy(imagePath = newImagePath))
-        }
-        logUpdateOutcome("update image for expense id ${expense.id}", result.status, result.errMsg)
+    suspend fun updateExpenseImage(expense: Expense, deviceId: String, newImagePath: String?): UpdateReturnInfo<Expense> {
+        val result = tryUpdateExpenseImage(expense, deviceId, newImagePath)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "image for expense '${expense.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateExpenseImage(expense: Expense, deviceId: String, newImagePath: String?): UpdateReturnInfo<Expense> {
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDeviceImagePath(
+            collection = expenses(uid),
+            entityTypeDisplayName = "Expense",
+            entity = expense,
+            id = expense.id,
+            currentPaths = expense.imagePaths,
+            deviceId = deviceId,
+            newPath = newImagePath,
+            withPaths = { expense.copy(imagePaths = it) }
+        )
     }
 
     /**
      * Deletes the expense from the database
      *
      * @param expense The [Expense] to delete
-     * @return A status reflection from [ExpenseDeleteReturnStatus]
+     * @return A status reflection from [DeleteReturnStatus]
      */
-    suspend fun deleteExpense(expense: Expense): ExpenseDeleteReturnStatus {
-        val status = if (expenseDao.deleteExpense(expense) == 1) ExpenseDeleteReturnStatus.Deleted else ExpenseDeleteReturnStatus.DoesNotExist
-        if (status == ExpenseDeleteReturnStatus.Deleted) Log.i(TAG, "Successfully deleted expense '${expense.description}'")
-        else Log.w(TAG, "Failed to delete expense '${expense.description}': expense does not exist")
-        return status
+    suspend fun deleteExpense(expense: Expense): DeleteReturnStatus {
+        val uid = auth.uid
+        val result =
+            if (uid == null) DeleteReturnStatus.ReauthenticationFailed
+            else deleteDocument(
+                db = db,
+                collection = expenses(uid),
+                id = expense.id,
+                subcollections = emptyList(),
+                relatedCollections = emptyList(),
+                batchSize = BATCH_SIZE
+            )
+        val wasSuccessful = result == DeleteReturnStatus.Deleted
+        val errMsg: String? =
+            if (wasSuccessful) null
+            else when (result) {
+                DeleteReturnStatus.DoesNotExist -> "Category does not exist"
+                DeleteReturnStatus.ReauthenticationFailed -> "No user currently signed in"
+                else -> "Unknown reason"
+            }
+        logOutcome(
+            tag = TAG,
+            wasSuccessful = wasSuccessful,
+            verbOnSuccess = "deleted",
+            verbOnFailure = "to delete",
+            messageDetails = "expense '${expense.id}'",
+            errMsg = errMsg
+        )
+        return result
     }
 }

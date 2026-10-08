@@ -13,17 +13,16 @@ class GoalSnapshotTest {
     private val today = LocalDate.of(2026, 6, 15)
 
     private fun expense(amount: Double, date: LocalDate) = Expense(
-        categoryId = 1,
+        categoryId = "1",
         description = "test",
         amount = amount,
-        date = date,
-        startTime = LocalTime.MIDNIGHT,
-        endTime = LocalTime.MIDNIGHT
+        date = date.toString(),
+        startTime = LocalTime.MIDNIGHT.toString(),
+        endTime = LocalTime.MIDNIGHT.toString()
     )
 
     private fun goal(min: Double, max: Double) = MonthlyGoal(
-        username = "user",
-        period = YearMonth.from(today),
+        id = YearMonth.from(today).toString(),
         minGoal = min,
         maxGoal = max
     )

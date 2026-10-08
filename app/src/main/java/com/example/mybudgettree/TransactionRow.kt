@@ -4,7 +4,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 data class TransactionRow(
-    val id: Long = 0,
+    val id: String = "",
     val title: String,
     val categoryName: String,
     val amount: Double,

@@ -1,41 +1,26 @@
 package com.example.mybudgettree.database.entries
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import androidx.room.ForeignKey
-import androidx.room.ColumnInfo
-import androidx.room.Index
+import com.google.firebase.firestore.DocumentId
 import java.time.YearMonth
 
 /**
- * A user's overall minimum/maximum spending goal for a given month, distinct from
- * per-category budgets
+ * A user's overall spending goal for one month, stored in Firestore at `users/{uid}/monthlyGoals/{yyyy-MM}`. The
+ * document ID is the ISO-8601 year-month the goal applies to (e.g. "2026-10"), so a month can only ever have one
+ * goal, and the owning user is identified by the path rather than a field
  *
- * @property id The auto-generated primary key for the goal
- * @property username The username of the [User] the goal belongs to
- * @property period The year and month this goal applies to
+ * @property id The year-month the goal applies to, as the document ID rather than a stored field; use [idAsYearMonth] to read it as a [YearMonth]
  * @property minGoal The minimum amount the user intends to spend this month
  * @property maxGoal The maximum amount the user intends to spend this month
  */
-@Entity(
-    tableName = "monthly_goals",
-    foreignKeys = [
-        ForeignKey(
-            entity = User::class,
-            parentColumns = ["username"],
-            childColumns = ["username"],
-            onUpdate = ForeignKey.CASCADE,
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [
-        Index(value = ["username", "period"], unique = true)
-    ]
-)
 data class MonthlyGoal(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val username: String, // Foreign key
-    val period: YearMonth,
-    @ColumnInfo(name = "min_goal") val minGoal: Double,
-    @ColumnInfo(name = "max_goal") val maxGoal: Double
-)
+    @DocumentId val id: String = "",
+    val minGoal: Double = 0.0,
+    val maxGoal: Double = 0.0
+) {
+    /**
+     * Parses [id] into a [YearMonth]
+     *
+     * @return The year and month this goal applies to
+     */
+    fun idAsYearMonth(): YearMonth = YearMonth.parse(id)
+}

@@ -5,16 +5,16 @@ import android.content.Context
 object ProfilePreferences {
     private const val PREFS = "profile_prefs"
 
-    fun isPushEnabled(context: Context, username: String): Boolean =
+    fun isPushEnabled(context: Context, uid: String): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getBoolean(pushKey(username), true)
+            .getBoolean(pushKey(uid), true)
 
-    fun setPushEnabled(context: Context, username: String, enabled: Boolean) {
+    fun setPushEnabled(context: Context, uid: String, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
-            .putBoolean(pushKey(username), enabled)
+            .putBoolean(pushKey(uid), enabled)
             .apply()
     }
 
-    private fun pushKey(username: String) = "push_$username"
+    private fun pushKey(uid: String) = "push_$uid"
 }

@@ -1,37 +1,44 @@
 package com.example.mybudgettree.database.entries
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import androidx.room.ColumnInfo
-import androidx.room.Index
+import com.google.firebase.firestore.DocumentId
 import java.time.LocalDate
 
 /**
- * A user account
+ * A user's profile, stored in Firestore at `users/{uid}`. The account itself (email and
+ * password) is owned by Firebase Authentication, so no password is stored here
  *
- * @property username The user's unique username, used as the primary key
- * @property password The account password
- * @property email The account email address, must be unique
- * @property phoneNumber The account phone number, must be unique
+ * Every property has a default value so Firestore can rebuild the object from a document
+ *
+ * @property uid The Firebase Authentication user ID, filled in from the document ID rather than stored as a field
+ * @property email The account email address, a display copy of the one held by Firebase Authentication
+ * @property phoneNumber The account phone number
  * @property displayName The name shown for the user
- * @property dateOfBirth The user's date of birth
+ * @property dateOfBirth The user's date of birth as an ISO-8601 string (e.g. "2000-01-01"), since Firestore can't store a [LocalDate]; use [dateOfBirthAsLocalDate] to read it as a date
  * @property currency The user's preferred currency
- * @property profilePhotoPath The path to the user's profile photo, or null if none is set
  */
-@Entity(
-    tableName = "users",
-    indices = [
-        Index(value = ["email"], unique = true),
-        Index(value = ["phone_number"], unique = true)
-    ]
-)
 data class User(
-    @PrimaryKey val username: String,
-    val password: String,
-    val email: String,
-    @ColumnInfo(name = "phone_number") val phoneNumber: String,
-    @ColumnInfo(name = "display_name") val displayName: String,
-    @ColumnInfo(name = "date_of_birth") val dateOfBirth: LocalDate,
-    val currency: String,
-    @ColumnInfo(name = "profile_photo_path") val profilePhotoPath: String? = null
-)
+    @DocumentId val uid: String = "",
+    val email: String = "",
+    val phoneNumber: String = "",
+    val displayName: String = "",
+    val dateOfBirth: String = "",
+    val currency: String = "ZAR"
+) {
+    /**
+     * Parses [dateOfBirth] into a [LocalDate]
+     *
+     * This is a function rather than a property so Firestore's serializer doesn't write it to the database as an extra field
+     *
+     * @return The user's date of birth
+     */
+    fun dateOfBirthAsLocalDate(): LocalDate = LocalDate.parse(dateOfBirth)
+}
+
+/**
+ * Marks a phone number as registered so no two accounts can share one, stored in Firestore at
+ * `phoneNumbers/{phoneNumber}`. The document ID is the normalized phone number (digits and an optional
+ * leading "+"), which also guarantees phone numbers are unique
+ *
+ * @property uid The Firebase Authentication user ID of the account that owns the phone number
+ */
+data class PhoneNumberLookup(val uid: String = "")

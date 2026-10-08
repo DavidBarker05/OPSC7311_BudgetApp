@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "470141736824",
+    "project_id": "mybudgettree",
+    "storage_bucket": "mybudgettree.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:470141736824:android:cd6c2c0f4d7906d71d9a8d",
+        "android_client_info": {
+          "package_name": "com.example.mybudgettree"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAm6EnMuyy8ZVSQrBOjM4PdTq4DxOXVASM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

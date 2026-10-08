@@ -1,39 +1,19 @@
 package com.example.mybudgettree.database.entries
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import androidx.room.ForeignKey
-import androidx.room.ColumnInfo
-import androidx.room.Index
+import com.google.firebase.firestore.DocumentId
 
 /**
- * A spending/income category belonging to a user
+ * A spending/income category, stored in Firestore at `users/{uid}/categories/{id}`. The owning user is
+ * identified by the path rather than a field
  *
- * @property id The auto-generated primary key for the category
- * @property username The username of the [User] the category belongs to
- * @property categoryName The category's name, must be unique per user
+ * @property id The auto-generated document ID, filled in from the document rather than stored as a field
+ * @property categoryName The category's name, must be unique per user (enforced in code, since Firestore has no unique constraints)
  * @property budgetAmount The category's budgeted amount, or null if no budget is set
- * @property iconKey The [IconCatalog] key for the category's icon, or null to fall back to a name-based default
+ * @property iconKey The [com.example.mybudgettree.IconCatalog] key for the category's icon, or null to fall back to a name-based default
  */
-@Entity(
-    tableName = "categories",
-    foreignKeys = [
-        ForeignKey(
-            entity = User::class,
-            parentColumns = ["username"],
-            childColumns = ["username"],
-            onUpdate = ForeignKey.CASCADE,
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [
-        Index(value = ["username", "category_name"], unique = true)
-    ]
-)
 data class Category(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val username: String, // Foreign key
-    @ColumnInfo(name = "category_name") val categoryName: String,
-    @ColumnInfo(name = "budget_amount") val budgetAmount: Double? = null,
-    @ColumnInfo(name = "icon_key") val iconKey: String? = null
+    @DocumentId val id: String = "",
+    val categoryName: String = "",
+    val budgetAmount: Double? = null,
+    val iconKey: String? = null
 )

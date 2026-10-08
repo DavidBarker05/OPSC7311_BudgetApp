@@ -82,12 +82,12 @@ class WateringCanActivity : AppCompatActivity() {
         val user = UserSession.currentUser ?: return
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
-            val goals = app.savingsGoalDatabaseSystem.getAllGoalsForUser(user).goals.orEmpty()
+            val goals = app.savingsGoalDatabaseSystem.getAllGoalsForUser(user).values.orEmpty()
             val currentMonth = YearMonth.now()
-            val expensesThisMonth = app.expenseDatabaseSystem.retrieveAllExpenses(user).expenses.orEmpty()
-                .filter { YearMonth.from(it.date) == currentMonth }
-            val incomesThisMonth = app.incomeDatabaseSystem.retrieveAllIncomes(user).incomes.orEmpty()
-                .filter { YearMonth.from(it.date) == currentMonth }
+            val expensesThisMonth = app.expenseDatabaseSystem.retrieveAllExpenses(user).values.orEmpty()
+                .filter { YearMonth.from(it.dateAsLocalDate()) == currentMonth }
+            val incomesThisMonth = app.incomeDatabaseSystem.retrieveAllIncomes(user).values.orEmpty()
+                .filter { YearMonth.from(it.dateAsLocalDate()) == currentMonth }
             val spentThisMonth = expensesThisMonth.sumOf { it.amount }
             val monthlyGoal = app.monthlyGoalDatabaseSystem.getGoal(user, currentMonth)
             BudgetOverview.bind(
@@ -102,7 +102,7 @@ class WateringCanActivity : AppCompatActivity() {
             var saved = 0.0
             var target = 0.0
             goals.forEach { goal ->
-                saved += app.savingsContributionDatabaseSystem.retrieveAllContributionsForGoal(goal).contributions.orEmpty().sumOf { it.amount }
+                saved += app.savingsContributionDatabaseSystem.retrieveAllContributionsForGoal(goal).values.orEmpty().sumOf { it.amount }
                 target += goal.targetAmount ?: 0.0
             }
             val percent = if (target <= 0.0) 0 else ((saved / target) * 100.0).toInt().coerceIn(0, 100)

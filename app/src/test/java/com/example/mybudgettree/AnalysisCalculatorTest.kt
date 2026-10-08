@@ -15,26 +15,25 @@ class AnalysisCalculatorTest {
     private val anchor = LocalDate.of(2026, 6, 15)
 
     private fun expense(amount: Double, date: LocalDate) = Expense(
-        categoryId = 1,
+        categoryId = "1",
         description = "test",
         amount = amount,
-        date = date,
-        startTime = LocalTime.MIDNIGHT,
-        endTime = LocalTime.MIDNIGHT
+        date = date.toString(),
+        startTime = LocalTime.MIDNIGHT.toString(),
+        endTime = LocalTime.MIDNIGHT.toString()
     )
 
     private fun income(amount: Double, date: LocalDate) = Income(
-        categoryId = 1,
+        categoryId = "1",
         description = "test",
         amount = amount,
-        date = date,
-        startTime = LocalTime.MIDNIGHT,
-        endTime = LocalTime.MIDNIGHT
+        date = date.toString(),
+        startTime = LocalTime.MIDNIGHT.toString(),
+        endTime = LocalTime.MIDNIGHT.toString()
     )
 
     private fun goal(min: Double, max: Double) = MonthlyGoal(
-        username = "user",
-        period = YearMonth.from(anchor),
+        id = YearMonth.from(anchor).toString(),
         minGoal = min,
         maxGoal = max
     )

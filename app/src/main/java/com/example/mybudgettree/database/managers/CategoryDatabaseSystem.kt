@@ -1,151 +1,129 @@
 package com.example.mybudgettree.database.managers
 
-import android.util.Log
-import com.example.mybudgettree.database.daos.CategoryDao
-import com.example.mybudgettree.database.entries.User
 import com.example.mybudgettree.database.entries.Category
+import com.example.mybudgettree.database.entries.User
+import com.example.mybudgettree.database.managers.shared.*
+import com.example.mybudgettree.database.managers.shared.firebase.*
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
+import com.google.firebase.firestore.toObjects
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.tasks.await
 
 /**
  * This system manages category state, uniqueness validation, discovery, updates, and removals
  *
- * @property categoryDao The underlying Data Access Object managing RoomDB operations
- * @property userDatabaseSystem Used to validate that the owning user exists before category operations proceed
+ * Categories are stored in Firestore at `users/{uid}/categories/{id}`. Only the signed-in user's data can be reached,
+ * so each function checks that the user it's given is the one signed in. Category names are unique per user, which
+ * Firestore can't enforce, so it's checked in code. Deleting a category also deletes the expenses and incomes in it
+ *
+ * @property auth The Firebase Authentication instance used to find the signed-in user
+ * @property db The Firestore instance that holds the categories
  */
 class CategoryDatabaseSystem(
-    private val categoryDao: CategoryDao,
-    private val userDatabaseSystem: UserDatabaseSystem
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
+    private fun categories(uid: String): CollectionReference = db.collection("users").document(uid).collection("categories")
+    private fun relatedCollections(uid: String): List<RelatedCollection> = listOf(
+        RelatedCollection(
+            collection = db.collection("users").document(uid).collection("expenses"),
+            referenceField = "categoryId"
+        ),
+        RelatedCollection(
+            collection = db.collection("users").document(uid).collection("incomes"),
+            referenceField = "categoryId"
+        )
+    )
 
     companion object {
         private const val TAG = "CategoryDatabaseSystem"
 
-        private fun logUpdateOutcome(action: String, status: UpdateCategoryReturnStatus, errMsg: String?) {
-            when (status) {
-                UpdateCategoryReturnStatus.Succeeded -> Log.i(TAG, "Successfully $action")
-                UpdateCategoryReturnStatus.Failed -> Log.w(TAG, "Failed to $action: $errMsg")
-                UpdateCategoryReturnStatus.NoChange -> Log.d(TAG, "No change $action")
-            }
-        }
+        private const val BATCH_SIZE = 400L
+    }
 
-        private fun logCreateOutcome(action: String, wasSuccessful: Boolean, errMsg: String?) {
-            if (wasSuccessful) Log.i(TAG, "Successfully $action") else Log.w(TAG, "Failed to $action: $errMsg")
-        }
+
+    /**
+     * Checks whether a user already has a category with the given name. Names are compared exactly, so "Food" and "food" are different
+     *
+     * @param uid The ID of the user to check, who must be the one signed in
+     * @param categoryName The name to look for
+     * @return True if the user has a category with that name. False if the name is free, or if the name is blank or [uid] isn't the signed-in user
+     */
+    suspend fun isCategoryNameTaken(uid: String, categoryName: String): Boolean {
+        if (uid.isBlank() || categoryName.isBlank() || auth.currentUser?.uid != uid) return false
+        return !categories(uid)
+            .whereEqualTo("categoryName", categoryName)
+            .limit(1)
+            .get().await()
+            .isEmpty
     }
 
     /**
-     * Wraps the category creation return in a detailed form
+     * Checks whether the user already has a category with the given name
      *
-     * @property wasSuccessful True if the category was created without error, false otherwise
-     * @property category The newly created [Category] record if successful, or null on execution failure
-     * @property errMsg The explanatory message detailing why creation failed, or null if successful
+     * @param user The [User] to check
+     * @param categoryName The name to look for
+     * @return True if the user has a category with that name, see the overload that takes a user ID
      */
-    data class CreateCategoryReturnInfo(
-        val wasSuccessful: Boolean,
-        val category: Category? = null,
-        val errMsg: String? = null
-    )
-
-    /**
-     * Wraps the search request return in a detailed form
-     *
-     * @property wasSuccessful True if the target record was found, false otherwise
-     * @property category The retrieved [Category] entity if located, or null if the record doesn't exist
-     * @property errMsg The diagnostic message stating the cause of failure, or null if found
-     */
-    data class FindCategoryReturnInfo(
-        val wasSuccessful: Boolean,
-        val category: Category? = null,
-        val errMsg: String? = null
-    )
-
-    /**
-     * Wraps the bulk retrieval return in a detailed form
-     *
-     * @property wasSuccessful True if the categories were retrieved without error, false otherwise
-     * @property categories The retrieved list of [Category] entities if successful, or null on execution failure
-     * @property errMsg The diagnostic message stating the cause of failure, or null if successful
-     */
-    data class FindAllCategoriesReturnInfo(
-        val wasSuccessful: Boolean,
-        val categories: List<Category>? = null,
-        val errMsg: String? = null
-    )
-
-    /**
-     * Identifies exactly what happened when updating a category
-     */
-    enum class UpdateCategoryReturnStatus {
-        /**
-         * The update failed
-         */
-        Failed,
-        /**
-         * The update did not change any data, but did not fail
-         */
-        NoChange,
-        /**
-         * The update successfully changed data
-         */
-        Succeeded
-    }
-
-    /**
-     * Wraps the update request return in a detailed form
-     *
-     * @property status A [UpdateCategoryReturnStatus] specifying the operation outcome
-     * @property category The modified [Category] record containing updated fields, or null if the task failed
-     * @property errMsg The error message, only set if the [status] is [UpdateCategoryReturnStatus.Failed]
-     */
-    data class UpdateCategoryReturnInfo(
-        val status: UpdateCategoryReturnStatus,
-        val category: Category? = null,
-        val errMsg: String? = null
-    )
-
-    /**
-     * Indicates what happened when trying to delete a category
-     */
-    enum class CategoryDeleteReturnStatus {
-        /**
-         * The category couldn't be deleted because it doesn't exist in the database
-         */
-        DoesNotExist,
-        /**
-         * The category was successfully deleted
-         */
-        Deleted
-    }
+    suspend fun isCategoryNameTaken(user: User, categoryName: String): Boolean = isCategoryNameTaken(user.uid, categoryName)
 
     /**
      * Creates a new category for the user after validating the name and confirming it isn't already in use
      *
      * @param user The [User] the category belongs to
      * @param categoryName The desired name for the category, must be unique for the user
-     * @return A [CreateCategoryReturnInfo] indicating what happened with the creation
+     * @return A [CreateReturnInfo] indicating what happened with the creation
      */
-    suspend fun createCategory(user: User, categoryName: String): CreateCategoryReturnInfo {
-        val result = run {
-            if (categoryName.isBlank()) return@run CreateCategoryReturnInfo(wasSuccessful = false, errMsg = "Category name is empty")
-            val userStatus = userDatabaseSystem.findUser(user.username)
-            if (!userStatus.wasSuccessful) return@run CreateCategoryReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
-            val category = Category(username = user.username, categoryName = categoryName)
-            val id = categoryDao.insertCategory(category)
-            if (id == -1L) return@run CreateCategoryReturnInfo(wasSuccessful = false, errMsg = "User already has a category with name \"$categoryName\"")
-            CreateCategoryReturnInfo(wasSuccessful = true, category = category.copy(id = id))
-        }
-        logCreateOutcome("create category '$categoryName' for user '${user.username}'", result.wasSuccessful, result.errMsg)
+    suspend fun createCategory(user: User, categoryName: String): CreateReturnInfo<Category> {
+        val result = tryCreateCategory(user, categoryName)
+        logOutcome(
+            tag = TAG,
+            wasSuccessful = result.wasSuccessful,
+            verbOnSuccess = "created",
+            verbOnFailure = "to create",
+            messageDetails = "category '$categoryName' for user '${user.uid}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryCreateCategory(user: User, categoryName: String): CreateReturnInfo<Category> {
+        if (categoryName.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Category name is empty")
+        if (auth.currentUser?.uid != user.uid) return CreateReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
+        return try {
+            if (isCategoryNameTaken(user, categoryName)) return CreateReturnInfo(wasSuccessful = false, errMsg = "User already has a category with name \"$categoryName\"")
+            val categories = categories(user.uid)
+            val category = Category(categoryName = categoryName)
+            val ref = categories.add(category).await()
+            CreateReturnInfo(wasSuccessful = true, value = category.copy(id = ref.id))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            CreateReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not create category")
+        }
     }
 
     /**
      * Find the category in the database if it exists
      *
      * @param categoryId The id to search for
-     * @return A [FindCategoryReturnInfo] indicating what happened with the search
+     * @return A [FindReturnInfo] indicating what happened with the search
      */
-    suspend fun findCategory(categoryId: Long): FindCategoryReturnInfo {
-        val category = categoryDao.findCategory(categoryId) ?: return FindCategoryReturnInfo(wasSuccessful = false, errMsg = "Category does not exist")
-        return FindCategoryReturnInfo(wasSuccessful = true, category = category)
+    suspend fun findCategory(categoryId: String): FindReturnInfo<Category> {
+        if (categoryId.isBlank()) return FindReturnInfo(wasSuccessful = false, errMsg = "Category id is empty")
+        val uid = auth.uid ?: return FindReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        return try {
+            val category = categories(uid).document(categoryId).get().await().toObject<Category>()
+            if (category != null) FindReturnInfo(wasSuccessful = true, value = category)
+            else FindReturnInfo(wasSuccessful = false, errMsg = "Could not find category '$categoryId' for current auth user")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not find category '$categoryId' for current auth user")
+        }
     }
 
     /**
@@ -153,44 +131,43 @@ class CategoryDatabaseSystem(
      *
      * @param user The [User] the category should belong to
      * @param categoryName The category name to search for
-     * @return A [FindCategoryReturnInfo] indicating what happened with the search
+     * @return A [FindReturnInfo] indicating what happened with the search
      */
-    suspend fun findCategory(user: User, categoryName: String): FindCategoryReturnInfo {
-        if (categoryName.isBlank()) return FindCategoryReturnInfo(wasSuccessful = false, errMsg = "Category name is empty")
-        val userStatus = userDatabaseSystem.findUser(user.username)
-        if (!userStatus.wasSuccessful) return FindCategoryReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
-        val foundCategory = categoryDao.findCategory(user.username, categoryName)
-        return if (foundCategory != null) FindCategoryReturnInfo(wasSuccessful = true, category = foundCategory)
-        else FindCategoryReturnInfo(wasSuccessful = false, errMsg = "No category with name = \"$categoryName\" found")
+    suspend fun findCategory(user: User, categoryName: String): FindReturnInfo<Category> {
+        if (categoryName.isBlank()) return FindReturnInfo(wasSuccessful = false, errMsg = "Category name is empty")
+        if (auth.currentUser?.uid != user.uid) return FindReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
+        return try {
+            val foundCategory = categories(user.uid)
+                .whereEqualTo("categoryName", categoryName)
+                .limit(1)
+                .get().await()
+                .documents.firstOrNull()
+                ?.toObject<Category>()
+            if (foundCategory != null) FindReturnInfo(wasSuccessful = true, value = foundCategory)
+            else FindReturnInfo(wasSuccessful = false, errMsg = "No category with name = \"$categoryName\" found")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not find category '$categoryName'")
+        }
     }
-
-    /**
-     * Check if the user already has a category with the given name
-     *
-     * @param user The [User] the category should belong to
-     * @param categoryName The category name to search for
-     * @return True if the category exists, false otherwise
-     */
-    suspend fun doesCategoryExist(user: User, categoryName: String): Boolean = findCategory(user, categoryName).wasSuccessful
-
-    /**
-     * Check if the category still exists in the database
-     *
-     * @param category The [Category] to validate
-     * @return True if the category still exists, false otherwise
-     */
-    suspend fun isCategoryStillValid(category: Category): Boolean = findCategory(category.id).wasSuccessful
-
+    
     /**
      * Retrieves every category belonging to the user
      *
      * @param user The [User] to retrieve categories for
-     * @return A [FindAllCategoriesReturnInfo] indicating what happened with the retrieval
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
      */
-    suspend fun getAllCategoriesForUser(user: User): FindAllCategoriesReturnInfo {
-        val userStatus = userDatabaseSystem.findUser(user.username)
-        if (!userStatus.wasSuccessful) return FindAllCategoriesReturnInfo(wasSuccessful = false, errMsg = userStatus.errMsg)
-        return FindAllCategoriesReturnInfo(wasSuccessful = true, categories = categoryDao.retrieveAllCategories(user.username))
+    suspend fun getAllCategoriesForUser(user: User): FindAllReturnInfo<Category> {
+        if (auth.currentUser?.uid != user.uid) return FindAllReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
+        return try {
+            val allCategories = categories(user.uid).get().await().toObjects<Category>()
+            FindAllReturnInfo(wasSuccessful = true, values = allCategories)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindAllReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not load categories")
+        }
     }
 
     /**
@@ -198,21 +175,31 @@ class CategoryDatabaseSystem(
      *
      * @param category The [Category] being updated
      * @param newCategoryName The new category name
-     * @return An [UpdateCategoryReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateCategoryName(category: Category, newCategoryName: String): UpdateCategoryReturnInfo {
-        val result = run {
-            if (newCategoryName.isBlank()) return@run UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Failed, errMsg = "Category name is empty")
-            if (category.categoryName == newCategoryName) return@run UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.NoChange, category = category)
-            val userStatus = userDatabaseSystem.findUser(category.username)
-            if (!userStatus.wasSuccessful) return@run UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Failed, errMsg = userStatus.errMsg)
-            categoryDao.findCategory(category.username, category.categoryName) ?: return@run UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Failed, errMsg = "Category does not exist")
-            if (categoryDao.findCategory(category.username, newCategoryName) != null) return@run UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Failed, errMsg = "Category name already in use")
-            categoryDao.updateCategoryName(category.id, newCategoryName)
-            UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Succeeded, category = category.copy(categoryName = newCategoryName))
-        }
-        logUpdateOutcome("update name for category '${category.categoryName}'", result.status, result.errMsg)
+    suspend fun updateCategoryName(category: Category, newCategoryName: String): UpdateReturnInfo<Category> {
+        val result = tryUpdateCategoryName(category, newCategoryName)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "name for category '${category.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateCategoryName(category: Category, newCategoryName: String): UpdateReturnInfo<Category> {
+        if (newCategoryName.isBlank()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New category name is empty")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        if (isCategoryNameTaken(uid, newCategoryName)) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Category name is already in use")
+        return updateDocumentField(
+            collection = categories(uid),
+            entityTypeDisplayName = "Category",
+            entity = category,
+            property = Category::categoryName,
+            newValue = newCategoryName,
+            updatedEntity = category.copy(categoryName = newCategoryName)
+        )
     }
 
     /**
@@ -220,18 +207,30 @@ class CategoryDatabaseSystem(
      *
      * @param category The [Category] being updated
      * @param newBudgetAmount The new budgeted amount, or null to remove the budget, cannot be negative
-     * @return An [UpdateCategoryReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateCategoryBudget(category: Category, newBudgetAmount: Double?): UpdateCategoryReturnInfo {
-        val result = run {
-            if (category.budgetAmount == newBudgetAmount) return@run UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.NoChange, category = category)
-            if (newBudgetAmount != null && newBudgetAmount < 0.0) return@run UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Failed, errMsg = "Budget amount cannot be negative")
-            if (!isCategoryStillValid(category)) return@run UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Failed, errMsg = "Category does not exist")
-            categoryDao.updateCategoryBudget(category.id, newBudgetAmount)
-            UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Succeeded, category = category.copy(budgetAmount = newBudgetAmount))
-        }
-        logUpdateOutcome("update budget for category '${category.categoryName}'", result.status, result.errMsg)
+    suspend fun updateCategoryBudget(category: Category, newBudgetAmount: Double?): UpdateReturnInfo<Category> {
+        val result = tryUpdateCategoryBudget(category, newBudgetAmount)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "budget for category '${category.id}'",
+            errMsg = result.errMsg
+        )
         return result
+    }
+
+    private suspend fun tryUpdateCategoryBudget(category: Category, newBudgetAmount: Double?): UpdateReturnInfo<Category> {
+        if (newBudgetAmount != null && newBudgetAmount < 0.0) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Budget amount cannot be negative")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = categories(uid),
+            entityTypeDisplayName = "Category",
+            entity = category,
+            property = Category::budgetAmount,
+            newValue = newBudgetAmount,
+            updatedEntity = category.copy(budgetAmount = newBudgetAmount)
+        )
     }
 
     /**
@@ -239,29 +238,66 @@ class CategoryDatabaseSystem(
      *
      * @param category The [Category] being updated
      * @param newIconKey The new [com.example.mybudgettree.IconCatalog] key, or null to fall back to the name-based default
-     * @return An [UpdateCategoryReturnInfo] indicating what happened with the update
+     * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateCategoryIcon(category: Category, newIconKey: String?): UpdateCategoryReturnInfo {
-        val result = run {
-            if (category.iconKey == newIconKey) return@run UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.NoChange, category = category)
-            if (!isCategoryStillValid(category)) return@run UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Failed, errMsg = "Category does not exist")
-            categoryDao.updateCategoryIcon(category.id, newIconKey)
-            UpdateCategoryReturnInfo(status = UpdateCategoryReturnStatus.Succeeded, category = category.copy(iconKey = newIconKey))
-        }
-        logUpdateOutcome("update icon for category '${category.categoryName}'", result.status, result.errMsg)
+    suspend fun updateCategoryIcon(category: Category, newIconKey: String?): UpdateReturnInfo<Category> {
+        val result = tryUpdateCategoryIcon(category, newIconKey)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "icon for category '${category.categoryName}'",
+            errMsg = result.errMsg
+        )
         return result
     }
 
+    private suspend fun tryUpdateCategoryIcon(category: Category, newIconKey: String?): UpdateReturnInfo<Category> {
+        if (newIconKey?.isBlank() ?: false) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New icon key path is empty")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDocumentField(
+            collection = categories(uid),
+            entityTypeDisplayName = "Category",
+            entity = category,
+            property = Category::iconKey,
+            newValue = newIconKey,
+            updatedEntity = category.copy(iconKey = newIconKey)
+        )
+    }
+
     /**
-     * Deletes the category from the database
+     * Deletes the category from the database, along with every expense and income in it
      *
      * @param category The [Category] to delete
-     * @return A status reflection from [CategoryDeleteReturnStatus]
+     * @return A status reflection from [DeleteReturnStatus]
      */
-    suspend fun deleteCategory(category: Category): CategoryDeleteReturnStatus {
-        val status = if (categoryDao.deleteCategory(category) == 1) CategoryDeleteReturnStatus.Deleted else CategoryDeleteReturnStatus.DoesNotExist
-        if (status == CategoryDeleteReturnStatus.Deleted) Log.i(TAG, "Successfully deleted category '${category.categoryName}'")
-        else Log.w(TAG, "Failed to delete category '${category.categoryName}': category does not exist")
-        return status
+    suspend fun deleteCategory(category: Category): DeleteReturnStatus {
+        val uid = auth.uid
+        val result =
+            if (uid == null) DeleteReturnStatus.ReauthenticationFailed
+            else deleteDocument(
+                db = db,
+                collection = categories(uid),
+                id = category.id,
+                subcollections = emptyList(),
+                relatedCollections = relatedCollections(uid),
+                batchSize = BATCH_SIZE
+            )
+        val wasSuccessful = result == DeleteReturnStatus.Deleted
+        val errMsg: String? =
+            if (wasSuccessful) null
+            else when (result) {
+                DeleteReturnStatus.DoesNotExist -> "Category does not exist"
+                DeleteReturnStatus.ReauthenticationFailed -> "No user currently signed in"
+                else -> "Unknown reason"
+            }
+        logOutcome(
+            tag = TAG,
+            wasSuccessful = wasSuccessful,
+            verbOnSuccess = "deleted",
+            verbOnFailure = "to delete",
+            messageDetails = "category '${category.id}'",
+            errMsg = errMsg
+        )
+        return result
     }
 }

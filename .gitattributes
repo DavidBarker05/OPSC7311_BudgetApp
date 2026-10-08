@@ -1,0 +1,2 @@
+# Shell scripts run on Linux in CI, where Windows line endings (CRLF) would break them
+*.sh text eol=lf

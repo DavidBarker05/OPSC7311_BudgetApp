@@ -21,6 +21,7 @@ import com.example.mybudgettree.database.managers.CategoryDatabaseSystem
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import kotlinx.coroutines.launch
+import com.example.mybudgettree.database.managers.shared.UpdateReturnStatus
 
 class EditCategoryActivity : AppCompatActivity() {
 
@@ -62,10 +63,10 @@ class EditCategoryActivity : AppCompatActivity() {
     }
 
     private fun loadCategory() {
-        val categoryId = intent.getLongExtra(EXTRA_CATEGORY_ID, -1L)
+        val categoryId = intent.getStringExtra(EXTRA_CATEGORY_ID).orEmpty()
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
-            val found = app.categoryDatabaseSystem.findCategory(categoryId).category
+            val found = app.categoryDatabaseSystem.findCategory(categoryId).value
             if (found == null) {
                 finish()
                 return@launch
@@ -109,18 +110,18 @@ class EditCategoryActivity : AppCompatActivity() {
             var working = current
             if (working.categoryName != newName) {
                 val renameResult = app.categoryDatabaseSystem.updateCategoryName(working, newName)
-                if (renameResult.status == CategoryDatabaseSystem.UpdateCategoryReturnStatus.Failed) {
+                if (renameResult.status == UpdateReturnStatus.Failed) {
                     Log.w(TAG, "Failed to rename category: ${renameResult.errMsg}")
                     Toast.makeText(this@EditCategoryActivity, renameResult.errMsg, Toast.LENGTH_SHORT).show()
                     return@launch
                 }
-                renameResult.category?.let { working = it }
+                renameResult.value?.let { working = it }
             }
             if (working.iconKey != selectedIconKey) {
-                app.categoryDatabaseSystem.updateCategoryIcon(working, selectedIconKey).category?.let { working = it }
+                app.categoryDatabaseSystem.updateCategoryIcon(working, selectedIconKey).value?.let { working = it }
             }
             if (working.budgetAmount != newBudget) {
-                app.categoryDatabaseSystem.updateCategoryBudget(working, newBudget).category?.let { working = it }
+                app.categoryDatabaseSystem.updateCategoryBudget(working, newBudget).value?.let { working = it }
             }
             category = working
             Toast.makeText(this@EditCategoryActivity, R.string.category_updated, Toast.LENGTH_SHORT).show()

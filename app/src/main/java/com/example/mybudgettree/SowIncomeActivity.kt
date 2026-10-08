@@ -105,14 +105,14 @@ class SowIncomeActivity : AppCompatActivity() {
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
             categories = CategoryGarden.sort(
-                app.categoryDatabaseSystem.getAllCategoriesForUser(user).categories.orEmpty()
+                app.categoryDatabaseSystem.getAllCategoriesForUser(user).values.orEmpty()
             )
             val names = categories.map { it.categoryName }
             val dropdown = findViewById<AutoCompleteTextView>(R.id.actSowCategory)
             dropdown.threshold = 0
             dropdown.setAdapter(ArrayAdapter(this@SowIncomeActivity, android.R.layout.simple_dropdown_item_1line, names))
             dropdown.setOnClickListener { dropdown.showDropDown() }
-            val preselectId = intent.getLongExtra(CategoryDetailActivity.EXTRA_CATEGORY_ID, -1L)
+            val preselectId = intent.getStringExtra(CategoryDetailActivity.EXTRA_CATEGORY_ID).orEmpty()
             val preselected = categories.firstOrNull { it.id == preselectId } ?: categories.firstOrNull()
             if (preselected != null) dropdown.setText(preselected.categoryName, false)
         }

@@ -58,10 +58,10 @@ class ProfileActivity : AppCompatActivity() {
     private fun bindProfile() {
         val user = UserSession.currentUser ?: return
         findViewById<TextView>(R.id.tvProfileName).text = user.displayName
-        findViewById<TextView>(R.id.tvProfileId).text = getString(R.string.profile_id, user.username)
+        findViewById<TextView>(R.id.tvProfileId).text = getString(R.string.profile_id, user.email)
         val photo = findViewById<ShapeableImageView>(R.id.ivProfilePhoto)
         val app = application as BudgetTreeApplication
-        lifecycleScope.launch { ProfilePhoto.bind(photo, user.profilePhotoPath, app) }
+        lifecycleScope.launch { ProfilePhoto.bind(photo, ProfilePhoto.load(app, user)) }
     }
 
     private fun logout() {

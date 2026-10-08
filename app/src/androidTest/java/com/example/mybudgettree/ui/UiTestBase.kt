@@ -1,6 +1,5 @@
 package com.example.mybudgettree.ui
 
-import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -8,54 +7,33 @@ import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import com.example.mybudgettree.BudgetTreeApplication
 import com.example.mybudgettree.UserSession
-import com.example.mybudgettree.database.AppDatabase
+import com.example.mybudgettree.FirebaseEmulator
 import com.example.mybudgettree.database.entries.User
-import com.example.mybudgettree.database.managers.CategoryDatabaseSystem
-import com.example.mybudgettree.database.managers.ExpenseDatabaseSystem
-import com.example.mybudgettree.database.managers.IncomeDatabaseSystem
-import com.example.mybudgettree.database.managers.MonthlyGoalDatabaseSystem
-import com.example.mybudgettree.database.managers.SavingsContributionDatabaseSystem
-import com.example.mybudgettree.database.managers.SavingsGoalDatabaseSystem
-import com.example.mybudgettree.database.managers.UserDatabaseSystem
-import com.example.mybudgettree.database.managers.UserTreeDatabaseSystem
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import java.time.LocalDate
 
 /**
- * Base class for Espresso UI tests that drive real Activities. [BudgetTreeApplication] normally
- * points at the persistent on-device database, which would leak state between test runs (e.g.
- * "email already in use" on the second run of a signup test). Before each test we swap the
- * running app's database systems for a fresh in-memory database, the same way
- * [com.example.mybudgettree.database.DatabaseTestBase] does for DB-layer tests, so UI tests
- * start from a clean slate and never touch real user data
+ * Base class for Espresso UI tests that drive real Activities. They run against the Firebase Emulator Suite instead of
+ * the real project (see [FirebaseEmulator]), so `firebase emulators:start` must be running before the tests start.
+ * The emulators are wiped once per run, not per test, so every test must use a user no other test uses
  */
 abstract class UiTestBase {
     protected lateinit var app: BudgetTreeApplication
-    protected lateinit var db: AppDatabase
 
     @Before
     fun setUpApp() {
+        FirebaseEmulator.connect()
         app = ApplicationProvider.getApplicationContext()
-        db = Room.inMemoryDatabaseBuilder(app, AppDatabase::class.java).build()
-        app.database = db
-        app.userDatabaseSystem = UserDatabaseSystem(db.userDao())
-        app.categoryDatabaseSystem = CategoryDatabaseSystem(db.categoryDao(), app.userDatabaseSystem)
-        app.expenseDatabaseSystem = ExpenseDatabaseSystem(db.expenseDao(), app.userDatabaseSystem, app.categoryDatabaseSystem)
-        app.incomeDatabaseSystem = IncomeDatabaseSystem(db.incomeDao(), app.userDatabaseSystem, app.categoryDatabaseSystem)
-        app.savingsGoalDatabaseSystem = SavingsGoalDatabaseSystem(db.savingsGoalDao(), app.userDatabaseSystem)
-        app.savingsContributionDatabaseSystem =
-            SavingsContributionDatabaseSystem(db.savingsContributionDao(), app.savingsGoalDatabaseSystem)
-        app.userTreeDatabaseSystem = UserTreeDatabaseSystem(db.userTreeDao())
-        app.monthlyGoalDatabaseSystem = MonthlyGoalDatabaseSystem(db.monthlyGoalDao())
+        app.userDatabaseSystem.logout()
         UserSession.logout()
     }
 
     @After
     fun tearDownApp() {
         UserSession.logout()
-        db.close()
+        app.userDatabaseSystem.logout()
     }
 
     /**
@@ -65,7 +43,7 @@ abstract class UiTestBase {
      * [com.example.mybudgettree.CategoriesActivity] seeding default categories from Room) has
      * actually finished and updated the UI
      */
-    protected fun waitForText(text: String, timeoutMs: Long = 5000, intervalMs: Long = 200) {
+    protected fun waitForText(text: String, timeoutMs: Long = 15000, intervalMs: Long = 200) {
         eventually(timeoutMs, intervalMs) { onView(withText(text)).check(matches(isDisplayed())) }
     }
 
@@ -75,7 +53,7 @@ abstract class UiTestBase {
      * Room, or a new Activity being launched after a click) rather than assuming it has
      * already happened by the time Espresso looks.
      */
-    protected fun eventually(timeoutMs: Long = 5000, intervalMs: Long = 200, block: () -> Unit) {
+    protected fun eventually(timeoutMs: Long = 15000, intervalMs: Long = 200, block: () -> Unit) {
         val deadline = System.currentTimeMillis() + timeoutMs
         var lastError: Throwable? = null
         while (System.currentTimeMillis() < deadline) {
@@ -90,15 +68,21 @@ abstract class UiTestBase {
         throw lastError ?: AssertionError("Timed out waiting for condition")
     }
 
+    /**
+     * Creates a real account in the emulator and leaves it signed in
+     *
+     * @param username Only used to make the email address (`<username>@example.com`), since people log in with their email
+     * now. Every test must pass a name no other test uses, because the emulators are not wiped between tests
+     */
     protected fun createTestUser(username: String = "testuser", password: String = "password123"): User = runBlocking {
-        app.userDatabaseSystem.createUser(
-            username = username,
-            password = password,
+        val result = app.userDatabaseSystem.createUser(
             email = "$username@example.com",
-            phoneNumber = "0821234567".plus(username.hashCode().toString().takeLast(2)),
+            password = password,
+            phoneNumber = FirebaseEmulator.nextPhoneNumber(),
             displayName = "Test User",
             dateOfBirth = LocalDate.of(2000, 1, 1),
             currency = "ZAR"
-        ).user!!
+        )
+        checkNotNull(result.value) { "Could not create the test user: ${result.errMsg}" }
     }
 }

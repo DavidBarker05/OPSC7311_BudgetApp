@@ -104,9 +104,7 @@ class SignupActivity : AppCompatActivity() {
         val app = application as BudgetTreeApplication
         signupButton.isEnabled = false
         lifecycleScope.launch {
-            val username = uniqueUsernameFromEmail(app, email)
             val result = app.userDatabaseSystem.createUser(
-                username = username,
                 password = password,
                 email = email,
                 phoneNumber = phone,
@@ -116,16 +114,12 @@ class SignupActivity : AppCompatActivity() {
             )
             signupButton.isEnabled = true
             if (result.wasSuccessful) {
-                val createdUser = result.user
-                if (createdUser != null) {
-                    app.userTreeDatabaseSystem.createUserTree(createdUser, YearMonth.now())
-                }
-                Log.i(TAG, "Signup succeeded for username '$username', navigating to LoginActivity")
+                Log.i(TAG, "Signup succeeded for '$email', navigating to LoginActivity")
                 Toast.makeText(this@SignupActivity, R.string.signup_success, Toast.LENGTH_SHORT).show()
                 startActivity(Intent(this@SignupActivity, LoginActivity::class.java))
                 finish()
             } else {
-                Log.w(TAG, "Signup failed for username '$username': ${result.errMsg}")
+                Log.w(TAG, "Signup failed for '$email': ${result.errMsg}")
                 Toast.makeText(
                     this@SignupActivity,
                     result.errMsg ?: getString(R.string.signup_fields_required),
@@ -133,16 +127,6 @@ class SignupActivity : AppCompatActivity() {
                 ).show()
             }
         }
-    }
-
-    private suspend fun uniqueUsernameFromEmail(app: BudgetTreeApplication, email: String): String {
-        val base = email.substringBefore("@").filter { it.isLetterOrDigit() }.ifBlank { "user" }
-        if (!app.userDatabaseSystem.doesUserExist(base)) return base
-        var suffix = 2
-        while (app.userDatabaseSystem.doesUserExist("$base$suffix")) {
-            suffix++
-        }
-        return "$base$suffix"
     }
 
     private fun parseDateOfBirth(value: String): LocalDate? {
