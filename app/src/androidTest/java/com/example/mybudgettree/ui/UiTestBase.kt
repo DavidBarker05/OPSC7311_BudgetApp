@@ -1,6 +1,9 @@
 package com.example.mybudgettree.ui
 
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
@@ -32,8 +35,23 @@ abstract class UiTestBase {
 
     @After
     fun tearDownApp() {
+        finishOpenScreens()
         UserSession.logout()
         app.userDatabaseSystem.logout()
+    }
+
+    /**
+     * Finishes every screen that is still open. A test only closes the screen it launched, so a screen opened by a click
+     * (e.g. the category detail) outlives the test. If it is still loading from Firestore when the user is signed out,
+     * its read is rejected and the app crashes, which takes every remaining test down with it
+     */
+    private fun finishOpenScreens() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.runOnMainSync {
+            val monitor = ActivityLifecycleMonitorRegistry.getInstance()
+            Stage.values().forEach { stage -> monitor.getActivitiesInStage(stage).forEach { it.finish() } }
+        }
+        instrumentation.waitForIdleSync()
     }
 
     /**

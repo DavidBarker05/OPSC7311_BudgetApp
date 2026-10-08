@@ -23,7 +23,7 @@ jobs:
       # Caches the downloaded dependencies and the build cache between runs. Only runs on master save it. Pull requests
       # just read master's copy, so they don't each fill the 10 GB of cache storage with their own
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -62,7 +62,7 @@ jobs:
       # Caches the downloaded dependencies and the build cache between runs. Only runs on master save it. Pull requests
       # just read master's copy, so they don't each fill the 10 GB of cache storage with their own
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -75,14 +75,14 @@ jobs:
 
       - name: Set up Node.js (for the Firebase CLI)
         if: matrix.firebase
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
 
       # The emulator download is large, so it is kept between runs. The key changes when firebase.json does
       - name: Cache the Firebase emulators
         if: matrix.firebase
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/firebase/emulators
           key: firebase-emulators-${{ runner.os }}-${{ hashFiles('firebase.json') }}
@@ -102,7 +102,7 @@ jobs:
       # The three instrumented jobs share one cache entry. Change the key when the api-level, target, arch or profile do
       - name: Cache the Android emulator
         id: avd-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.android/avd/*
@@ -147,7 +147,7 @@ jobs:
 
       - name: Upload ${{ matrix.suite }} test report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.suite }}-test-report
           path: |
