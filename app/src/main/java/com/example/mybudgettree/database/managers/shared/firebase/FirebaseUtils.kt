@@ -69,14 +69,14 @@ suspend fun deleteDocument(
     db: FirebaseFirestore,
     collection: CollectionReference,
     id: String,
-    subCollections: List<CollectionReference>,
+    subcollections: List<CollectionReference>,
     relatedCollections: List<RelatedCollection>,
     batchSize: Long
 ): DeleteReturnStatus {
     if (id.isBlank()) return DeleteReturnStatus.DoesNotExist
     val documentRef = collection.document(id)
     if (!documentRef.get().await().exists())  return DeleteReturnStatus.DoesNotExist
-    for (subColl in subCollections) deleteCollection(db, subColl, batchSize)
+    for (subcollection in subcollections) deleteCollection(db, subcollection, batchSize)
     for (related in relatedCollections) {
         val pointingAtDocument = related.collection.whereEqualTo(related.referenceField, id)
         deleteCollection(db, pointingAtDocument, batchSize)

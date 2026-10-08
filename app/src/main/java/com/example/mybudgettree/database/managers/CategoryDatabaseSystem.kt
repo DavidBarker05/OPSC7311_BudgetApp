@@ -20,19 +20,24 @@ class CategoryDatabaseSystem(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
+    private fun categories(uid: String): CollectionReference = db.collection("users").document(uid).collection("categories")
+    private fun relatedCollections(uid: String): List<RelatedCollection> = listOf(
+        RelatedCollection(
+            collection = db.collection("users").document(uid).collection("expenses"),
+            referenceField = "categoryId"
+        ),
+        RelatedCollection(
+            collection = db.collection("users").document(uid).collection("incomes"),
+            referenceField = "categoryId"
+        )
+    )
 
     companion object {
         private const val TAG = "CategoryDatabaseSystem"
 
         private const val BATCH_SIZE = 400L
-
-        private val CATEGORY_RELATED_COLLECTIONS = listOf(
-            RelatedCollection(collectionName = "expenses", referenceField = "categoryId"),
-            RelatedCollection(collectionName = "incomes", referenceField = "categoryId")
-        )
     }
 
-    private fun categories(uid: String): CollectionReference = db.collection("users").document(uid).collection("categories")
 
     suspend fun isCategoryNameTaken(uid: String, categoryName: String): Boolean {
         if (uid.isBlank() || categoryName.isBlank() || auth.currentUser?.uid != uid) return false
@@ -168,14 +173,11 @@ class CategoryDatabaseSystem(
         val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
         if (isCategoryNameTaken(uid, newCategoryName)) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Category name is already in use")
         return updateDocumentField(
-            auth = auth,
-            db = db,
-            collectionName = "categories",
+            collection = categories(uid),
             entityTypeDisplayName = "Category",
-            id = category.id,
             entity = category,
             property = Category::categoryName,
-            value = newCategoryName,
+            newValue = newCategoryName,
             updatedEntity = category.copy(categoryName = newCategoryName)
         )
     }
@@ -200,15 +202,13 @@ class CategoryDatabaseSystem(
 
     private suspend fun tryUpdateCategoryBudget(category: Category, newBudgetAmount: Double?): UpdateReturnInfo<Category> {
         if (newBudgetAmount != null && newBudgetAmount < 0.0) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Budget amount cannot be negative")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
         return updateDocumentField(
-            auth = auth,
-            db = db,
-            collectionName = "categories",
+            collection = categories(uid),
             entityTypeDisplayName = "Category",
-            id = category.id,
             entity = category,
             property = Category::budgetAmount,
-            value = newBudgetAmount,
+            newValue = newBudgetAmount,
             updatedEntity = category.copy(budgetAmount = newBudgetAmount)
         )
     }
@@ -233,15 +233,13 @@ class CategoryDatabaseSystem(
 
     private suspend fun tryUpdateCategoryIcon(category: Category, newIconKey: String?): UpdateReturnInfo<Category> {
         if (newIconKey?.isBlank() ?: false) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New icon key path is empty")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
         return updateDocumentField(
-            auth = auth,
-            db = db,
-            collectionName = "categories",
+            collection = categories(uid),
             entityTypeDisplayName = "Category",
-            id = category.id,
             entity = category,
             property = Category::iconKey,
-            value = newIconKey,
+            newValue = newIconKey,
             updatedEntity = category.copy(iconKey = newIconKey)
         )
     }
@@ -253,15 +251,17 @@ class CategoryDatabaseSystem(
      * @return A status reflection from [DeleteReturnStatus]
      */
     suspend fun deleteCategory(category: Category): DeleteReturnStatus {
-        val result = deleteDocument(
-            auth = auth,
-            db = db,
-            collectionName = "categories",
-            id = category.id,
-            subCollections = emptyList(),
-            relatedCollections = CATEGORY_RELATED_COLLECTIONS,
-            batchSize = BATCH_SIZE
-        )
+        val uid = auth.uid
+        val result =
+            if (uid == null) DeleteReturnStatus.ReauthenticationFailed
+            else deleteDocument(
+                db = db,
+                collection = categories(uid),
+                id = category.id,
+                subcollections = emptyList(),
+                relatedCollections = relatedCollections(uid),
+                batchSize = 0L
+            )
         val wasSuccessful = result == DeleteReturnStatus.Deleted
         val errMsg: String? =
             if (wasSuccessful) null

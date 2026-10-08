@@ -21,17 +21,21 @@ class SavingsGoalDatabaseSystem(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
 
+    private fun goals(uid: String): CollectionReference = db.collection("users").document(uid).collection("savingsGoals")
+    private fun relatedCollections(uid: String): List<RelatedCollection> = listOf(
+        RelatedCollection(
+            collection = db.collection("users").document(uid).collection("savingsContributions"),
+            referenceField = "goalId"
+        )
+    )
+
     companion object {
         private const val TAG = "SavingsGoalDatabaseSystem"
 
         private const val BATCH_SIZE = 400L
-
-        private val SAVINGS_GOAL_RELATED_COLLECTIONS = listOf(
-            RelatedCollection(collectionName = "savingsContributions", referenceField = "goalId"),
-        )
     }
 
-    private fun goals(uid: String): CollectionReference = db.collection("users").document(uid).collection("savingsGoals")
+
 
     suspend fun isGoalNameTaken(uid: String, goalName: String): Boolean {
         if (uid.isBlank() || goalName.isBlank() || auth.currentUser?.uid != uid) return false
@@ -147,14 +151,11 @@ class SavingsGoalDatabaseSystem(
         val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
         if (isGoalNameTaken(uid, newGoalName)) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Goal name is already in use")
         return updateDocumentField(
-            auth = auth,
-            db = db,
-            collectionName = "savingsGoals",
+            collection = goals(uid),
             entityTypeDisplayName = "Goal",
-            id = goal.id,
             entity = goal,
             property = SavingsGoal::goalName,
-            value = newGoalName,
+            newValue = newGoalName,
             updatedEntity = goal.copy(goalName = newGoalName)
         )
     }
@@ -172,15 +173,13 @@ class SavingsGoalDatabaseSystem(
 
     private suspend fun tryUpdateGoalIcon(goal: SavingsGoal, newIconKey: String?): UpdateReturnInfo<SavingsGoal> {
         if (newIconKey?.isBlank() ?: false) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New icon key path is empty")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
         return updateDocumentField(
-            auth = auth,
-            db = db,
-            collectionName = "savingsGoals",
+            collection = goals(uid),
             entityTypeDisplayName = "Goal",
-            id = goal.id,
             entity = goal,
             property = SavingsGoal::iconKey,
-            value = newIconKey,
+            newValue = newIconKey,
             updatedEntity = goal.copy(iconKey = newIconKey)
         )
     }
@@ -198,29 +197,29 @@ class SavingsGoalDatabaseSystem(
 
     private suspend fun tryUpdateGoalTarget(goal: SavingsGoal, newTargetAmount: Double?): UpdateReturnInfo<SavingsGoal> {
         if (newTargetAmount != null && newTargetAmount < 0.0) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Target amount cannot be negative")
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
         return updateDocumentField(
-            auth = auth,
-            db = db,
-            collectionName = "savingsGoals",
+            collection = goals(uid),
             entityTypeDisplayName = "Goal",
-            id = goal.id,
             entity = goal,
             property = SavingsGoal::targetAmount,
-            value = newTargetAmount,
+            newValue = newTargetAmount,
             updatedEntity = goal.copy(targetAmount = newTargetAmount)
         )
     }
 
     suspend fun deleteGoal(goal: SavingsGoal): DeleteReturnStatus {
-        val result = deleteDocument(
-            auth = auth,
-            db = db,
-            collectionName = "savingsGoals",
-            id = goal.id,
-            subCollections = emptyList(),
-            relatedCollections = SAVINGS_GOAL_RELATED_COLLECTIONS,
-            batchSize = BATCH_SIZE
-        )
+        val uid = auth.uid
+        val result =
+            if (uid == null) DeleteReturnStatus.ReauthenticationFailed
+            else deleteDocument(
+                db = db,
+                collection = goals(uid),
+                id = goal.id,
+                subcollections = emptyList(),
+                relatedCollections = relatedCollections(uid),
+                batchSize = 0L
+            )
         val wasSuccessful = result == DeleteReturnStatus.Deleted
         val errMsg: String? =
             if (wasSuccessful) null

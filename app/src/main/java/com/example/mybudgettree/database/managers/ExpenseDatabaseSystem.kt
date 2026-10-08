@@ -1,6 +1,5 @@
 package com.example.mybudgettree.database.managers
 
-import android.util.Log
 import com.example.mybudgettree.database.entries.User
 import com.example.mybudgettree.database.entries.Category
 import com.example.mybudgettree.database.entries.Expense
@@ -480,7 +479,7 @@ class ExpenseDatabaseSystem(
                 db = db,
                 collection = expenses(uid),
                 id = expense.id,
-                subCollections = emptyList(),
+                subcollections = emptyList(),
                 relatedCollections = emptyList(),
                 batchSize = 0L
             )

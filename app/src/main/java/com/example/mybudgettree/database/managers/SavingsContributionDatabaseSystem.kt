@@ -116,15 +116,17 @@ class SavingsContributionDatabaseSystem(
      * @return A status reflection from [DeleteReturnStatus]
      */
     suspend fun deleteContribution(contribution: SavingsContribution): DeleteReturnStatus {
-        val result = deleteDocument(
-            auth = auth,
-            db = db,
-            collectionName = "savingsContributions",
-            id = contribution.id,
-            subCollections = emptyList(),
-            relatedCollections = emptyList(),
-            batchSize = 0L
-        )
+        val uid = auth.uid
+        val result =
+            if (uid == null) DeleteReturnStatus.ReauthenticationFailed
+            else deleteDocument(
+                db = db,
+                collection = contributions(uid),
+                id = contribution.id,
+                subcollections = emptyList(),
+                relatedCollections = emptyList(),
+                batchSize = 0L
+            )
         val wasSuccessful = result == DeleteReturnStatus.Deleted
         val errMsg: String? =
             if (wasSuccessful) null
