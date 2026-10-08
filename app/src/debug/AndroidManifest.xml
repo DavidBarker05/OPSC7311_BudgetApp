@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Debug builds (and so instrumented tests) only: the Firebase emulators are reached over plain http on
+         10.0.2.2, which Android blocks by default. Release builds are unaffected -->
+    <application android:usesCleartextTraffic="true" />
+
+</manifest>
