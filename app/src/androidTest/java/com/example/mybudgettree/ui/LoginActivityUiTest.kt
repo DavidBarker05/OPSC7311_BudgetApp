@@ -18,8 +18,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Drives the real [LoginActivity] UI with Espresso against an isolated in-memory database
- * (see [UiTestBase]) instead of the on-device one
+ * Drives the real [LoginActivity] UI with Espresso against the Firebase emulators (see [UiTestBase]) instead of the real
+ * project. People log in with their email, so there is no separate username login to test
  */
 @RunWith(AndroidJUnit4::class)
 class LoginActivityUiTest : UiTestBase() {
@@ -54,19 +54,6 @@ class LoginActivityUiTest : UiTestBase() {
             // no navigation should have happened — the login button is still on screen
             onView(withId(R.id.btnLogin)).check(matches(isDisplayed()))
             assertFalse(UserSession.isLoggedIn())
-        }
-    }
-
-    @Test
-    fun canLogInWithEmailInsteadOfUsername() {
-        createTestUser(username = "loginuser3", password = "correctPass1")
-
-        ActivityScenario.launch(LoginActivity::class.java).use {
-            onView(withId(R.id.etUsernameOrEmail)).perform(typeText("loginuser3@example.com"), closeSoftKeyboard())
-            onView(withId(R.id.etPassword)).perform(typeText("correctPass1"), closeSoftKeyboard())
-            onView(withId(R.id.btnLogin)).perform(click())
-
-            eventually { onView(withId(R.id.tvWelcomeSanctuary)).check(matches(isDisplayed())) }
         }
     }
 }
