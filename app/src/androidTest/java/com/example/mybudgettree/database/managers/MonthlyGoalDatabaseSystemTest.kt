@@ -19,8 +19,16 @@ class MonthlyGoalDatabaseSystemTest : DatabaseTestBase() {
         val user = createTestUser()
         val result = monthlyGoalDatabaseSystem.saveGoal(user, YearMonth.of(2026, 1), 1000.0, 5000.0)
         assertTrue(result.wasSuccessful)
-        assertEquals(1000.0, result.goal?.minGoal)
-        assertEquals(5000.0, result.goal?.maxGoal)
+        assertEquals(1000.0, result.value?.minGoal)
+        assertEquals(5000.0, result.value?.maxGoal)
+    }
+
+    @Test
+    fun saveGoal_idIsTheMonth() = runBlocking {
+        val user = createTestUser()
+        val result = monthlyGoalDatabaseSystem.saveGoal(user, YearMonth.of(2026, 1), 1000.0, 5000.0)
+        assertEquals("2026-01", result.value?.id)
+        assertEquals(YearMonth.of(2026, 1), result.value?.idAsYearMonth())
     }
 
     @Test
@@ -34,6 +42,14 @@ class MonthlyGoalDatabaseSystemTest : DatabaseTestBase() {
     fun saveGoal_negativeMin_fails() = runBlocking {
         val user = createTestUser()
         val result = monthlyGoalDatabaseSystem.saveGoal(user, YearMonth.of(2026, 1), -100.0, 1000.0)
+        assertFalse(result.wasSuccessful)
+    }
+
+    @Test
+    fun saveGoal_forUserWhoIsNotSignedIn_fails() = runBlocking {
+        val userA = createTestUser("usera")
+        createTestUser("userb")
+        val result = monthlyGoalDatabaseSystem.saveGoal(userA, YearMonth.of(2026, 1), 1000.0, 5000.0)
         assertFalse(result.wasSuccessful)
     }
 
@@ -72,5 +88,13 @@ class MonthlyGoalDatabaseSystemTest : DatabaseTestBase() {
         val february = monthlyGoalDatabaseSystem.getGoal(user, YearMonth.of(2026, 2))
         assertEquals(5000.0, january?.maxGoal)
         assertEquals(5500.0, february?.maxGoal)
+    }
+
+    @Test
+    fun getGoal_isPerUser() = runBlocking {
+        val userA = createTestUser("usera")
+        monthlyGoalDatabaseSystem.saveGoal(userA, YearMonth.of(2026, 1), 1000.0, 5000.0)
+        val userB = createTestUser("userb")
+        assertNull(monthlyGoalDatabaseSystem.getGoal(userB, YearMonth.of(2026, 1)))
     }
 }
