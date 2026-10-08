@@ -18,7 +18,7 @@ import java.time.LocalTime
  * @property date The date the income occurred on, as an ISO-8601 date (e.g. "2026-10-05")
  * @property startTime The time the income started, as an ISO-8601 time (e.g. "14:30")
  * @property endTime The time the income ended, as an ISO-8601 time (e.g. "15:45")
- * @property imagePath The path to the income's proof image, or null if none is set
+ * @property imagePaths The local path to the income's proof image on each device that has one, keyed by device ID (a random ID the app generates once per install). The image itself never leaves the device that saved it, so each device keeps its own path and one device can't overwrite another's. Empty if no device has an image
  */
 data class Income(
     @DocumentId val id: String = "",
@@ -28,7 +28,7 @@ data class Income(
     val date: String = "",
     val startTime: String = "",
     val endTime: String = "",
-    val imagePath: String? = null
+    val imagePaths: Map<String, String> = emptyMap()
 ) {
     /**
      * Parses [date] into a [LocalDate]
@@ -50,4 +50,19 @@ data class Income(
      * @return The time the income ended
      */
     fun endTimeAsLocalTime(): LocalTime = LocalTime.parse(endTime)
+
+    /**
+     * Whether any device has saved an image for this income
+     *
+     * @return True if at least one device has an image
+     */
+    fun hasImage(): Boolean = imagePaths.isNotEmpty()
+
+    /**
+     * Gets the image path saved by one device
+     *
+     * @param deviceId The ID of the device to look up
+     * @return The local path on that device, or null if it has no image for this income
+     */
+    fun imagePathFor(deviceId: String): String? = imagePaths[deviceId]
 }

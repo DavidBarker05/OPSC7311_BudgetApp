@@ -15,7 +15,6 @@ import java.time.LocalDate
  * @property displayName The name shown for the user
  * @property dateOfBirth The user's date of birth as an ISO-8601 string (e.g. "2000-01-01"), since Firestore can't store a [LocalDate]; use [dateOfBirthAsLocalDate] to read it as a date
  * @property currency The user's preferred currency
- * @property profilePhoto The local path to the user's profile photo, or null if none is set; the image itself stays on the device
  */
 data class User(
     @DocumentId val uid: String = "",
@@ -23,8 +22,7 @@ data class User(
     val phoneNumber: String = "",
     val displayName: String = "",
     val dateOfBirth: String = "",
-    val currency: String = "ZAR",
-    val profilePhoto: String? = null
+    val currency: String = "ZAR"
 ) {
     /**
      * Parses [dateOfBirth] into a [LocalDate]

@@ -18,7 +18,7 @@ import java.time.LocalTime
  * @property date The date the expense occurred on, as an ISO-8601 date (e.g. "2026-10-05")
  * @property startTime The time the expense started, as an ISO-8601 time (e.g. "14:30")
  * @property endTime The time the expense ended, as an ISO-8601 time (e.g. "15:45")
- * @property imagePath The path to the expense's receipt image, or null if none is set
+ * @property imagePaths The local path to the expense's receipt image on each device that has one, keyed by device ID (a random ID the app generates once per install). The image itself never leaves the device that saved it, so each device keeps its own path and one device can't overwrite another's. Empty if no device has an image
  */
 data class Expense(
     @DocumentId val id: String = "",
@@ -28,7 +28,7 @@ data class Expense(
     val date: String = "",
     val startTime: String = "",
     val endTime: String = "",
-    val imagePath: String? = null
+    val imagePaths: Map<String, String> = emptyMap()
 ) {
     /**
      * Parses [date] into a [LocalDate]
@@ -50,4 +50,19 @@ data class Expense(
      * @return The time the expense ended
      */
     fun endTimeAsLocalTime(): LocalTime = LocalTime.parse(endTime)
+
+    /**
+     * Whether any device has saved an image for this expense
+     *
+     * @return True if at least one device has an image
+     */
+    fun hasImage(): Boolean = imagePaths.isNotEmpty()
+
+    /**
+     * Gets the image path saved by one device
+     *
+     * @param deviceId The ID of the device to look up
+     * @return The local path on that device, or null if it has no image for this expense
+     */
+    fun imagePathFor(deviceId: String): String? = imagePaths[deviceId]
 }

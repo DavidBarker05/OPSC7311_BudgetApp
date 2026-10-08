@@ -37,7 +37,8 @@ class IncomeDatabaseSystem(
      * @param date The date the income occurred on
      * @param startTime The time the income started
      * @param endTime The time the income ended, cannot be before [startTime]
-     * @param imagePath The path to the income's proof image, or null if none is set
+     * @param imagePath The path to the income's proof image on this device, or null if none is set
+     * @param deviceId The ID of the device the image is saved on, required if [imagePath] is set
      * @return A [CreateReturnInfo] indicating what happened with the creation
      */
     suspend fun createIncome(
@@ -47,7 +48,8 @@ class IncomeDatabaseSystem(
         date: LocalDate,
         startTime: LocalTime,
         endTime: LocalTime,
-        imagePath: String? = null
+        imagePath: String? = null,
+        deviceId: String? = null
     ): CreateReturnInfo<Income> {
         val result = tryCreateIncome(
             category = category,
@@ -56,7 +58,8 @@ class IncomeDatabaseSystem(
             date = date,
             startTime = startTime,
             endTime = endTime,
-            imagePath = imagePath
+            imagePath = imagePath,
+            deviceId = deviceId
         )
         logOutcome(
             tag = TAG,
@@ -76,13 +79,15 @@ class IncomeDatabaseSystem(
         date: LocalDate,
         startTime: LocalTime,
         endTime: LocalTime,
-        imagePath: String? = null
+        imagePath: String? = null,
+        deviceId: String? = null
     ): CreateReturnInfo<Income> {
         if (category.id.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Category id is empty")
         if (description.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Description is blank")
         if (amount < 0.0) return CreateReturnInfo(wasSuccessful = false, errMsg = "Amount cannot be negative")
         if (endTime < startTime) return CreateReturnInfo(wasSuccessful = false, errMsg = "Start time is after end time")
         if (imagePath?.isBlank() ?: false) return CreateReturnInfo(wasSuccessful = false, errMsg = "Image path is empty")
+        if (imagePath != null && deviceId.isNullOrBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Device id is empty")
         val uid = auth.uid ?: return CreateReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
         if (!db .collection("users")
                 .document(uid)
@@ -101,7 +106,7 @@ class IncomeDatabaseSystem(
                 date = date.toString(),
                 startTime = startTime.toString(),
                 endTime = endTime.toString(),
-                imagePath = imagePath
+                imagePaths = if (imagePath != null && deviceId != null) mapOf(deviceId to imagePath) else emptyMap()
             )
             val ref = expenses.add(expense).await()
             CreateReturnInfo(wasSuccessful = true, value = expense.copy(id = ref.id))
@@ -434,14 +439,15 @@ class IncomeDatabaseSystem(
     }
 
     /**
-     * Modifies the proof image path for the income
+     * Modifies the proof image path one device saved for the income, leaving the other devices' paths untouched
      *
      * @param income The [Income] being updated
-     * @param newImagePath The new image path, or null to remove it
+     * @param deviceId The ID of the device the image is saved on
+     * @param newImagePath The new local image path, or null to remove this device's image
      * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateIncomeImage(income: Income, newImagePath: String?): UpdateReturnInfo<Income> {
-        val result = tryUpdateIncomeImage(income, newImagePath)
+    suspend fun updateIncomeImage(income: Income, deviceId: String, newImagePath: String?): UpdateReturnInfo<Income> {
+        val result = tryUpdateIncomeImage(income, deviceId, newImagePath)
         logOutcome(
             tag = TAG,
             status = result.status,
@@ -451,16 +457,17 @@ class IncomeDatabaseSystem(
         return result
     }
 
-    private suspend fun tryUpdateIncomeImage(income: Income, newImagePath: String?): UpdateReturnInfo<Income> {
-        if (newImagePath?.isBlank() ?: false) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Image path cannot be blank")
+    private suspend fun tryUpdateIncomeImage(income: Income, deviceId: String, newImagePath: String?): UpdateReturnInfo<Income> {
         val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
-        return updateDocumentField(
+        return updateDeviceImagePath(
             collection = incomes(uid),
             entityTypeDisplayName = "Income",
             entity = income,
-            property = Income::imagePath,
-            newValue = newImagePath,
-            updatedEntity = income.copy(imagePath = newImagePath)
+            id = income.id,
+            currentPaths = income.imagePaths,
+            deviceId = deviceId,
+            newPath = newImagePath,
+            withPaths = { income.copy(imagePaths = it) }
         )
     }
 

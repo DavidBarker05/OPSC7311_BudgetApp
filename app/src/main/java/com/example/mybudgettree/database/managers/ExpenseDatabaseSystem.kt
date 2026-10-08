@@ -38,7 +38,8 @@ class ExpenseDatabaseSystem(
      * @param date The date the expense occurred on
      * @param startTime The time the expense started
      * @param endTime The time the expense ended, cannot be before [startTime]
-     * @param imagePath The path to the expense's receipt image, or null if none is set
+     * @param imagePath The path to the expense's receipt image on this device, or null if none is set
+     * @param deviceId The ID of the device the image is saved on, required if [imagePath] is set
      * @return A [CreateReturnInfo] indicating what happened with the creation
      */
     suspend fun createExpense(
@@ -48,7 +49,8 @@ class ExpenseDatabaseSystem(
         date: LocalDate,
         startTime: LocalTime,
         endTime: LocalTime,
-        imagePath: String? = null
+        imagePath: String? = null,
+        deviceId: String? = null
     ): CreateReturnInfo<Expense> {
         val result = tryCreateExpense(
             category = category,
@@ -57,7 +59,8 @@ class ExpenseDatabaseSystem(
             date = date,
             startTime = startTime,
             endTime = endTime,
-            imagePath = imagePath
+            imagePath = imagePath,
+            deviceId = deviceId
         )
         logOutcome(
             tag = TAG,
@@ -77,13 +80,15 @@ class ExpenseDatabaseSystem(
         date: LocalDate,
         startTime: LocalTime,
         endTime: LocalTime,
-        imagePath: String? = null
+        imagePath: String? = null,
+        deviceId: String? = null
     ): CreateReturnInfo<Expense> {
         if (category.id.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Category id is empty")
         if (description.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Description is blank")
         if (amount < 0.0) return CreateReturnInfo(wasSuccessful = false, errMsg = "Amount cannot be negative")
         if (endTime < startTime) return CreateReturnInfo(wasSuccessful = false, errMsg = "Start time is after end time")
         if (imagePath?.isBlank() ?: false) return CreateReturnInfo(wasSuccessful = false, errMsg = "Image path is empty")
+        if (imagePath != null && deviceId.isNullOrBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Device id is empty")
         val uid = auth.uid ?: return CreateReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
         if (!db .collection("users")
                 .document(uid)
@@ -102,7 +107,7 @@ class ExpenseDatabaseSystem(
                 date = date.toString(),
                 startTime = startTime.toString(),
                 endTime = endTime.toString(),
-                imagePath = imagePath
+                imagePaths = if (imagePath != null && deviceId != null) mapOf(deviceId to imagePath) else emptyMap()
             )
             val ref = expenses.add(expense).await()
             CreateReturnInfo(wasSuccessful = true, value = expense.copy(id = ref.id))
@@ -435,14 +440,15 @@ class ExpenseDatabaseSystem(
     }
 
     /**
-     * Modifies the receipt image path for the expense
+     * Modifies the receipt image path one device saved for the expense, leaving the other devices' paths untouched
      *
      * @param expense The [Expense] being updated
-     * @param newImagePath The new image path, or null to remove it
+     * @param deviceId The ID of the device the image is saved on
+     * @param newImagePath The new local image path, or null to remove this device's image
      * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateExpenseImage(expense: Expense, newImagePath: String?): UpdateReturnInfo<Expense> {
-        val result = tryUpdateExpenseImage(expense, newImagePath)
+    suspend fun updateExpenseImage(expense: Expense, deviceId: String, newImagePath: String?): UpdateReturnInfo<Expense> {
+        val result = tryUpdateExpenseImage(expense, deviceId, newImagePath)
         logOutcome(
             tag = TAG,
             status = result.status,
@@ -452,16 +458,17 @@ class ExpenseDatabaseSystem(
         return result
     }
 
-    private suspend fun tryUpdateExpenseImage(expense: Expense, newImagePath: String?): UpdateReturnInfo<Expense> {
-        if (newImagePath?.isBlank() ?: false) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Image path cannot be blank")
+    private suspend fun tryUpdateExpenseImage(expense: Expense, deviceId: String, newImagePath: String?): UpdateReturnInfo<Expense> {
         val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
-        return updateDocumentField(
+        return updateDeviceImagePath(
             collection = expenses(uid),
             entityTypeDisplayName = "Expense",
             entity = expense,
-            property = Expense::imagePath,
-            newValue = newImagePath,
-            updatedEntity = expense.copy(imagePath = newImagePath)
+            id = expense.id,
+            currentPaths = expense.imagePaths,
+            deviceId = deviceId,
+            newPath = newImagePath,
+            withPaths = { expense.copy(imagePaths = it) }
         )
     }
 

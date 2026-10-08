@@ -4,6 +4,7 @@ import android.util.Log
 import android.util.Patterns
 import com.example.mybudgettree.database.entries.PhoneNumberLookup
 import com.example.mybudgettree.database.entries.User
+import com.example.mybudgettree.database.entries.UserPhoto
 import com.example.mybudgettree.database.entries.UserTree
 import com.example.mybudgettree.database.managers.shared.*
 import com.google.firebase.auth.EmailAuthProvider
@@ -16,6 +17,7 @@ import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.FirebaseTooManyRequestsException
+import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
@@ -50,10 +52,13 @@ class UserDatabaseSystem(
         private val PHONE_NUMBER_REGEX = Regex("^\\+?[0-9]{7,15}$")
         private const val BATCH_SIZE = 400L
 
+        // Firestore limits a document to 1 MiB, so the photo must be shrunk and compressed before it's saved
+        private const val MAX_PHOTO_BYTES = 500_000
+
         // Everything stored under `users/{uid}`, so deleting an account can clear it. Firestore does not delete
         // subcollections when their parent is deleted, so any new subcollection must be added here
         private val USER_SUBCOLLECTIONS = listOf(
-            "userTree", "categories", "expenses", "incomes", "savingsGoals", "savingsContributions", "monthlyGoals"
+            "userTree", UserPhoto.COLLECTION, "categories", "expenses", "incomes", "savingsGoals", "savingsContributions", "monthlyGoals"
         )
 
         private fun normalizePhoneNumber(phoneNumber: String): String {
@@ -471,14 +476,15 @@ class UserDatabaseSystem(
     }
 
     /**
-     * Updates the profile photo path for the user
+     * Saves or removes the user's profile photo, which is stored in its own document at
+     * `users/{uid}/profilePhoto/photo` so the image isn't downloaded every time the profile is read
      *
      * @param user The [User] being updated
-     * @param newProfilePhotoPath The new profile photo path, or null to remove it
-     * @return An [UpdateReturnInfo] indicating what happened with the update
+     * @param newPhoto The new photo as compressed image bytes (at most 500 KB), or null to remove it
+     * @return An [UpdateReturnInfo] indicating what happened with the update. The [User] itself never changes
      */
-    suspend fun updateProfilePhoto(user: User, newProfilePhotoPath: String?): UpdateReturnInfo<User> {
-        val result = tryUpdateProfilePhoto(user, newProfilePhotoPath)
+    suspend fun updateProfilePhoto(user: User, newPhoto: ByteArray?): UpdateReturnInfo<User> {
+        val result = tryUpdateProfilePhoto(user, newPhoto)
         logOutcome(
             tag = TAG,
             status = result.status,
@@ -488,11 +494,31 @@ class UserDatabaseSystem(
         return result
     }
 
-    private suspend fun tryUpdateProfilePhoto(user: User, newProfilePhotoPath: String?): UpdateReturnInfo<User> {
-        if (newProfilePhotoPath?.isBlank() ?: false) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New profile photo path is empty")
-        if (user.profilePhoto == newProfilePhotoPath) return UpdateReturnInfo(status = UpdateReturnStatus.NoChange, value = user)
-        return updateProfileField(user, "profilePhoto", newProfilePhotoPath, user.copy(profilePhoto = newProfilePhotoPath))
+    private suspend fun tryUpdateProfilePhoto(user: User, newPhoto: ByteArray?): UpdateReturnInfo<User> {
+        if (newPhoto != null && newPhoto.isEmpty()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New profile photo is empty")
+        if (newPhoto != null && newPhoto.size > MAX_PHOTO_BYTES) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New profile photo is too large")
+        if (auth.currentUser?.uid != user.uid) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "User does not exist")
+        return try {
+            val photoRef = users.document(user.uid).collection(UserPhoto.COLLECTION).document(UserPhoto.DOCUMENT_ID)
+            if (newPhoto == null) photoRef.delete().await()
+            else photoRef.set(UserPhoto(image = Blob.fromBytes(newPhoto))).await()
+            UpdateReturnInfo(status = UpdateReturnStatus.Succeeded, value = user)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = e.message ?: "Could not update profile photo")
+        }
     }
+
+    /**
+     * Finds the user's profile photo if they have one
+     *
+     * @param user The [User] to find the photo for
+     * @return The compressed image bytes, or null if the user has no photo. Network failures propagate to the caller
+     */
+    suspend fun findProfilePhoto(user: User): ByteArray? =
+        users.document(user.uid).collection(UserPhoto.COLLECTION).document(UserPhoto.DOCUMENT_ID)
+            .get().await().toObject<UserPhoto>()?.image?.toBytes()
 
     /**
      * Deletes the user's account and all of their data
