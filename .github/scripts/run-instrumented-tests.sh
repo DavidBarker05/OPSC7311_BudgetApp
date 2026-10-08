@@ -33,6 +33,16 @@ if [ "$status" -ne 0 ]; then
   adb shell dumpsys window windows > ci-diagnostics/windows.txt || true
   adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp|mDreamingLockscreen|isKeyguardShowing" > ci-diagnostics/focus.txt || true
   adb logcat -d > ci-diagnostics/logcat.txt || true
+  adb shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity|mFocusedApp" > ci-diagnostics/activities.txt || true
+
+  # The most useful lines are also printed here, so they can be read straight from the job log without the artifact
+  echo "---- window focus / keyguard"
+  cat ci-diagnostics/focus.txt || true
+  echo "---- resumed activity"
+  cat ci-diagnostics/activities.txt || true
+  echo "---- system dialogs, crashes and ANRs in the logcat"
+  grep -E "ANR in|Application Not Responding|FATAL EXCEPTION|has stopped|isn't responding|keeps stopping" ci-diagnostics/logcat.txt | tail -20 || true
+  echo "---- end of diagnostics"
 fi
 
 exit "$status"
