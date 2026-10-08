@@ -12,6 +12,8 @@ use_firebase="$2"
 
 gradle_command="./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.package=${packages} --console=plain"
 
+# A failing run is not an error here: the exit code is kept until the diagnostics have been collected
+set +e
 if [ "$use_firebase" = "true" ]; then
   # Starts the Firebase Auth and Firestore emulators (using firebase.json and firestore.rules), runs the tests against
   # them, then stops them. The exit code is the tests' exit code
@@ -19,3 +21,18 @@ if [ "$use_firebase" = "true" ]; then
 else
   $gradle_command
 fi
+status=$?
+set -e
+
+if [ "$status" -ne 0 ]; then
+  # When tests fail, saves what the emulator was showing and what Android reported, since that is not in the Gradle log.
+  # The workflow uploads this folder with the test report
+  echo "Tests failed, collecting emulator diagnostics into ci-diagnostics/"
+  mkdir -p ci-diagnostics
+  adb exec-out screencap -p > ci-diagnostics/screen.png || true
+  adb shell dumpsys window windows > ci-diagnostics/windows.txt || true
+  adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp|mDreamingLockscreen|isKeyguardShowing" > ci-diagnostics/focus.txt || true
+  adb logcat -d > ci-diagnostics/logcat.txt || true
+fi
+
+exit "$status"

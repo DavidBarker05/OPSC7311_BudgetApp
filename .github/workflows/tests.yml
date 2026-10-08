@@ -91,6 +91,12 @@ jobs:
         if: matrix.firebase
         run: npm install -g firebase-tools
 
+      # Compiles the app and its tests before the emulator starts. Otherwise the compile runs while the emulator is
+      # booting and sitting idle, which makes the runner's CPU a bottleneck for both, and the screen can lock again
+      # during the long compile that used to sit between waking the emulator and starting the tests
+      - name: Build the test APKs
+        run: ./gradlew assembleDebug assembleDebugAndroidTest --console=plain
+
       # The AVD and its boot snapshot are kept between runs, so the emulator starts in seconds instead of cold booting.
       # The three instrumented jobs share one cache entry. Change the key when the api-level, target, arch or profile do
       - name: Cache the Android emulator
@@ -141,4 +147,5 @@ jobs:
           path: |
             app/build/reports/androidTests/connected
             app/build/outputs/androidTest-results/connected
+            ci-diagnostics
           retention-days: 14
