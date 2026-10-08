@@ -280,7 +280,7 @@ class CategoryDatabaseSystem(
                 id = category.id,
                 subcollections = emptyList(),
                 relatedCollections = relatedCollections(uid),
-                batchSize = 0L
+                batchSize = BATCH_SIZE
             )
         val wasSuccessful = result == DeleteReturnStatus.Deleted
         val errMsg: String? =

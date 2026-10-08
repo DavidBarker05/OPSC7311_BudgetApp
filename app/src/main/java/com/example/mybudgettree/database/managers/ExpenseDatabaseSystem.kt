@@ -211,7 +211,7 @@ class ExpenseDatabaseSystem(
             return FindAllReturnInfo(wasSuccessful = false, errMsg = "Category does not exist in the database")
         return try {
             val allExpenses = expenses(uid)
-                .whereEqualTo("categoryID", category.id)
+                .whereEqualTo("categoryId", category.id)
                 .get()
                 .await()
                 .toObjects<Expense>()

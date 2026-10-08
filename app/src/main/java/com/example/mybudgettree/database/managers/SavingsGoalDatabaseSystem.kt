@@ -94,7 +94,7 @@ class SavingsGoalDatabaseSystem(
         if (goalName.isBlank()) return CreateReturnInfo(wasSuccessful = false, errMsg = "Goal name is empty")
         if (auth.currentUser?.uid != user.uid) return CreateReturnInfo(wasSuccessful = false, errMsg = "User does not exist")
         return try {
-            if (isGoalNameTaken(user, goalName)) return CreateReturnInfo(wasSuccessful = false, errMsg = "User already has a category with name \"$goalName\"")
+            if (isGoalNameTaken(user, goalName)) return CreateReturnInfo(wasSuccessful = false, errMsg = "User already has a goal with name \"$goalName\"")
             val goals = goals(user.uid)
             val goal = SavingsGoal(
                 goalName = goalName,
@@ -106,7 +106,7 @@ class SavingsGoalDatabaseSystem(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            CreateReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not create category")
+            CreateReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not create goal")
         }
     }
 
@@ -186,7 +186,7 @@ class SavingsGoalDatabaseSystem(
         logOutcome(
             tag = TAG,
             status = result.status,
-            messageDetails = "name for category '${goal.id}'",
+            messageDetails = "name for goal '${goal.id}'",
             errMsg = result.errMsg
         )
         return result
