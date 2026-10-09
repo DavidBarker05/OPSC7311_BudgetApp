@@ -127,7 +127,10 @@ class GoalDetailActivity : AppCompatActivity() {
     private fun removeContribution(contribution: SavingsContribution) {
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
-            app.savingsContributionDatabaseSystem.deleteContribution(contribution)
+            if (!safeDelete { app.savingsContributionDatabaseSystem.deleteContribution(contribution) }) {
+                android.widget.Toast.makeText(this@GoalDetailActivity, R.string.delete_failed, android.widget.Toast.LENGTH_SHORT).show()
+                return@launch
+            }
             android.widget.Toast.makeText(this@GoalDetailActivity, R.string.savings_removed, android.widget.Toast.LENGTH_SHORT).show()
             loadGoal()
         }
@@ -142,7 +145,10 @@ class GoalDetailActivity : AppCompatActivity() {
             .setPositiveButton(R.string.delete) { _, _ ->
                 val app = application as BudgetTreeApplication
                 lifecycleScope.launch {
-                    app.savingsGoalDatabaseSystem.deleteGoal(current)
+                    if (!safeDelete { app.savingsGoalDatabaseSystem.deleteGoal(current) }) {
+                        android.widget.Toast.makeText(this@GoalDetailActivity, R.string.delete_failed, android.widget.Toast.LENGTH_SHORT).show()
+                        return@launch
+                    }
                     android.widget.Toast.makeText(this@GoalDetailActivity, R.string.goal_deleted, android.widget.Toast.LENGTH_SHORT).show()
                     finish()
                 }

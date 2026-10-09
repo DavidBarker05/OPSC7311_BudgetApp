@@ -121,7 +121,10 @@ class EditSavingsGoalActivity : AppCompatActivity() {
     private fun deleteGoal(target: SavingsGoal) {
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
-            app.savingsGoalDatabaseSystem.deleteGoal(target)
+            if (!safeDelete { app.savingsGoalDatabaseSystem.deleteGoal(target) }) {
+                Toast.makeText(this@EditSavingsGoalActivity, R.string.delete_failed, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
             Toast.makeText(this@EditSavingsGoalActivity, R.string.goal_deleted, Toast.LENGTH_SHORT).show()
             setResult(RESULT_OK)
             finish()

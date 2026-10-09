@@ -38,7 +38,7 @@ abstract class DatabaseTestBase {
     protected val incomeDatabaseSystem = IncomeDatabaseSystem(auth, firestore)
     protected val savingsGoalDatabaseSystem = SavingsGoalDatabaseSystem(auth, firestore)
     protected val savingsContributionDatabaseSystem = SavingsContributionDatabaseSystem(auth, firestore)
-    protected val userTreeDatabaseSystem = UserTreeDatabaseSystem(firestore)
+    protected val userTreeDatabaseSystem = UserTreeDatabaseSystem(auth, firestore)
     protected val monthlyGoalDatabaseSystem = MonthlyGoalDatabaseSystem(auth, firestore)
     protected val imageStorageSystem: ImageStorageSystem = LocalImageStorageSystem(ApplicationProvider.getApplicationContext())
 

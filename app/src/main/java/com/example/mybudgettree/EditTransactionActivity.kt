@@ -237,11 +237,17 @@ class EditTransactionActivity : AppCompatActivity() {
         lifecycleScope.launch {
             if (isIncome) {
                 val income = app.incomeDatabaseSystem.findIncome(id).value
-                if (income != null) app.incomeDatabaseSystem.deleteIncome(income)
+                if (income != null && !safeDelete { app.incomeDatabaseSystem.deleteIncome(income) }) {
+                    Toast.makeText(this@EditTransactionActivity, R.string.delete_failed, Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
                 Toast.makeText(this@EditTransactionActivity, R.string.income_deleted, Toast.LENGTH_SHORT).show()
             } else {
                 val expense = app.expenseDatabaseSystem.findExpense(id).value
-                if (expense != null) app.expenseDatabaseSystem.deleteExpense(expense)
+                if (expense != null && !safeDelete { app.expenseDatabaseSystem.deleteExpense(expense) }) {
+                    Toast.makeText(this@EditTransactionActivity, R.string.delete_failed, Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
                 Toast.makeText(this@EditTransactionActivity, R.string.expense_deleted, Toast.LENGTH_SHORT).show()
             }
             finish()

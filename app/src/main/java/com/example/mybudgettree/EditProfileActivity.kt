@@ -104,7 +104,6 @@ class EditProfileActivity : AppCompatActivity() {
     private fun bindPhotoAndName() {
         val user = UserSession.currentUser ?: return
         findViewById<TextView>(R.id.tvEditName).text = user.displayName
-        findViewById<TextView>(R.id.tvEditId).text = getString(R.string.profile_id, user.email)
         val photo = findViewById<ShapeableImageView>(R.id.ivEditPhoto)
         val app = application as BudgetTreeApplication
         lifecycleScope.launch { ProfilePhoto.bind(photo, ProfilePhoto.load(app, user)) }

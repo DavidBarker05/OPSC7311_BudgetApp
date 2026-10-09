@@ -145,7 +145,10 @@ class EditCategoryActivity : AppCompatActivity() {
     private fun deleteCategory(target: Category) {
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
-            app.categoryDatabaseSystem.deleteCategory(target)
+            if (!safeDelete { app.categoryDatabaseSystem.deleteCategory(target) }) {
+                Toast.makeText(this@EditCategoryActivity, R.string.delete_failed, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
             Toast.makeText(this@EditCategoryActivity, R.string.category_deleted, Toast.LENGTH_SHORT).show()
             setResult(RESULT_OK)
             finish()
