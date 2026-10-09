@@ -87,9 +87,17 @@ jobs:
           path: ~/.cache/firebase/emulators
           key: firebase-emulators-${{ runner.os }}-${{ hashFiles('firebase.json') }}
 
+      # npm occasionally fails with a 404 for a package that was published minutes earlier and has not reached every
+      # registry server yet, so the install is tried a few times before giving up
       - name: Install the Firebase CLI
         if: matrix.firebase
-        run: npm install -g firebase-tools
+        run: |
+          for attempt in 1 2 3; do
+            npm install -g firebase-tools && exit 0
+            echo "Installing the Firebase CLI failed (attempt $attempt of 3), trying again in 20 seconds"
+            sleep 20
+          done
+          exit 1
 
       # Compiles the app and its tests before the emulator starts. Otherwise the compile runs while the emulator is
       # booting and sitting idle, which makes the runner's CPU a bottleneck for both, and the screen can lock again
