@@ -35,6 +35,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import android.text.InputType
+import android.graphics.Bitmap
+import com.canhub.cropper.CropException
+import com.canhub.cropper.CropImageContract
+import com.canhub.cropper.CropImageContractOptions
+import com.canhub.cropper.CropImageOptions
+import com.canhub.cropper.CropImageView
 
 class EditProfileActivity : AppCompatActivity() {
 
@@ -42,14 +48,24 @@ class EditProfileActivity : AppCompatActivity() {
         private const val TAG = "EditProfileActivity"
     }
 
-    private var cameraFile: File? = null
+    private var cameraUri: Uri? = null
 
+    // The picked or taken photo is cropped first, and only the cropped result is compressed and saved
     private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) savePhotoFromUri(uri)
+        if (uri != null) startCrop(uri)
     }
     private val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        val file = cameraFile
-        if (success && file != null) savePhotoFromFile(file)
+        val uri = cameraUri
+        if (success && uri != null) startCrop(uri)
+    }
+    private val cropImage = registerForActivityResult(CropImageContract()) { result ->
+        val cropped = result.uriContent
+        if (result.isSuccessful && cropped != null) {
+            savePhotoFromUri(cropped)
+        } else if (result.error != null && result.error !is CropException.Cancellation) {
+            Log.w(TAG, "Failed to crop the photo: ${result.error?.message}")
+            Toast.makeText(this, R.string.crop_photo_failed, Toast.LENGTH_SHORT).show()
+        }
     }
     private val requestCamera = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) launchCamera() else Toast.makeText(this, R.string.camera_permission_needed, Toast.LENGTH_SHORT).show()
@@ -236,9 +252,36 @@ class EditProfileActivity : AppCompatActivity() {
 
     private fun launchCamera() {
         val file = File(cacheDir, "profile_${System.currentTimeMillis()}.jpg")
-        cameraFile = file
         val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+        cameraUri = uri
         takePicture.launch(uri)
+    }
+
+    /**
+     * Opens the crop screen for a photo. The profile photo is shown as a circle, so the crop is a fixed square. The
+     * crop is kept rectangular rather than oval because an oval crop returns an image with transparent corners, which
+     * turn black when saved as a JPEG
+     *
+     * @param uri The photo to crop
+     */
+    private fun startCrop(uri: Uri) {
+        cropImage.launch(
+            CropImageContractOptions(
+                uri = uri,
+                cropImageOptions = CropImageOptions(
+                    cropShape = CropImageView.CropShape.RECTANGLE,
+                    fixAspectRatio = true,
+                    aspectRatioX = 1,
+                    aspectRatioY = 1,
+                    guidelines = CropImageView.Guidelines.ON,
+                    allowFlipping = false,
+                    outputCompressFormat = Bitmap.CompressFormat.JPEG,
+                    outputCompressQuality = 90,
+                    activityTitle = getString(R.string.crop_photo),
+                    cropMenuCropButtonTitle = getString(R.string.crop_photo_confirm)
+                )
+            )
+        )
     }
 
     private fun savePhotoFromUri(uri: Uri) {
@@ -247,13 +290,6 @@ class EditProfileActivity : AppCompatActivity() {
             val bytes = withContext(Dispatchers.IO) {
                 contentResolver.openInputStream(uri)?.use { it.readBytes() }
             }
-            persistPhoto(bytes)
-        }
-    }
-
-    private fun savePhotoFromFile(file: File) {
-        lifecycleScope.launch {
-            val bytes = withContext(Dispatchers.IO) { file.readBytes() }
             persistPhoto(bytes)
         }
     }

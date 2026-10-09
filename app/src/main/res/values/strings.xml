@@ -292,4 +292,7 @@
     <string name="delete_account_wrong_password">That password is incorrect, so your account was not deleted</string>
     <string name="delete_account_failed">Could not delete your account, please check your connection and try again</string>
     <string name="delete_failed">Could not delete, please check your connection and try again</string>
+    <string name="crop_photo">Crop photo</string>
+    <string name="crop_photo_confirm">Use photo</string>
+    <string name="crop_photo_failed">Could not crop that photo, please try another one</string>
 </resources>
