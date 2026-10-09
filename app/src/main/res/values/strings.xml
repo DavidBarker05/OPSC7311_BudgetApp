@@ -10,7 +10,6 @@
     <string name="welcome">Welcome</string>
     <string name="create_account">Create Account</string>
 
-    <string name="username_or_email">Username Or Email</string>
     <string name="password">Password</string>
     <string name="full_name">Full Name</string>
     <string name="email">Email</string>
@@ -58,7 +57,7 @@
     <string name="pin_digit">Pin digit</string>
     <string name="social_coming_soon">Social sign-in is coming soon.</string>
     <string name="login_fields_required">Please enter your email and password.</string>
-    <string name="login_failed">Invalid username/email or password.</string>
+    <string name="login_failed">Invalid email or password.</string>
     <string name="signup_fields_required">Please fill in every field.</string>
     <string name="signup_invalid_date">Please choose a valid date of birth.</string>
     <string name="signup_success">Account created. Please log in.</string>
@@ -162,13 +161,11 @@
     <string name="no_category_expenses">No expenses in this category yet.</string>
     <string name="camera_permission_needed">Camera permission is needed to take a photo.</string>
     <string name="receipt_added">Receipt added.</string>
-    <string name="profile_id">ID: %1$s</string>
     <string name="edit_profile">Edit Profile</string>
     <string name="edit_my_profile">Edit My Profile</string>
     <string name="help">Help</string>
     <string name="logout">Logout</string>
     <string name="account_settings">Account Settings</string>
-    <string name="username">Username</string>
     <string name="phone">Phone</string>
     <string name="email_address">Email Address</string>
     <string name="push_notifications">Push Notifications</string>
@@ -294,4 +291,5 @@
     <string name="delete_account_password_hint">Enter your password to confirm</string>
     <string name="delete_account_wrong_password">That password is incorrect, so your account was not deleted</string>
     <string name="delete_account_failed">Could not delete your account, please check your connection and try again</string>
+    <string name="delete_failed">Could not delete, please check your connection and try again</string>
 </resources>

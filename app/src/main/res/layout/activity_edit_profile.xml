@@ -124,16 +124,6 @@
                     tools:text="Tiyah Singh" />
 
                 <TextView
-                    android:id="@+id/tvEditId"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:gravity="center"
-                    android:textColor="@color/green_text"
-                    android:textSize="13sp"
-                    tools:text="ID: 25030024" />
-
-                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
@@ -146,7 +136,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="@string/username"
+                    android:text="@string/full_name"
                     android:textColor="@color/green_text"
                     android:textSize="15sp"
                     android:textStyle="bold" />

@@ -19,13 +19,12 @@ import org.junit.runner.RunWith
 class ProfileActivityUiTest : UiTestBase() {
 
     @Test
-    fun showsLoggedInUsersNameAndId() {
+    fun showsLoggedInUsersName() {
         val user = createTestUser(username = "profileuser")
         UserSession.login(user)
 
         ActivityScenario.launch(ProfileActivity::class.java).use {
             onView(withId(R.id.tvProfileName)).check(matches(withText(user.displayName)))
-            onView(withId(R.id.tvProfileId)).check(matches(isDisplayed()))
         }
     }
 

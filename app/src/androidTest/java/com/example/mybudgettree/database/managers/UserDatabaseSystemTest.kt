@@ -68,9 +68,10 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
     @Test
     fun createUser_alsoCreatesTheMoneyTree() = runBlocking {
         val created = signUp().value!!
-        val tree = userTreeDatabaseSystem.findUserTree(created)
-        assertNotNull(tree)
-        assertEquals(YearMonth.now().toString(), tree?.yearMonth)
+        val result = userTreeDatabaseSystem.findUserTree(created)
+        assertTrue(result.wasSuccessful)
+        assertNotNull(result.value)
+        assertEquals(YearMonth.now().toString(), result.value?.yearMonth)
     }
 
     @Test

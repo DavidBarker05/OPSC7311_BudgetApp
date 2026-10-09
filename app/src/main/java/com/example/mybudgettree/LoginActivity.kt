@@ -37,17 +37,17 @@ class LoginActivity : AppCompatActivity() {
             insets
         }
 
-        val usernameOrEmail = findViewById<EditText>(R.id.etUsernameOrEmail)
+        val emailField = findViewById<EditText>(R.id.etEmail)
         val password = findViewById<EditText>(R.id.etPassword)
         val loginButton = findViewById<MaterialButton>(R.id.btnLogin)
 
         loginButton.setOnClickListener {
-            val identifier = usernameOrEmail.text?.toString()?.trim().orEmpty()
+            val email = emailField.text?.toString()?.trim().orEmpty()
             val passwordValue = password.text?.toString().orEmpty()
-            if (identifier.isBlank() || passwordValue.isBlank()) {
+            if (email.isBlank() || passwordValue.isBlank()) {
                 Toast.makeText(this, R.string.login_fields_required, Toast.LENGTH_SHORT).show()
             } else {
-                signIn(loginButton, identifier, passwordValue)
+                signIn(loginButton, email, passwordValue)
             }
         }
         findViewById<MaterialButton>(R.id.btnSignup).setOnClickListener { openSignup() }
@@ -59,11 +59,11 @@ class LoginActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.btnGoogle).setOnClickListener { showSocialComingSoon() }
     }
 
-    private fun signIn(loginButton: MaterialButton, identifier: String, password: String) {
+    private fun signIn(loginButton: MaterialButton, email: String, password: String) {
         val app = application as BudgetTreeApplication
         loginButton.isEnabled = false
         lifecycleScope.launch {
-            val result = app.userDatabaseSystem.login(identifier, password)
+            val result = app.userDatabaseSystem.login(email, password)
             loginButton.isEnabled = true
             val user = result.value
             if (result.wasSuccessful && user != null) {
