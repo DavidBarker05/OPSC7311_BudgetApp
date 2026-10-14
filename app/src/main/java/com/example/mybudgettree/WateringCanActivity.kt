@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.Window
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -18,8 +19,11 @@ import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.mybudgettree.database.entries.SavingsGoal
+import com.example.mybudgettree.database.managers.shared.UpdateReturnStatus
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 import java.time.YearMonth
 
 class WateringCanActivity : AppCompatActivity() {
@@ -29,6 +33,7 @@ class WateringCanActivity : AppCompatActivity() {
     }
 
     private var selectedIconKey: String? = IconCatalog.DEFAULT_KEY
+    private var featuredGoal: SavingsGoal? = null
     private val adapter = GoalTileAdapter(
         onGoal = { goal ->
             startActivity(
@@ -69,6 +74,7 @@ class WateringCanActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.btnSaveMore).setOnClickListener {
             startActivity(Intent(this, FillWateringCanActivity::class.java))
         }
+        findViewById<MaterialButton>(R.id.btnWaterTree).setOnClickListener { waterFeaturedTree() }
         findViewById<ImageButton>(R.id.btnEditMonthlyGoal).setOnClickListener { showMonthlyGoalDialog() }
         MainNavigation.bind(this, MainNavigation.Tab.GOALS)
     }
@@ -99,14 +105,62 @@ class WateringCanActivity : AppCompatActivity() {
                 monthlyGoal?.minGoal ?: 0.0
             )
             adapter.submit(goals)
-            var saved = 0.0
-            var target = 0.0
-            goals.forEach { goal ->
-                saved += app.savingsContributionDatabaseSystem.retrieveAllContributionsForGoal(goal).values.orEmpty().sumOf { it.amount }
-                target += goal.targetAmount ?: 0.0
+            val snapshots = goals.map { goal ->
+                val contributions = app.savingsContributionDatabaseSystem
+                    .retrieveAllContributionsForGoal(goal).values.orEmpty()
+                GoalCanSnapshot(goal, GoalTreeGame.canState(goal, contributions))
             }
-            val percent = if (target <= 0.0) 0 else ((saved / target) * 100.0).toInt().coerceIn(0, 100)
-            findViewById<WateringCanView>(R.id.wateringCanView).setFillPercent(percent)
+            val featured = GoalTreeGame.featured(snapshots)
+            featuredGoal = featured?.goal
+            val can = featured?.can
+            findViewById<TextView>(R.id.tvCanForGoal).text = if (featured == null) {
+                getString(R.string.tree_needs_goal)
+            } else {
+                getString(R.string.watering_can_for, featured.goal.goalName)
+            }
+            findViewById<WateringCanView>(R.id.wateringCanView).setFillPercent(can?.fillPercent ?: 0)
+            findViewById<TextView>(R.id.tvLastFilled).text =
+                GoalTreeUi.lastFilledLine(this@WateringCanActivity, can?.lastFilled)
+            val level = featured?.goal?.treeLevel ?: 1
+            findViewById<MoneyTreeView>(R.id.moneyTreeView).setLevel(level)
+            findViewById<TextView>(R.id.tvTreeStage).text = if (featured == null) {
+                ""
+            } else {
+                GoalTreeUi.stageLine(this@WateringCanActivity, featured.goal.goalName, level)
+            }
+        }
+    }
+
+    private fun waterFeaturedTree() {
+        val goal = featuredGoal
+        if (goal == null) {
+            Toast.makeText(this, R.string.tree_needs_goal, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val button = findViewById<MaterialButton>(R.id.btnWaterTree)
+        val app = application as BudgetTreeApplication
+        button.isEnabled = false
+        lifecycleScope.launch {
+            val result = app.savingsGoalDatabaseSystem.waterTree(goal, LocalDateTime.now())
+            button.isEnabled = true
+            val grown = result.value
+            if (result.status == UpdateReturnStatus.Succeeded && grown != null) {
+                Log.i(TAG, "Watered tree for goal '${goal.goalName}' to level ${grown.treeLevel}")
+                Toast.makeText(
+                    this@WateringCanActivity,
+                    getString(R.string.tree_grew, GoalTreeUi.stageName(this@WateringCanActivity, grown.treeLevel)),
+                    Toast.LENGTH_SHORT
+                ).show()
+                loadGoals()
+            } else {
+                Log.w(TAG, "Failed to water tree for goal '${goal.goalName}': ${result.errMsg}")
+                val message = if (result.errMsg?.contains(GoalTreeGame.EMPTY_CAN_MESSAGE, ignoreCase = true) == true) {
+                    getString(R.string.can_empty)
+                } else {
+                    result.errMsg ?: getString(R.string.can_empty)
+                }
+                Toast.makeText(this@WateringCanActivity, message, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

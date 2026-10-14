@@ -299,6 +299,76 @@
                 tools:text="30% Of Your Expenses, Looks Good." />
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/treeSection"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="16dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/goalStatusRow">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <com.example.mybudgettree.MoneyTreeView
+                    android:id="@+id/moneyTreeView"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/money_tree" />
+
+                <com.example.mybudgettree.WateringCanView
+                    android:id="@+id/goalCanView"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/watering_can" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvTreeStage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/green_text"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                tools:text="Wedding · Seed · Level 1" />
+
+            <TextView
+                android:id="@+id/tvLastFilled"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:textColor="@color/green_text"
+                android:textSize="13sp"
+                tools:text="Last filled: 14 Oct 2026" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnWaterTree"
+                android:layout_width="200dp"
+                android:layout_height="44dp"
+                android:layout_marginTop="8dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minHeight="44dp"
+                android:text="@string/water_tree"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="15sp"
+                app:backgroundTint="@color/green_primary"
+                app:cornerRadius="22dp" />
+        </LinearLayout>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvGoalSavings"
             android:layout_width="0dp"
@@ -311,7 +381,7 @@
             app:layout_constraintBottom_toTopOf="@id/btnAddSavings"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/goalStatusRow"
+            app:layout_constraintTop_toBottomOf="@id/treeSection"
             tools:listitem="@layout/item_search_result" />
 
         <TextView

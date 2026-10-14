@@ -43,6 +43,7 @@ class GoalTileAdapter(
         private val background = view.findViewById<FrameLayout>(R.id.goalTileBg)
         private val icon = view.findViewById<ImageView>(R.id.ivGoalIcon)
         private val name = view.findViewById<TextView>(R.id.tvGoalName)
+        private val level = view.findViewById<TextView>(R.id.tvGoalLevel)
 
         fun bind(tile: GoalTile) {
             if (tile.isMore) {
@@ -50,10 +51,13 @@ class GoalTileAdapter(
                 icon.setImageResource(R.drawable.ic_plus)
                 icon.setColorFilter(ContextCompat.getColor(itemView.context, R.color.green_text))
                 name.text = itemView.context.getString(R.string.more)
+                level.visibility = View.GONE
                 itemView.setOnClickListener { onMore() }
             } else {
                 val goal = tile.goal ?: return
                 name.text = goal.goalName
+                level.visibility = View.VISIBLE
+                level.text = itemView.context.getString(R.string.goal_tree_level, goal.treeLevel.coerceAtLeast(1))
                 icon.setImageResource(IconCatalog.resFor(goal.iconKey))
                 background.setBackgroundResource(R.drawable.bg_category_tile)
                 icon.setColorFilter(ContextCompat.getColor(itemView.context, R.color.green_text))

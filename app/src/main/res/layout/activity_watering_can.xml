@@ -111,12 +111,80 @@
                     tools:itemCount="3"
                     tools:listitem="@layout/item_goal_tile" />
 
+                <TextView
+                    android:id="@+id/tvTreeHow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:paddingStart="28dp"
+                    android:paddingEnd="28dp"
+                    android:text="@string/tree_how_it_works"
+                    android:textColor="@color/hint_text"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvCanForGoal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="24dp"
+                    android:textColor="@color/green_text"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="Watering can for Wedding" />
+
                 <com.example.mybudgettree.WateringCanView
                     android:id="@+id/wateringCanView"
                     android:layout_width="match_parent"
-                    android:layout_height="260dp"
-                    android:layout_marginTop="8dp"
+                    android:layout_height="200dp"
+                    android:layout_marginTop="4dp"
                     android:contentDescription="@string/watering_can" />
+
+                <TextView
+                    android:id="@+id/tvLastFilled"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:textColor="@color/green_text"
+                    android:textSize="14sp"
+                    tools:text="Last filled: 14 Oct 2026" />
+
+                <com.example.mybudgettree.MoneyTreeView
+                    android:id="@+id/moneyTreeView"
+                    android:layout_width="match_parent"
+                    android:layout_height="150dp"
+                    android:layout_marginTop="4dp"
+                    android:contentDescription="@string/money_tree" />
+
+                <TextView
+                    android:id="@+id/tvTreeStage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="24dp"
+                    android:textColor="@color/green_text"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    tools:text="Wedding · Seed · Level 1" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnWaterTree"
+                    android:layout_width="200dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="10dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:minHeight="48dp"
+                    android:text="@string/water_tree"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    app:backgroundTint="@color/green_primary"
+                    app:cornerRadius="24dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSaveMore"
