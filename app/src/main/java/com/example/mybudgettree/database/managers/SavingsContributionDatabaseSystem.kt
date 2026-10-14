@@ -2,6 +2,7 @@ package com.example.mybudgettree.database.managers
 
 import com.example.mybudgettree.database.entries.SavingsContribution
 import com.example.mybudgettree.database.entries.SavingsGoal
+import com.example.mybudgettree.database.entries.User
 import com.example.mybudgettree.database.managers.shared.*
 import com.example.mybudgettree.database.managers.shared.firebase.*
 import com.google.firebase.auth.FirebaseAuth
@@ -105,6 +106,28 @@ class SavingsContributionDatabaseSystem(
                 return FindAllReturnInfo(wasSuccessful = false, errMsg = "Goal does not exist in the database")
             val allContributions = contributions(uid)
                 .whereEqualTo("goalId", goal.id)
+                .get()
+                .await()
+                .toObjects<SavingsContribution>()
+            FindAllReturnInfo(wasSuccessful = true, values = allContributions)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FindAllReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not load contributions")
+        }
+    }
+
+    /**
+     * Retrieves every contribution made after a specific date and time
+     *
+     * @param dateTime The [LocalDateTime] indicating the beginning date and time to look for contributions
+     * @return A [FindAllReturnInfo] indicating what happened with the retrieval
+     */
+    suspend fun retrieveAllContributionsAfterDateTime(dateTime: LocalDateTime): FindAllReturnInfo<SavingsContribution> {
+        val uid = auth.uid ?: return FindAllReturnInfo(wasSuccessful = false, errMsg = "No user currently signed in")
+        return try {
+            val allContributions = contributions(uid)
+                .whereGreaterThanOrEqualTo("createdAt", dateTime.toString())
                 .get()
                 .await()
                 .toObjects<SavingsContribution>()
