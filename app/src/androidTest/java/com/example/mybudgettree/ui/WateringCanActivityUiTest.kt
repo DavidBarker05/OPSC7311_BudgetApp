@@ -3,6 +3,7 @@ package com.example.mybudgettree.ui
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -24,7 +25,8 @@ class WateringCanActivityUiTest : UiTestBase() {
         ActivityScenario.launch(WateringCanActivity::class.java).use {
             // the goals are loaded from Firestore asynchronously, so the grid is empty until they arrive
             eventually { onView(withId(R.id.rvGoals)).check(matches(isDisplayed())) }
-            onView(withId(R.id.btnSaveMore)).check(matches(isDisplayed()))
+            // the button sits below the tree and watering can, so on shorter screens it starts off-screen
+            onView(withId(R.id.btnSaveMore)).perform(scrollTo()).check(matches(isDisplayed()))
         }
     }
 
