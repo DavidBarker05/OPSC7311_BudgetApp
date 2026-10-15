@@ -108,6 +108,12 @@ class GoalDetailActivity : AppCompatActivity() {
                 GoalTreeUi.stageLine(this@GoalDetailActivity, found.goalName, found.treeLevel)
             findViewById<TextView>(R.id.tvLastFilled).text =
                 GoalTreeUi.lastFilledLine(this@GoalDetailActivity, can.lastFilled)
+            findViewById<TextView>(R.id.tvGrowthFeedback).text = GoalTreeUi.progressMessage(
+                this@GoalDetailActivity,
+                found.goalName,
+                found.treeLevel,
+                can
+            )
             val saved = contributions.sumOf { it.amount }
             val target = found.targetAmount ?: 0.0
             val percent = if (target <= 0.0) 0 else ((saved / target) * 100.0).toInt().coerceIn(0, 100)
@@ -147,8 +153,8 @@ class GoalDetailActivity : AppCompatActivity() {
                 android.util.Log.i("GoalDetailActivity", "Watered tree for goal '${current.goalName}' to level ${grown.treeLevel}")
                 android.widget.Toast.makeText(
                     this@GoalDetailActivity,
-                    getString(R.string.tree_grew, GoalTreeUi.stageName(this@GoalDetailActivity, grown.treeLevel)),
-                    android.widget.Toast.LENGTH_SHORT
+                    GoalTreeUi.grewMessage(this@GoalDetailActivity, current.goalName, grown.treeLevel),
+                    android.widget.Toast.LENGTH_LONG
                 ).show()
                 loadGoal()
             } else {

@@ -128,6 +128,12 @@ class WateringCanActivity : AppCompatActivity() {
             } else {
                 GoalTreeUi.stageLine(this@WateringCanActivity, featured.goal.goalName, level)
             }
+            findViewById<TextView>(R.id.tvGrowthFeedback).text = GoalTreeUi.progressMessage(
+                this@WateringCanActivity,
+                featured?.goal?.goalName,
+                level,
+                can
+            )
         }
     }
 
@@ -148,8 +154,8 @@ class WateringCanActivity : AppCompatActivity() {
                 Log.i(TAG, "Watered tree for goal '${goal.goalName}' to level ${grown.treeLevel}")
                 Toast.makeText(
                     this@WateringCanActivity,
-                    getString(R.string.tree_grew, GoalTreeUi.stageName(this@WateringCanActivity, grown.treeLevel)),
-                    Toast.LENGTH_SHORT
+                    GoalTreeUi.grewMessage(this@WateringCanActivity, goal.goalName, grown.treeLevel),
+                    Toast.LENGTH_LONG
                 ).show()
                 loadGoals()
             } else {

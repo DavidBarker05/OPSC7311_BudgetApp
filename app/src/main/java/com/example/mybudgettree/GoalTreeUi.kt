@@ -36,4 +36,41 @@ object GoalTreeUi {
         } else {
             context.getString(R.string.last_filled, filledDateFormatter.format(lastFilled))
         }
+
+    /**
+     * Explains the next growth step for this goal: save to fill the can, then water to move one stage
+     */
+    fun progressMessage(context: Context, goalName: String?, level: Int, can: WateringCanState?): String {
+        if (goalName == null || can == null) return context.getString(R.string.tree_needs_goal)
+        val safeLevel = level.coerceAtLeast(1)
+        val nextLevel = GoalTreeGame.nextLevel(safeLevel)
+        val currentName = stageName(context, safeLevel)
+        val nextName = stageName(context, nextLevel)
+        val mature = GoalTreeGame.stageForLevel(safeLevel) == TreeStage.MATURE &&
+            GoalTreeGame.stageForLevel(nextLevel) == TreeStage.MATURE
+        val water = MoneyFormatter.format(can.unpouredAmount)
+        return when {
+            mature && can.canWater -> context.getString(R.string.tree_progress_mature_ready, water, goalName, nextLevel)
+            mature -> context.getString(R.string.tree_progress_mature, goalName)
+            can.canWater -> context.getString(R.string.tree_progress_ready, water, goalName, currentName, nextName)
+            can.lastFilled == null -> context.getString(R.string.tree_progress_save_first, goalName, currentName, nextName)
+            else -> context.getString(R.string.tree_progress_refill, goalName, currentName, nextName)
+        }
+    }
+
+    fun grewMessage(context: Context, goalName: String, newLevel: Int): String {
+        val previousLevel = (newLevel - 1).coerceAtLeast(1)
+        val stillMature = GoalTreeGame.stageForLevel(previousLevel) == TreeStage.MATURE &&
+            GoalTreeGame.stageForLevel(newLevel) == TreeStage.MATURE
+        return if (stillMature) {
+            context.getString(R.string.tree_grew_level, goalName, newLevel)
+        } else {
+            context.getString(
+                R.string.tree_grew,
+                goalName,
+                stageName(context, previousLevel),
+                stageName(context, newLevel)
+            )
+        }
+    }
 }

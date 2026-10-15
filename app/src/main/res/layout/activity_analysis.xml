@@ -85,8 +85,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:text="@string/total_balance"
-                    android:textColor="@color/title_on_sage"
-                    android:textSize="12sp" />
+                    android:textColor="@color/white"
+                    android:textSize="14sp" />
             </LinearLayout>
 
             <TextView
@@ -95,7 +95,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:textColor="@color/white"
-                android:textSize="22sp"
+                android:textSize="28sp"
                 android:textStyle="bold"
                 tools:text="R7,783.00" />
         </LinearLayout>
@@ -129,8 +129,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:text="@string/total_expense"
-                    android:textColor="@color/title_on_sage"
-                    android:textSize="12sp" />
+                    android:textColor="@color/white"
+                    android:textSize="14sp" />
             </LinearLayout>
 
             <TextView
@@ -139,7 +139,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:textColor="@color/white"
-                android:textSize="22sp"
+                android:textSize="28sp"
                 android:textStyle="bold"
                 tools:text="-R1,187.40" />
         </LinearLayout>
@@ -148,7 +148,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/budgetBar"
         android:layout_width="0dp"
-        android:layout_height="28dp"
+        android:layout_height="36dp"
         android:layout_marginStart="24dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="24dp"
@@ -174,7 +174,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
             android:textColor="@color/white"
-            android:textSize="12sp"
+            android:textSize="15sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -187,7 +187,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="12dp"
             android:textColor="@color/white"
-            android:textSize="12sp"
+            android:textSize="15sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -220,8 +220,8 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:textColor="@color/title_on_sage"
-            android:textSize="13sp"
+            android:textColor="@color/white"
+            android:textSize="16sp"
             tools:text="30% Of Your Expenses, Looks Good." />
     </LinearLayout>
 
