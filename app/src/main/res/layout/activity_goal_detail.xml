@@ -93,7 +93,7 @@
         <ImageView
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:alpha="0.3"
+            android:alpha="0.1"
             android:contentDescription="@string/welcome_background_description"
             android:scaleType="centerCrop"
             android:src="@drawable/img_nature_footer"
@@ -139,8 +139,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
                         android:text="@string/goal"
-                        android:textColor="@color/hint_text"
-                        android:textSize="12sp" />
+                        android:textColor="@color/green_text"
+                        android:textSize="14sp" />
                 </LinearLayout>
 
                 <TextView
@@ -149,7 +149,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
                     android:textColor="@color/green_text"
-                    android:textSize="26sp"
+                    android:textSize="30sp"
                     android:textStyle="bold"
                     tools:text="R34,700.00" />
 
@@ -172,8 +172,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
                         android:text="@string/amount_saved"
-                        android:textColor="@color/hint_text"
-                        android:textSize="12sp" />
+                        android:textColor="@color/green_text"
+                        android:textSize="14sp" />
                 </LinearLayout>
 
                 <TextView
@@ -182,7 +182,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
                     android:textColor="@color/green_text"
-                    android:textSize="22sp"
+                    android:textSize="26sp"
                     android:textStyle="bold"
                     tools:text="R296.25" />
             </LinearLayout>
@@ -222,7 +222,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/goalProgressBar"
             android:layout_width="0dp"
-            android:layout_height="28dp"
+            android:layout_height="36dp"
             android:layout_marginStart="24dp"
             android:layout_marginTop="16dp"
             android:layout_marginEnd="24dp"
@@ -248,7 +248,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:textColor="@color/white"
-                android:textSize="12sp"
+                android:textSize="15sp"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -261,7 +261,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="12dp"
                 android:textColor="@color/white"
-                android:textSize="12sp"
+                android:textSize="15sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
@@ -295,8 +295,106 @@
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:textColor="@color/green_text"
-                android:textSize="13sp"
+                android:textSize="15sp"
                 tools:text="30% Of Your Expenses, Looks Good." />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/treeSection"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="16dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/goalStatusRow">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_balance_card"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/growth_heading"
+                    android:textColor="@color/green_text"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvGrowthFeedback"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:lineSpacingExtra="2dp"
+                    android:textColor="@color/green_text"
+                    android:textSize="15sp"
+                    tools:text="R250.00 is waiting in the can. Water the tree to grow Wedding from Seed to Sprout." />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <com.example.mybudgettree.MoneyTreeView
+                    android:id="@+id/moneyTreeView"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/money_tree" />
+
+                <com.example.mybudgettree.WateringCanView
+                    android:id="@+id/goalCanView"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/watering_can" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvTreeStage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/green_text"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                tools:text="Wedding · Seed · Level 1" />
+
+            <TextView
+                android:id="@+id/tvLastFilled"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:textColor="@color/green_text"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                tools:text="Last filled: 14 Oct 2026" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnWaterTree"
+                android:layout_width="200dp"
+                android:layout_height="44dp"
+                android:layout_marginTop="8dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minHeight="44dp"
+                android:text="@string/water_tree"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="15sp"
+                app:backgroundTint="@color/green_primary"
+                app:cornerRadius="22dp" />
         </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView
@@ -311,7 +409,7 @@
             app:layout_constraintBottom_toTopOf="@id/btnAddSavings"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/goalStatusRow"
+            app:layout_constraintTop_toBottomOf="@id/treeSection"
             tools:listitem="@layout/item_search_result" />
 
         <TextView

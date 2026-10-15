@@ -33,4 +33,13 @@
         android:textColor="@color/green_text"
         android:textSize="14sp"
         tools:text="Wedding" />
+
+    <TextView
+        android:id="@+id/tvGoalLevel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="@color/hint_text"
+        android:textSize="12sp"
+        tools:text="Level 1" />
 </LinearLayout>
