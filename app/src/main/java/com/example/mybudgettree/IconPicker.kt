@@ -12,10 +12,17 @@ import androidx.core.content.ContextCompat
  * new savings goal dialog so both icon pickers look and behave the same way.
  */
 object IconPicker {
-    fun populate(container: GridLayout, initialKey: String?, onSelect: (String) -> Unit) {
+    /**
+     * @param container The grid to fill
+     * @param initialKey The icon that starts selected, or null for the default
+     * @param rows Lay the icons out in this many rows and as many columns as that takes, for a grid that scrolls
+     *   sideways. Null keeps four columns, however many rows that needs
+     * @param onSelect Called with the key of the icon the user taps
+     */
+    fun populate(container: GridLayout, initialKey: String?, rows: Int? = null, onSelect: (String) -> Unit) {
         val context = container.context
         container.removeAllViews()
-        container.columnCount = 4
+        container.columnCount = if (rows == null) 4 else (IconCatalog.icons.size + rows - 1) / rows
         var selected = initialKey ?: IconCatalog.DEFAULT_KEY
         val buttons = mutableMapOf<String, ImageButton>()
 

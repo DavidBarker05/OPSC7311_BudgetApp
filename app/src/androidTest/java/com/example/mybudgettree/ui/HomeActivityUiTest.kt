@@ -2,6 +2,7 @@ package com.example.mybudgettree.ui
 
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isSelected
@@ -27,7 +28,7 @@ class HomeActivityUiTest : UiTestBase() {
             eventually {
                 onView(withId(R.id.tvTotalBalance)).check(matches(withText("R0.00")))
                 onView(withId(R.id.tvTotalExpense)).check(matches(withText("-R0.00")))
-                onView(withId(R.id.tvEmptyTransactions)).check(matches(isDisplayed()))
+                onView(withId(R.id.tvEmptyTransactions)).perform(scrollTo()).check(matches(isDisplayed()))
             }
         }
     }

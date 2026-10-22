@@ -102,346 +102,345 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <LinearLayout
-            android:id="@+id/goalSummary"
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/goalScroll"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="24dp"
-            android:paddingTop="28dp"
-            android:paddingEnd="24dp"
+            android:layout_height="0dp"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
             <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:contentDescription="@string/goal"
-                        android:src="@drawable/ic_wallet"
-                        app:tint="@color/green_text" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp"
-                        android:text="@string/goal"
-                        android:textColor="@color/green_text"
-                        android:textSize="14sp" />
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tvGoalAmount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:textColor="@color/green_text"
-                    android:textSize="30sp"
-                    android:textStyle="bold"
-                    tools:text="R34,700.00" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:contentDescription="@string/amount_saved"
-                        android:src="@drawable/ic_wallet"
-                        app:tint="@color/green_text" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp"
-                        android:text="@string/amount_saved"
-                        android:textColor="@color/green_text"
-                        android:textSize="14sp" />
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tvAmountSaved"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:textColor="@color/green_text"
-                    android:textSize="26sp"
-                    android:textStyle="bold"
-                    tools:text="R296.25" />
-            </LinearLayout>
-
-            <FrameLayout
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:background="@drawable/bg_category_tile">
-
-                <com.example.mybudgettree.DonutTargetView
-                    android:id="@+id/goalDonut"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
-
-                <ImageView
-                    android:id="@+id/ivGoalBadge"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_gravity="center"
-                    android:layout_marginBottom="10dp"
-                    android:contentDescription="@string/goals"
-                    android:src="@drawable/ic_wedding_rings"
-                    app:tint="@color/green_text" />
-
-                <TextView
-                    android:id="@+id/tvGoalBadgeName"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|center_horizontal"
-                    android:layout_marginBottom="14dp"
-                    android:textColor="@color/green_text"
-                    android:textSize="12sp"
-                    tools:text="Wedding" />
-            </FrameLayout>
-        </LinearLayout>
-
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/goalProgressBar"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_marginStart="24dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="24dp"
-            android:background="@drawable/bg_budget_track"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/goalSummary">
-
-            <View
-                android:id="@+id/goalFill"
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:background="@drawable/bg_budget_fill"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintWidth_default="percent"
-                app:layout_constraintWidth_percent="0.1" />
-
-            <TextView
-                android:id="@+id/tvGoalPercent"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:textColor="@color/white"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:text="10%" />
-
-            <TextView
-                android:id="@+id/tvGoalTarget"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp"
-                android:textColor="@color/white"
-                android:textSize="15sp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:text="R34,700.00" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <LinearLayout
-            android:id="@+id/goalStatusRow"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="24dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginEnd="24dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/goalProgressBar">
-
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:contentDescription="@string/expenses_status_good"
-                android:src="@drawable/ic_check_box"
-                app:tint="@color/green_text" />
-
-            <TextView
-                android:id="@+id/tvGoalStatus"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:textColor="@color/green_text"
-                android:textSize="15sp"
-                tools:text="30% Of Your Expenses, Looks Good." />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/treeSection"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="12dp"
-            android:layout_marginEnd="16dp"
-            android:gravity="center_horizontal"
-            android:orientation="vertical"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/goalStatusRow">
-
-            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:background="@drawable/bg_balance_card"
                 android:orientation="vertical"
-                android:padding="14dp">
+                android:paddingBottom="16dp">
 
-                <TextView
+                <LinearLayout
+                    android:id="@+id/goalSummary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/growth_heading"
-                    android:textColor="@color/green_text"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="24dp"
+                    android:paddingTop="28dp"
+                    android:paddingEnd="24dp">
 
-                <TextView
-                    android:id="@+id/tvGrowthFeedback"
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:contentDescription="@string/goal"
+                                android:src="@drawable/ic_wallet"
+                                app:tint="@color/green_text" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:text="@string/goal"
+                                android:textColor="@color/green_text"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvGoalAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:textColor="@color/green_text"
+                            android:textSize="30sp"
+                            android:textStyle="bold"
+                            tools:text="R34,700.00" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:contentDescription="@string/amount_saved"
+                                android:src="@drawable/ic_wallet"
+                                app:tint="@color/green_text" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:text="@string/amount_saved"
+                                android:textColor="@color/green_text"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvAmountSaved"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:textColor="@color/green_text"
+                            android:textSize="26sp"
+                            android:textStyle="bold"
+                            tools:text="R296.25" />
+                    </LinearLayout>
+
+                    <FrameLayout
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        android:background="@drawable/bg_category_tile">
+
+                        <com.example.mybudgettree.DonutTargetView
+                            android:id="@+id/goalDonut"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
+
+                        <ImageView
+                            android:id="@+id/ivGoalBadge"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:layout_gravity="center"
+                            android:layout_marginBottom="10dp"
+                            android:contentDescription="@string/goals"
+                            android:src="@drawable/ic_wedding_rings"
+                            app:tint="@color/green_text" />
+
+                        <TextView
+                            android:id="@+id/tvGoalBadgeName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="bottom|center_horizontal"
+                            android:layout_marginBottom="14dp"
+                            android:textColor="@color/green_text"
+                            android:textSize="12sp"
+                            tools:text="Wedding" />
+                    </FrameLayout>
+                </LinearLayout>
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/goalProgressBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="24dp"
+                    android:background="@drawable/bg_budget_track"
+                    android:clipToOutline="true"
+                    android:outlineProvider="background">
+
+                    <View
+                        android:id="@+id/goalFill"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:background="@drawable/bg_budget_fill"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintWidth_default="percent"
+                        app:layout_constraintWidth_percent="0.1" />
+
+                    <TextView
+                        android:id="@+id/tvGoalPercent"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:textColor="@color/white"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        tools:text="10%" />
+
+                    <TextView
+                        android:id="@+id/tvGoalTarget"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:textColor="@color/white"
+                        android:textSize="15sp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        tools:text="R34,700.00" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <LinearLayout
+                    android:id="@+id/goalStatusRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:lineSpacingExtra="2dp"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginEnd="24dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:contentDescription="@string/expenses_status_good"
+                        android:src="@drawable/ic_check_box"
+                        app:tint="@color/green_text" />
+
+                    <TextView
+                        android:id="@+id/tvGoalStatus"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:textColor="@color/green_text"
+                        android:textSize="15sp"
+                        tools:text="30% Of Your Expenses, Looks Good." />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/treeSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginEnd="16dp"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:background="@drawable/bg_balance_card"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/growth_heading"
+                            android:textColor="@color/green_text"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvGrowthFeedback"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:lineSpacingExtra="2dp"
+                            android:textColor="@color/green_text"
+                            android:textSize="15sp"
+                            tools:text="R250.00 is waiting in the can. Water the tree to grow Wedding from Seed to Sprout." />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="120dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <com.example.mybudgettree.MoneyTreeView
+                            android:id="@+id/moneyTreeView"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:contentDescription="@string/money_tree" />
+
+                        <com.example.mybudgettree.WateringCanView
+                            android:id="@+id/goalCanView"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:contentDescription="@string/watering_can" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvTreeStage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textColor="@color/green_text"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        tools:text="Wedding · Seed · Level 1" />
+
+                    <TextView
+                        android:id="@+id/tvLastFilled"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:gravity="center"
+                        android:textColor="@color/green_text"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        tools:text="Last filled: 14 Oct 2026" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAddSavings"
+                        android:layout_width="200dp"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="8dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="48dp"
+                        android:text="@string/add_savings"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        android:textSize="16sp"
+                        app:backgroundTint="@color/sage_button"
+                        app:cornerRadius="24dp" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnWaterTree"
+                        android:layout_width="200dp"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="8dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="44dp"
+                        android:text="@string/water_tree"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        android:textSize="15sp"
+                        app:backgroundTint="@color/green_primary"
+                        app:cornerRadius="22dp" />
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvGoalSavings"
+                    android:nestedScrollingEnabled="false"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:paddingStart="16dp"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp"
+                    tools:listitem="@layout/item_search_result" />
+
+                <TextView
+                    android:id="@+id/tvEmptyGoal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:padding="24dp"
+                    android:text="@string/no_goal_savings"
                     android:textColor="@color/green_text"
-                    android:textSize="15sp"
-                    tools:text="R250.00 is waiting in the can. Water the tree to grow Wedding from Seed to Sprout." />
+                    android:visibility="gone" />
             </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="120dp"
-                android:gravity="center"
-                android:orientation="horizontal">
-
-                <com.example.mybudgettree.MoneyTreeView
-                    android:id="@+id/moneyTreeView"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:contentDescription="@string/money_tree" />
-
-                <com.example.mybudgettree.WateringCanView
-                    android:id="@+id/goalCanView"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:contentDescription="@string/watering_can" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/tvTreeStage"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:textColor="@color/green_text"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                tools:text="Wedding · Seed · Level 1" />
-
-            <TextView
-                android:id="@+id/tvLastFilled"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:gravity="center"
-                android:textColor="@color/green_text"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                tools:text="Last filled: 14 Oct 2026" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnWaterTree"
-                android:layout_width="200dp"
-                android:layout_height="44dp"
-                android:layout_marginTop="8dp"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:minHeight="44dp"
-                android:text="@string/water_tree"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:textSize="15sp"
-                app:backgroundTint="@color/green_primary"
-                app:cornerRadius="22dp" />
-        </LinearLayout>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvGoalSavings"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:clipToPadding="false"
-            android:paddingStart="16dp"
-            android:paddingTop="12dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="8dp"
-            app:layout_constraintBottom_toTopOf="@id/btnAddSavings"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/treeSection"
-            tools:listitem="@layout/item_search_result" />
-
-        <TextView
-            android:id="@+id/tvEmptyGoal"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:padding="24dp"
-            android:text="@string/no_goal_savings"
-            android:textColor="@color/green_text"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="@id/rvGoalSavings"
-            app:layout_constraintStart_toStartOf="@id/rvGoalSavings"
-            app:layout_constraintTop_toTopOf="@id/rvGoalSavings" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnAddSavings"
-            android:layout_width="200dp"
-            android:layout_height="48dp"
-            android:layout_marginBottom="16dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:minHeight="48dp"
-            android:text="@string/add_savings"
-            android:textAllCaps="false"
-            android:textColor="@color/white"
-            android:textSize="16sp"
-            app:backgroundTint="@color/sage_button"
-            app:cornerRadius="24dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+        </androidx.core.widget.NestedScrollView>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <include
