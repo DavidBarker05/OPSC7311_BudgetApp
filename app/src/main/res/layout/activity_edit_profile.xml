@@ -189,20 +189,44 @@
                     android:textSize="15sp"
                     android:textStyle="bold" />
 
-                <EditText
-                    android:id="@+id/etEmail"
+                <!-- Plain text with no box, so it reads as something to look at and not a field to type in -->
+                <TextView
+                    android:id="@+id/tvEmailValue"
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_sow_field"
-                    android:hint="@string/hint_email"
-                    android:importantForAutofill="no"
-                    android:inputType="textEmailAddress"
-                    android:paddingStart="18dp"
-                    android:paddingEnd="18dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
                     android:textColor="@color/green_text"
-                    android:textColorHint="@color/hint_text"
-                    android:textSize="15sp" />
+                    android:textIsSelectable="true"
+                    android:textSize="16sp"
+                    tools:text="tiyah@example.com" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnOpenUpdateEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="12dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="@string/update_email_address"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="15sp"
+                    app:backgroundTint="@color/sage_button"
+                    app:cornerRadius="24dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnOpenChangePassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="10dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="@string/edit_profile_change_password"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="15sp"
+                    app:backgroundTint="@color/sage_button"
+                    app:cornerRadius="24dp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"

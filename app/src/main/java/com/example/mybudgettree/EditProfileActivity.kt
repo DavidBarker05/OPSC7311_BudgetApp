@@ -96,6 +96,13 @@ class EditProfileActivity : AppCompatActivity() {
         }
         findViewById<View>(R.id.btnChangePhoto).setOnClickListener { showPhotoChooser() }
         findViewById<MaterialButton>(R.id.btnUpdateProfile).setOnClickListener { saveProfile() }
+        // Changing the email or the password is more important to the account than the rest, so each has its own screen
+        findViewById<MaterialButton>(R.id.btnOpenUpdateEmail).setOnClickListener {
+            startActivity(Intent(this, UpdateEmailActivity::class.java))
+        }
+        findViewById<MaterialButton>(R.id.btnOpenChangePassword).setOnClickListener {
+            startActivity(Intent(this, NewPasswordActivity::class.java))
+        }
         findViewById<MaterialButton>(R.id.btnDeleteAccount).setOnClickListener { confirmDeleteAccount() }
         MainNavigation.bind(this, MainNavigation.Tab.PROFILE)
         bindFields()
@@ -110,7 +117,7 @@ class EditProfileActivity : AppCompatActivity() {
         val user = UserSession.currentUser ?: return
         findViewById<EditText>(R.id.etDisplayName).setText(user.displayName)
         findViewById<EditText>(R.id.etPhone).setText(user.phoneNumber)
-        findViewById<EditText>(R.id.etEmail).setText(user.email)
+        findViewById<TextView>(R.id.tvEmailValue).text = user.email
         findViewById<TextView>(R.id.tvCurrency).text = user.currency
         findViewById<MaterialSwitch>(R.id.switchPush).isChecked =
             ProfilePreferences.isPushEnabled(this, user.uid)
@@ -129,9 +136,8 @@ class EditProfileActivity : AppCompatActivity() {
         val user = UserSession.currentUser ?: return
         val displayName = findViewById<EditText>(R.id.etDisplayName).text?.toString()?.trim().orEmpty()
         val phone = findViewById<EditText>(R.id.etPhone).text?.toString()?.trim().orEmpty()
-        val email = findViewById<EditText>(R.id.etEmail).text?.toString()?.trim().orEmpty()
         val pushEnabled = findViewById<MaterialSwitch>(R.id.switchPush).isChecked
-        if (displayName.isBlank() || phone.isBlank() || email.isBlank()) {
+        if (displayName.isBlank() || phone.isBlank()) {
             Toast.makeText(this, R.string.signup_fields_required, Toast.LENGTH_SHORT).show()
             return
         }
@@ -147,10 +153,6 @@ class EditProfileActivity : AppCompatActivity() {
                 val result = app.userDatabaseSystem.updatePhoneNumber(current, phone)
                 if (!applyUpdate(result)) return@launch
                 current = UserSession.currentUser ?: current
-            }
-            if (email != current.email) {
-                val result = app.userDatabaseSystem.updateEmail(current, email)
-                if (!applyUpdate(result)) return@launch
             }
             ProfilePreferences.setPushEnabled(this@EditProfileActivity, current.uid, pushEnabled)
             Toast.makeText(this@EditProfileActivity, R.string.profile_updated, Toast.LENGTH_SHORT).show()

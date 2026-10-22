@@ -41,7 +41,7 @@
     <string name="done">Done</string>
     <string name="send_again">Send Again</string>
     <string name="send_again_in">Send Again (%1$ds)</string>
-    <string name="new_password_title">New Password</string>
+    <string name="new_password_title">Change Password</string>
     <string name="new_password">New Password</string>
     <string name="confirm_new_password">Confirm New Password</string>
     <string name="change_password">Change Password</string>
@@ -352,4 +352,25 @@
     <string name="chart_running_total">Running total</string>
     <string name="chart_min">Min</string>
     <string name="chart_max">Max</string>
+    <string name="update">Update</string>
+    <string name="update_email_address">Update email address</string>
+    <string name="edit_profile_change_password">Change password</string>
+    <string name="update_email_title">Update Email Address</string>
+    <string name="update_email_explanation">We will send a verification link to your new email address. Your email only changes once you open that link, so keep using your current email to log in until then.</string>
+    <string name="update_email_current">Current email address</string>
+    <string name="update_email_new">New email address</string>
+    <string name="update_email_password">Enter your password to confirm</string>
+    <string name="update_email_error_empty">Please enter your new email address</string>
+    <string name="update_email_error_password_empty">Please enter your password</string>
+    <string name="update_email_error_same">That is already your email address</string>
+    <string name="update_email_error_generic">Could not update your email, please try again</string>
+    <string name="update_email_sent_title">Check your inbox</string>
+    <string name="update_email_sent_message">We sent a verification link to %1$s. Your email changes once you open it. Until then, keep logging in with %2$s. After it changes, you will be asked to log in again with your new email.</string>
+    <string name="current_password_label">Current Password</string>
+    <string name="password_error_current_empty">Enter your current password</string>
+    <string name="password_error_current_wrong">Your current password is incorrect</string>
+    <string name="password_error_too_short">Use at least %1$d characters</string>
+    <string name="password_error_same">Choose a password different from your current one</string>
+    <string name="password_error_mismatch">The passwords do not match</string>
+    <string name="password_error_generic">Could not change your password, please try again</string>
 </resources>

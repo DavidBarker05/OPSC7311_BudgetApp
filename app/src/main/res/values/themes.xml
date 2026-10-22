@@ -38,6 +38,14 @@
         <item name="android:windowBackground">@color/home_sheet</item>
     </style>
 
+    <!-- The crop screen's "Use photo" button is a menu item, and a menu item only shows in an action bar. The rest of the
+         app has none (NoActionBar), so this gives the library's CropImageActivity one -->
+    <style name="Theme.MyBudgetTree.Crop" parent="Theme.Material3.Light">
+        <item name="colorPrimary">@color/green_primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/green_dark</item>
+    </style>
+
     <style name="Theme.MyBudgetTree.Success" parent="Theme.MyBudgetTree">
         <item name="android:statusBarColor">@color/success_green</item>
         <item name="android:navigationBarColor">@color/success_green</item>
