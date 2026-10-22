@@ -2,6 +2,7 @@ package com.example.mybudgettree.database.managers
 
 import com.example.mybudgettree.database.entries.User
 import com.example.mybudgettree.database.entries.Category
+import com.example.mybudgettree.database.entries.DeviceImages
 import com.example.mybudgettree.database.entries.Expense
 import java.time.LocalDate
 import java.time.LocalTime
@@ -499,6 +500,44 @@ class ExpenseDatabaseSystem(
             deviceId = deviceId,
             newPath = newImagePath,
             withPaths = { expense.copy(imagePaths = it) }
+        )
+    }
+
+    /**
+     * Records that a device was asked whether it wants to add an image for the expense and said no, so it isn't asked
+     * again. Other devices' images are left alone. The device can still add one later with [updateExpenseImage], which
+     * replaces the record. A device that already has an image of its own keeps it
+     *
+     * @param expense The [Expense] being updated
+     * @param deviceId The ID of the device that said no
+     * @return An [UpdateReturnInfo] indicating what happened with the update, [UpdateReturnStatus.NoChange] if the
+     * device had already said no or already has an image
+     */
+    suspend fun declineExpenseImage(expense: Expense, deviceId: String): UpdateReturnInfo<Expense> {
+        val result = tryDeclineExpenseImage(expense, deviceId)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "declined image for expense '${expense.id}'",
+            errMsg = result.errMsg
+        )
+        return result
+    }
+
+    private suspend fun tryDeclineExpenseImage(expense: Expense, deviceId: String): UpdateReturnInfo<Expense> {
+        // Saying no must never throw away an image the device has
+        if (expense.imagePathFor(deviceId) != null) return UpdateReturnInfo(status = UpdateReturnStatus.NoChange, value = expense)
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDeviceImagePath(
+            collection = expenses(uid),
+            entityTypeDisplayName = "Expense",
+            entity = expense,
+            id = expense.id,
+            currentPaths = expense.imagePaths,
+            deviceId = deviceId,
+            newPath = DeviceImages.DECLINED,
+            withPaths = { expense.copy(imagePaths = it) },
+            allowDeclined = true
         )
     }
 

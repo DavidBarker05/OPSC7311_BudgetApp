@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
@@ -40,6 +41,7 @@ import com.example.mybudgettree.database.managers.shared.UpdateReturnStatus
 class EditTransactionActivity : AppCompatActivity() {
 
     companion object {
+        private const val TAG = "EditTransactionActivity"
         const val EXTRA_TRANSACTION_ID = "transaction_id"
         const val EXTRA_IS_INCOME = "is_income"
     }
@@ -52,6 +54,10 @@ class EditTransactionActivity : AppCompatActivity() {
     private var selectedEndTime: LocalTime = LocalTime.MIDNIGHT
     private var imagePath: String? = null
     private var imageCleared = false
+
+    // Set when the user said yes to adding an image for this device. The next image they pick or take is then saved
+    // to the database straight away, instead of waiting for the Update button
+    private var saveNextImageStraightAway = false
 
     private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) saveReceiptFromUri(uri)
@@ -119,6 +125,7 @@ class EditTransactionActivity : AppCompatActivity() {
         val id = intent.getStringExtra(EXTRA_TRANSACTION_ID).orEmpty()
         val app = application as BudgetTreeApplication
         lifecycleScope.launch {
+            var needsImageDecision = false
             if (isIncome) {
                 val income = app.incomeDatabaseSystem.findIncome(id).value
                 if (income == null) {
@@ -131,6 +138,7 @@ class EditTransactionActivity : AppCompatActivity() {
                 selectedStartTime = income.startTimeAsLocalTime()
                 selectedEndTime = income.endTimeAsLocalTime()
                 imagePath = income.imagePathFor(DeviceId.get(app))
+                needsImageDecision = income.needsImageDecision(DeviceId.get(app))
             } else {
                 val expense = app.expenseDatabaseSystem.findExpense(id).value
                 if (expense == null) {
@@ -143,11 +151,60 @@ class EditTransactionActivity : AppCompatActivity() {
                 selectedStartTime = expense.startTimeAsLocalTime()
                 selectedEndTime = expense.endTimeAsLocalTime()
                 imagePath = expense.imagePathFor(DeviceId.get(app))
+                needsImageDecision = expense.needsImageDecision(DeviceId.get(app))
             }
             bindDate()
             bindTimes()
             showReceiptPreview()
+            if (needsImageDecision) askAboutImageForThisDevice()
         }
+    }
+
+    /**
+     * Another device added an image for this item, but images are only stored on the device that took them, so this one
+     * can't show it. Asks whether the user wants to add one for this device. Yes opens the upload or take photo choice,
+     * and the image chosen is saved to the database as soon as it is picked. No is recorded in the database so the
+     * question isn't asked every time the item is opened
+     */
+    private fun askAboutImageForThisDevice() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.image_other_device_title)
+            .setMessage(if (isIncome) R.string.image_other_device_income_message else R.string.image_other_device_expense_message)
+            .setCancelable(false)
+            .setPositiveButton(R.string.yes) { _, _ ->
+                saveNextImageStraightAway = true
+                showReceiptChooser()
+            }
+            .setNegativeButton(R.string.no) { _, _ -> rememberNoImageForThisDevice() }
+            .show()
+    }
+
+    private fun rememberNoImageForThisDevice() {
+        val id = intent.getStringExtra(EXTRA_TRANSACTION_ID).orEmpty()
+        val app = application as BudgetTreeApplication
+        lifecycleScope.launch {
+            val deviceId = DeviceId.get(app)
+            val result = if (isIncome) {
+                app.incomeDatabaseSystem.findIncome(id).value?.let { app.incomeDatabaseSystem.declineIncomeImage(it, deviceId) }
+            } else {
+                app.expenseDatabaseSystem.findExpense(id).value?.let { app.expenseDatabaseSystem.declineExpenseImage(it, deviceId) }
+            }
+            Log.i(TAG, "Remembered that this device doesn't want an image: ${result?.status}")
+        }
+    }
+
+    // Saves the image just picked to the database for this device, without going through the Update button
+    private suspend fun saveImageForThisDevice(app: BudgetTreeApplication) {
+        val path = imagePath ?: return
+        val id = intent.getStringExtra(EXTRA_TRANSACTION_ID).orEmpty()
+        val deviceId = DeviceId.get(app)
+        val status = if (isIncome) {
+            app.incomeDatabaseSystem.findIncome(id).value?.let { app.incomeDatabaseSystem.updateIncomeImage(it, deviceId, path) }?.status
+        } else {
+            app.expenseDatabaseSystem.findExpense(id).value?.let { app.expenseDatabaseSystem.updateExpenseImage(it, deviceId, path) }?.status
+        }
+        val message = if (status == UpdateReturnStatus.Succeeded) R.string.image_added_for_this_device else R.string.image_add_failed
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun saveChanges() {
@@ -323,6 +380,10 @@ class EditTransactionActivity : AppCompatActivity() {
             imagePath = app.imageStorageSystem.saveImage(bytes, "transaction_${System.currentTimeMillis()}.jpg")
             imageCleared = false
             showReceiptPreview()
+            if (saveNextImageStraightAway) {
+                saveNextImageStraightAway = false
+                saveImageForThisDevice(app)
+            }
         }
     }
 
@@ -333,6 +394,10 @@ class EditTransactionActivity : AppCompatActivity() {
             imagePath = app.imageStorageSystem.saveImage(bytes, "transaction_${System.currentTimeMillis()}.jpg")
             imageCleared = false
             showReceiptPreview()
+            if (saveNextImageStraightAway) {
+                saveNextImageStraightAway = false
+                saveImageForThisDevice(app)
+            }
         }
     }
 

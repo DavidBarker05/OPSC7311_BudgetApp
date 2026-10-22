@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.mybudgettree.database.DatabaseTestBase
+import com.example.mybudgettree.database.entries.DeviceImages
 import com.example.mybudgettree.database.entries.Income
 import com.example.mybudgettree.database.managers.shared.UpdateReturnStatus
 import kotlinx.coroutines.runBlocking
@@ -195,5 +196,104 @@ class IncomeImageIntegrationTest : DatabaseTestBase() {
 
         assertNull(imageStorageSystem.loadImage(income.imagePathFor(deviceA)))
         assertEquals(income.id, reload(income).id)
+    }
+
+    // ---- saying no to adding an image on this device
+
+    @Test
+    fun declineIncomeImage_recordsTheNo_withoutAddingAnImage() = runBlocking {
+        val pathA = saveSampleImage()
+        val created = createIncomeWithImage(pathA, deviceA).value!!
+
+        val result = incomeDatabaseSystem.declineIncomeImage(created, deviceB)
+
+        assertEquals(UpdateReturnStatus.Succeeded, result.status)
+        val saved = reload(created)
+        assertEquals(mapOf(deviceA to pathA, deviceB to DeviceImages.DECLINED), saved.imagePaths)
+        assertNull(saved.imagePathFor(deviceB))
+    }
+
+    @Test
+    fun declineIncomeImage_leavesTheOtherDevicesImageAlone() = runBlocking {
+        val pathA = saveSampleImage()
+        val created = createIncomeWithImage(pathA, deviceA).value!!
+
+        incomeDatabaseSystem.declineIncomeImage(created, deviceB)
+
+        assertEquals(pathA, reload(created).imagePathFor(deviceA))
+        assertTrue(reload(created).hasImage())
+    }
+
+    @Test
+    fun declineIncomeImage_stopsTheDeviceBeingAskedAgain() = runBlocking {
+        val created = createIncomeWithImage(saveSampleImage(), deviceA).value!!
+        assertTrue(reload(created).needsImageDecision(deviceB))
+
+        incomeDatabaseSystem.declineIncomeImage(created, deviceB)
+
+        assertFalse(reload(created).needsImageDecision(deviceB))
+    }
+
+    @Test
+    fun declineIncomeImage_anIncomeNoOneAddedAnImageTo_stillNeedsNoDecision() = runBlocking {
+        val created = createIncomeWithImage(null, null).value!!
+        incomeDatabaseSystem.declineIncomeImage(created, deviceA)
+        assertFalse(reload(created).hasImage())
+        assertFalse(reload(created).needsImageDecision(deviceB))
+    }
+
+    @Test
+    fun declineIncomeImage_twice_isNoChange() = runBlocking {
+        val created = createIncomeWithImage(saveSampleImage(), deviceA).value!!
+        val declined = incomeDatabaseSystem.declineIncomeImage(created, deviceB).value!!
+        assertEquals(UpdateReturnStatus.NoChange, incomeDatabaseSystem.declineIncomeImage(declined, deviceB).status)
+    }
+
+    @Test
+    fun declineIncomeImage_neverThrowsAwayAnImageTheDeviceAlreadyHas() = runBlocking {
+        val pathA = saveSampleImage()
+        val created = createIncomeWithImage(pathA, deviceA).value!!
+
+        val result = incomeDatabaseSystem.declineIncomeImage(created, deviceA)
+
+        assertEquals(UpdateReturnStatus.NoChange, result.status)
+        assertEquals(pathA, reload(created).imagePathFor(deviceA))
+    }
+
+    @Test
+    fun declineIncomeImage_afterwards_theDeviceCanStillAddAnImage() = runBlocking {
+        val created = createIncomeWithImage(saveSampleImage(), deviceA).value!!
+        val declined = incomeDatabaseSystem.declineIncomeImage(created, deviceB).value!!
+
+        val pathB = saveSampleImage(8)
+        val result = incomeDatabaseSystem.updateIncomeImage(declined, deviceB, pathB)
+
+        assertEquals(UpdateReturnStatus.Succeeded, result.status)
+        assertEquals(pathB, reload(created).imagePathFor(deviceB))
+    }
+
+    @Test
+    fun declineIncomeImage_blankDeviceId_fails() = runBlocking {
+        val created = createIncomeWithImage(saveSampleImage(), deviceA).value!!
+        assertEquals(UpdateReturnStatus.Failed, incomeDatabaseSystem.declineIncomeImage(created, "").status)
+    }
+
+    @Test
+    fun declineIncomeImage_incomeDeleted_fails() = runBlocking {
+        val created = createIncomeWithImage(saveSampleImage(), deviceA).value!!
+        incomeDatabaseSystem.deleteIncome(created)
+        assertEquals(UpdateReturnStatus.Failed, incomeDatabaseSystem.declineIncomeImage(created, deviceB).status)
+    }
+
+    @Test
+    fun updateIncomeImage_aBlankPathIsStillRefused() = runBlocking {
+        val created = createIncomeWithImage(saveSampleImage(), deviceA).value!!
+        assertEquals(UpdateReturnStatus.Failed, incomeDatabaseSystem.updateIncomeImage(created, deviceB, "").status)
+    }
+
+    @Test
+    fun updateIncomeImage_theDeclinedMarkerIsRefused_onlyDecliningMayStoreIt() = runBlocking {
+        val created = createIncomeWithImage(saveSampleImage(), deviceA).value!!
+        assertEquals(UpdateReturnStatus.Failed, incomeDatabaseSystem.updateIncomeImage(created, deviceB, DeviceImages.DECLINED).status)
     }
 }

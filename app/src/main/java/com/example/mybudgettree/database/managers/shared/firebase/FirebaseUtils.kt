@@ -1,5 +1,6 @@
 package com.example.mybudgettree.database.managers.shared.firebase
 
+import com.example.mybudgettree.database.entries.DeviceImages
 import com.example.mybudgettree.database.managers.shared.*
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FieldPath
@@ -95,6 +96,8 @@ suspend fun <T: Any, V> updateDocumentField(
  * @param deviceId The ID of the device the image is saved on
  * @param newPath The new local image path, or null to remove this device's image
  * @param withPaths Builds the updated entity from the new `imagePaths`
+ * @param allowDeclined Whether [newPath] may be the marker for a device that said no
+ *   to adding an image (see [com.example.mybudgettree.database.entries.DeviceImages.DECLINED])
  * @return An [UpdateReturnInfo] indicating what happened with the update
  */
 suspend fun <T : Any> updateDeviceImagePath(
@@ -105,11 +108,13 @@ suspend fun <T : Any> updateDeviceImagePath(
     currentPaths: Map<String, String>,
     deviceId: String,
     newPath: String?,
-    withPaths: (Map<String, String>) -> T
+    withPaths: (Map<String, String>) -> T,
+    allowDeclined: Boolean = false
 ): UpdateReturnInfo<T> {
     if (id.isBlank()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "$entityTypeDisplayName id is empty")
     if (deviceId.isBlank()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Device id is empty")
     if (newPath?.isBlank() == true) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Image path cannot be blank")
+    if (!allowDeclined && newPath == DeviceImages.DECLINED) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Image path cannot be the declined marker")
     if (currentPaths[deviceId] == newPath) return UpdateReturnInfo(status = UpdateReturnStatus.NoChange, value = entity)
     return try {
         // FieldPath.of avoids the device ID being parsed as part of a dotted path

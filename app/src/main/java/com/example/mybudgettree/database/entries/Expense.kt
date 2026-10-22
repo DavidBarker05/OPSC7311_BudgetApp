@@ -54,15 +54,24 @@ data class Expense(
     /**
      * Whether any device has saved an image for this expense
      *
-     * @return True if at least one device has an image
+     * @return True if at least one device has an image. A device that was asked and said no does not count
      */
-    fun hasImage(): Boolean = imagePaths.isNotEmpty()
+    fun hasImage(): Boolean = DeviceImages.hasImage(imagePaths)
 
     /**
      * Gets the image path saved by one device
      *
      * @param deviceId The ID of the device to look up
-     * @return The local path on that device, or null if it has no image for this expense
+     * @return The local path on that device, or null if it has no image for this expense or said no to adding one
      */
-    fun imagePathFor(deviceId: String): String? = imagePaths[deviceId]
+    fun imagePathFor(deviceId: String): String? = DeviceImages.pathFor(imagePaths, deviceId)
+
+    /**
+     * Whether the device should be asked if it wants to add an image: another device has one for this expense, and this
+     * device has neither added one nor said no already
+     *
+     * @param deviceId The ID of the device that has the expense open
+     * @return True if the device should be asked
+     */
+    fun needsImageDecision(deviceId: String): Boolean = DeviceImages.needsDecision(imagePaths, deviceId)
 }
