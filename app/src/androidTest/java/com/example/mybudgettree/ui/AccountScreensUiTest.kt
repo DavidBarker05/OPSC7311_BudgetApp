@@ -16,6 +16,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.mybudgettree.EditProfileActivity
 import com.example.mybudgettree.FirebaseEmulator
 import com.example.mybudgettree.NewPasswordActivity
+import com.example.mybudgettree.PasswordChangedActivity
 import com.example.mybudgettree.ProfileActivity
 import com.example.mybudgettree.R
 import com.example.mybudgettree.UpdateEmailActivity
@@ -154,7 +155,7 @@ class AccountScreensUiTest : UiTestBase() {
     }
 
     @Test
-    fun changePassword_success_showsTheConfirmation_thenGoesBackToTheProfile_andTheNewPasswordWorks() {
+    fun changePassword_success_endsBackOnTheProfile_andTheNewPasswordWorks() {
         val user = createTestUser(username = "accountchange")
         UserSession.login(user)
 
@@ -168,12 +169,29 @@ class AccountScreensUiTest : UiTestBase() {
             type(R.id.etConfirmPassword, "brandnewpass1")
             onView(withId(R.id.btnChangePassword)).perform(scrollTo(), click())
 
-            eventually { onView(withId(R.id.tvSuccess)).check(matches(isDisplayed())) }
-            // the confirmation stays for a couple of seconds, then the profile is shown again
+            // the confirmation is shown for a couple of seconds, and then the profile is shown again
             eventually { onView(withId(R.id.tvProfileName)).check(matches(isDisplayed())) }
         }
 
         app.userDatabaseSystem.logout()
         assertTrue(runBlocking { app.userDatabaseSystem.login(user.email, "brandnewpass1").wasSuccessful })
+    }
+
+    // ---- password changed
+
+    @Test
+    fun passwordChanged_showsTheConfirmationMessage() {
+        ActivityScenario.launch(PasswordChangedActivity::class.java).use {
+            onView(withId(R.id.tvSuccess)).check(matches(isDisplayed()))
+        }
+    }
+
+    @Test
+    fun passwordChanged_takesTheUserBackToTheirProfileAfterAMoment() {
+        UserSession.login(createTestUser(username = "accountconfirmed"))
+
+        ActivityScenario.launch(PasswordChangedActivity::class.java).use {
+            eventually { onView(withId(R.id.tvProfileName)).check(matches(isDisplayed())) }
+        }
     }
 }
