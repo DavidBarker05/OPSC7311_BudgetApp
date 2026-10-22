@@ -51,11 +51,6 @@ object MoneyFormatter {
         CAD("CAD", "$", $$"%1$s%2$s"),
 
         /**
-         * Chinese yuan
-         */
-        CNY("CNY", "¥", $$"%1$s%2$s"),
-
-        /**
          * Czech koruna
          */
         CZK("CZK", "Kč", $$"%2$s %1$s", groupSeparator = '\u00A0', decimalSeparator = ','),
