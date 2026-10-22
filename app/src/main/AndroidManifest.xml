@@ -90,6 +90,11 @@
             android:exported="false"
             android:theme="@style/Theme.MyBudgetTree.Home" />
         <activity
+            android:name=".SpendingDashboardActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".SowExpensesActivity"
             android:exported="false"
             android:theme="@style/Theme.MyBudgetTree.Home"
