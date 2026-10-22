@@ -58,6 +58,9 @@ class CategoriesActivity : AppCompatActivity() {
         }
 
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
+        findViewById<MaterialButton>(R.id.btnSpendingDashboard).setOnClickListener {
+            startActivity(Intent(this, SpendingDashboardActivity::class.java))
+        }
         findViewById<ImageButton>(R.id.btnHeaderBell).setOnClickListener {
             startActivity(Intent(this, NotificationsActivity::class.java))
         }
