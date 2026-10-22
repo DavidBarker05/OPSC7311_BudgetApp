@@ -22,6 +22,7 @@ import com.example.mybudgettree.R
 import com.example.mybudgettree.UpdateEmailActivity
 import com.example.mybudgettree.UserSession
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -70,6 +71,47 @@ class AccountScreensUiTest : UiTestBase() {
             onView(withId(R.id.btnOpenChangePassword)).perform(scrollTo(), click())
 
             eventually { onView(withId(R.id.etCurrentPassword)).check(matches(isDisplayed())) }
+        }
+    }
+
+    // ---- currency
+
+    @Test
+    fun editProfile_showsTheCurrentCurrency() {
+        UserSession.login(createTestUser(username = "currencyshown"))
+
+        ActivityScenario.launch(EditProfileActivity::class.java).use {
+            onView(withId(R.id.tvCurrency)).perform(scrollTo()).check(matches(withText("ZAR (R)")))
+        }
+    }
+
+    @Test
+    fun editProfile_changingTheCurrency_warnsThatNothingIsConverted_thenSavesIt() {
+        val user = createTestUser(username = "currencychange")
+        UserSession.login(user)
+
+        ActivityScenario.launch(EditProfileActivity::class.java).use {
+            onView(withId(R.id.rowCurrency)).perform(scrollTo(), click())
+            eventually { onView(withText("USD ($)")).inRoot(isDialog()).perform(click()) }
+            eventually { onView(withText("Change currency to USD?")).inRoot(isDialog()).check(matches(isDisplayed())) }
+            onView(withText(R.string.currency_change)).inRoot(isDialog()).perform(click())
+
+            eventually { onView(withId(R.id.tvCurrency)).perform(scrollTo()).check(matches(withText("USD ($)"))) }
+        }
+
+        eventually { assertEquals("USD", runBlocking { app.userDatabaseSystem.getCurrentUser()!!.currency }) }
+    }
+
+    @Test
+    fun editProfile_cancellingTheWarning_keepsTheCurrency() {
+        UserSession.login(createTestUser(username = "currencycancel"))
+
+        ActivityScenario.launch(EditProfileActivity::class.java).use {
+            onView(withId(R.id.rowCurrency)).perform(scrollTo(), click())
+            eventually { onView(withText("EUR (€)")).inRoot(isDialog()).perform(click()) }
+            eventually { onView(withText(R.string.cancel)).inRoot(isDialog()).perform(click()) }
+
+            onView(withId(R.id.tvCurrency)).perform(scrollTo()).check(matches(withText("ZAR (R)")))
         }
     }
 

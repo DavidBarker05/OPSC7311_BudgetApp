@@ -172,6 +172,12 @@
     <string name="email_address">Email Address</string>
     <string name="push_notifications">Push Notifications</string>
     <string name="currency">Currency</string>
+    <string name="currency_picker_title">Choose a currency</string>
+    <string name="currency_change_title">Change currency to %1$s?</string>
+    <string name="currency_change_warning">Your existing amounts will not be converted. They will keep the same numbers and only be shown in %1$s, so 100 %2$s becomes 100 in the new currency.</string>
+    <string name="currency_change">Change</string>
+    <string name="currency_updated">Currency updated.</string>
+    <string name="currency_update_failed">Could not change the currency. Please try again.</string>
     <string name="update_profile">Update Profile</string>
     <string name="profile_updated">Profile updated.</string>
     <string name="delete_account">Delete Account</string>
