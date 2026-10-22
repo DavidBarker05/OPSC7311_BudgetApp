@@ -414,4 +414,104 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
         signUp()
         assertEquals(DeleteReturnStatus.DoesNotExist, userDatabaseSystem.deleteUser(first, "password123"))
     }
+
+    // ---- sendPasswordRecoveryEmail
+    // The Auth emulator sends no emails. It records a code for each request instead, and FirebaseEmulator can read those
+
+    @Test
+    fun sendPasswordRecoveryEmail_forAnExistingAccount_succeeds_andARecoveryCodeIsRecorded() = runBlocking {
+        val user = signUp().value!!
+        userDatabaseSystem.logout()
+
+        val result = userDatabaseSystem.sendPasswordRecoveryEmail(user.email)
+
+        assertTrue(result.wasSuccessful)
+        assertNull(result.errMsg)
+        assertEquals(1, FirebaseEmulator.recordedCodes(user.email).size)
+    }
+
+    @Test
+    fun sendPasswordRecoveryEmail_worksWhileNobodyIsSignedIn() = runBlocking {
+        // The person asking has forgotten their password, so they are never signed in
+        val user = signUp().value!!
+        userDatabaseSystem.logout()
+        assertNull(auth.currentUser)
+
+        assertTrue(userDatabaseSystem.sendPasswordRecoveryEmail(user.email).wasSuccessful)
+    }
+
+    @Test
+    fun sendPasswordRecoveryEmail_resettingThroughTheCode_letsTheUserInWithTheNewPassword() = runBlocking {
+        val user = signUp().value!!
+        userDatabaseSystem.logout()
+        userDatabaseSystem.sendPasswordRecoveryEmail(user.email)
+
+        FirebaseEmulator.resetPassword(FirebaseEmulator.recordedCodes(user.email).single().oobCode, "brandnewpass1")
+
+        assertFalse(userDatabaseSystem.login(user.email, "password123").wasSuccessful)
+        assertTrue(userDatabaseSystem.login(user.email, "brandnewpass1").wasSuccessful)
+    }
+
+    @Test
+    fun sendPasswordRecoveryEmail_doesNotChangeThePasswordByItself() = runBlocking {
+        val user = signUp().value!!
+        userDatabaseSystem.logout()
+        userDatabaseSystem.sendPasswordRecoveryEmail(user.email)
+
+        assertTrue(userDatabaseSystem.login(user.email, "password123").wasSuccessful)
+    }
+
+    @Test
+    fun sendPasswordRecoveryEmail_askingAgain_recordsAnotherCode() = runBlocking {
+        val user = signUp().value!!
+        userDatabaseSystem.logout()
+
+        userDatabaseSystem.sendPasswordRecoveryEmail(user.email)
+        userDatabaseSystem.sendPasswordRecoveryEmail(user.email)
+
+        assertEquals(2, FirebaseEmulator.recordedCodes(user.email).size)
+    }
+
+    @Test
+    fun sendPasswordRecoveryEmail_onlyForTheAddressAskedFor() = runBlocking {
+        val first = signUp().value!!
+        userDatabaseSystem.logout()
+        val second = signUp().value!!
+        userDatabaseSystem.logout()
+
+        userDatabaseSystem.sendPasswordRecoveryEmail(first.email)
+
+        assertEquals(1, FirebaseEmulator.recordedCodes(first.email).size)
+        assertTrue(FirebaseEmulator.recordedCodes(second.email).isEmpty())
+    }
+
+    @Test
+    fun sendPasswordRecoveryEmail_blankEmail_fails_andSendsNothing() = runBlocking {
+        val blank = userDatabaseSystem.sendPasswordRecoveryEmail("")
+        val spaces = userDatabaseSystem.sendPasswordRecoveryEmail("   ")
+
+        assertFalse(blank.wasSuccessful)
+        assertFalse(spaces.wasSuccessful)
+        assertNotNull(blank.errMsg)
+    }
+
+    @Test
+    fun sendPasswordRecoveryEmail_invalidEmail_fails_andSendsNothing() = runBlocking {
+        val result = userDatabaseSystem.sendPasswordRecoveryEmail("not-an-email")
+
+        assertFalse(result.wasSuccessful)
+        assertNotNull(result.errMsg)
+        assertTrue(FirebaseEmulator.recordedCodes("not-an-email").isEmpty())
+    }
+
+    @Test
+    fun sendPasswordRecoveryEmail_forAnEmailWithNoAccount_sendsNothing() = runBlocking {
+        // Whether this reports success depends on the project's email enumeration protection (on for real projects,
+        // which then say yes for everyone, off in the emulator), so only check that no email would have been sent
+        val email = FirebaseEmulator.uniqueEmail("nobody")
+
+        userDatabaseSystem.sendPasswordRecoveryEmail(email)
+
+        assertTrue(FirebaseEmulator.recordedCodes(email).isEmpty())
+    }
 }

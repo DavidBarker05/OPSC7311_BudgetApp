@@ -77,7 +77,7 @@ class LoginActivity : AppCompatActivity() {
                 finish()
             } else {
                 Log.w(TAG, "Login failed: ${result.errMsg}")
-                Toast.makeText(this@LoginActivity, R.string.login_failed, Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@LoginActivity, result.errMsg ?: getString(R.string.login_failed), Toast.LENGTH_SHORT).show()
             }
         }
     }

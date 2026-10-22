@@ -70,6 +70,18 @@ class UserDatabaseSystem(
     }
 
     /**
+     * The result of asking for a password recovery email
+     *
+     * @property wasSuccessful Whether the request was accepted. This does NOT mean an account exists for the email,
+     * see [sendPasswordRecoveryEmail]
+     * @property errMsg Why the request failed, only set when it didn't succeed
+     */
+    data class PasswordRecoveryReturnInfo(
+        val wasSuccessful: Boolean,
+        val errMsg: String? = null
+    )
+
+    /**
      * Creates a new Firebase Authentication account and its Firestore profile after validating the fields and
      * confirming the phone number is not already in use
      *
@@ -230,6 +242,49 @@ class UserDatabaseSystem(
                     // Kotlin then ends the coroutine quietly
         } catch (e: Exception) {
             FindReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not log in")
+        }
+    }
+
+    /**
+     * Asks Firebase Authentication to email a password reset link to the address. The user opens the link, chooses a
+     * new password on a Firebase-hosted page, then logs in with it. The app never sees the new password
+     *
+     * Success does not tell you whether an account exists for the email. While Firebase's email enumeration
+     * protection is on (the default for new projects), it reports success for unknown addresses too, and nothing is
+     * sent. So screens should say that an email is sent "if an account exists" instead of confirming that one was sent,
+     * otherwise they would reveal which emails have accounts
+     *
+     * @param email The address of the account to recover, spaces around it are not trimmed
+     * @return A [PasswordRecoveryReturnInfo] that fails for an empty or invalid email, no internet connection, or too
+     * many requests in a short time
+     */
+    suspend fun sendPasswordRecoveryEmail(email: String): PasswordRecoveryReturnInfo {
+        val result = trySendPasswordRecoveryEmail(email)
+        logOutcome(
+            tag = TAG,
+            wasSuccessful = result.wasSuccessful,
+            verbOnSuccess = "send",
+            verbOnFailure = "to send",
+            messageDetails = "recovery email to '$email'",
+            errMsg = result.errMsg
+        )
+        return result
+    }
+
+    private suspend fun trySendPasswordRecoveryEmail(email: String): PasswordRecoveryReturnInfo {
+        if (email.isBlank()) return PasswordRecoveryReturnInfo(wasSuccessful = false, errMsg = "Email is empty")
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) return PasswordRecoveryReturnInfo(wasSuccessful = false, errMsg = "Email is not a valid email address")
+        return try {
+            auth.sendPasswordResetEmail(email).await()
+            PasswordRecoveryReturnInfo(wasSuccessful = true)
+        } catch (_: FirebaseNetworkException) {
+            PasswordRecoveryReturnInfo(wasSuccessful = false, errMsg = "No internet connection")
+        } catch (_: FirebaseTooManyRequestsException) {
+            PasswordRecoveryReturnInfo(wasSuccessful = false, errMsg = "Too many attempts, please try again later")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            PasswordRecoveryReturnInfo(wasSuccessful = false, errMsg = e.message ?: "Could not send recovery email")
         }
     }
 
