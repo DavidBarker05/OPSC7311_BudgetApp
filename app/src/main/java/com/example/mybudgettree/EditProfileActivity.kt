@@ -103,6 +103,7 @@ class EditProfileActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.btnOpenChangePassword).setOnClickListener {
             startActivity(Intent(this, NewPasswordActivity::class.java))
         }
+        findViewById<View>(R.id.rowCurrency).setOnClickListener { showCurrencyPicker() }
         findViewById<MaterialButton>(R.id.btnDeleteAccount).setOnClickListener { confirmDeleteAccount() }
         MainNavigation.bind(this, MainNavigation.Tab.PROFILE)
         bindFields()
@@ -118,7 +119,7 @@ class EditProfileActivity : AppCompatActivity() {
         findViewById<EditText>(R.id.etDisplayName).setText(user.displayName)
         findViewById<EditText>(R.id.etPhone).setText(user.phoneNumber)
         findViewById<TextView>(R.id.tvEmailValue).text = user.email
-        findViewById<TextView>(R.id.tvCurrency).text = user.currency
+        findViewById<TextView>(R.id.tvCurrency).text = currencyLabel(MoneyFormatter.AppCurrency.fromCode(user.currency))
         findViewById<MaterialSwitch>(R.id.switchPush).isChecked =
             ProfilePreferences.isPushEnabled(this, user.uid)
         bindPhotoAndName()
@@ -180,6 +181,50 @@ class EditProfileActivity : AppCompatActivity() {
                 Toast.makeText(this, result.errMsg ?: getString(R.string.signup_fields_required), Toast.LENGTH_SHORT).show()
                 false
             }
+        }
+    }
+
+    private fun currencyLabel(currency: MoneyFormatter.AppCurrency) = "${currency.code} (${currency.symbol})"
+
+    private fun showCurrencyPicker() {
+        val user = UserSession.currentUser ?: return
+        val currencies = MoneyFormatter.AppCurrency.entries
+        AlertDialog.Builder(this)
+            .setTitle(R.string.currency_picker_title)
+            .setSingleChoiceItems(
+                currencies.map { currencyLabel(it) }.toTypedArray(),
+                currencies.indexOfFirst { it.code == user.currency }
+            ) { dialog, which ->
+                dialog.dismiss()
+                if (currencies[which].code != user.currency) confirmCurrencyChange(currencies[which])
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    // Amounts are only relabelled, never converted, so the user is told before it happens
+    private fun confirmCurrencyChange(currency: MoneyFormatter.AppCurrency) {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.currency_change_title, currency.code))
+            .setMessage(getString(R.string.currency_change_warning, currency.code, MoneyFormatter.AppCurrency.fromCode(UserSession.currentUser?.currency).code))
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.currency_change) { _, _ -> changeCurrency(currency) }
+            .show()
+    }
+
+    private fun changeCurrency(currency: MoneyFormatter.AppCurrency) {
+        val user = UserSession.currentUser ?: return
+        val app = application as BudgetTreeApplication
+        lifecycleScope.launch {
+            val result = app.userDatabaseSystem.updateCurrency(user, currency.code)
+            if (result.status == UpdateReturnStatus.Failed) {
+                Log.w(TAG, "Failed to change the currency: ${result.errMsg}")
+                Toast.makeText(this@EditProfileActivity, R.string.currency_update_failed, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            applyUpdate(result)
+            findViewById<TextView>(R.id.tvCurrency).text = currencyLabel(currency)
+            Toast.makeText(this@EditProfileActivity, R.string.currency_updated, Toast.LENGTH_SHORT).show()
         }
     }
 
