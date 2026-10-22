@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.mybudgettree.database.DatabaseTestBase
+import com.example.mybudgettree.database.entries.DeviceImages
 import com.example.mybudgettree.database.entries.Expense
 import com.example.mybudgettree.database.managers.shared.UpdateReturnStatus
 import kotlinx.coroutines.runBlocking
@@ -195,5 +196,104 @@ class ExpenseImageIntegrationTest : DatabaseTestBase() {
 
         assertNull(imageStorageSystem.loadImage(expense.imagePathFor(deviceA)))
         assertEquals(expense.id, reload(expense).id)
+    }
+
+    // ---- saying no to adding an image on this device
+
+    @Test
+    fun declineExpenseImage_recordsTheNo_withoutAddingAnImage() = runBlocking {
+        val pathA = saveSampleImage()
+        val created = createExpenseWithImage(pathA, deviceA).value!!
+
+        val result = expenseDatabaseSystem.declineExpenseImage(created, deviceB)
+
+        assertEquals(UpdateReturnStatus.Succeeded, result.status)
+        val saved = reload(created)
+        assertEquals(mapOf(deviceA to pathA, deviceB to DeviceImages.DECLINED), saved.imagePaths)
+        assertNull(saved.imagePathFor(deviceB))
+    }
+
+    @Test
+    fun declineExpenseImage_leavesTheOtherDevicesImageAlone() = runBlocking {
+        val pathA = saveSampleImage()
+        val created = createExpenseWithImage(pathA, deviceA).value!!
+
+        expenseDatabaseSystem.declineExpenseImage(created, deviceB)
+
+        assertEquals(pathA, reload(created).imagePathFor(deviceA))
+        assertTrue(reload(created).hasImage())
+    }
+
+    @Test
+    fun declineExpenseImage_stopsTheDeviceBeingAskedAgain() = runBlocking {
+        val created = createExpenseWithImage(saveSampleImage(), deviceA).value!!
+        assertTrue(reload(created).needsImageDecision(deviceB))
+
+        expenseDatabaseSystem.declineExpenseImage(created, deviceB)
+
+        assertFalse(reload(created).needsImageDecision(deviceB))
+    }
+
+    @Test
+    fun declineExpenseImage_anExpenseNoOneAddedAnImageTo_stillNeedsNoDecision() = runBlocking {
+        val created = createExpenseWithImage(null, null).value!!
+        expenseDatabaseSystem.declineExpenseImage(created, deviceA)
+        assertFalse(reload(created).hasImage())
+        assertFalse(reload(created).needsImageDecision(deviceB))
+    }
+
+    @Test
+    fun declineExpenseImage_twice_isNoChange() = runBlocking {
+        val created = createExpenseWithImage(saveSampleImage(), deviceA).value!!
+        val declined = expenseDatabaseSystem.declineExpenseImage(created, deviceB).value!!
+        assertEquals(UpdateReturnStatus.NoChange, expenseDatabaseSystem.declineExpenseImage(declined, deviceB).status)
+    }
+
+    @Test
+    fun declineExpenseImage_neverThrowsAwayAnImageTheDeviceAlreadyHas() = runBlocking {
+        val pathA = saveSampleImage()
+        val created = createExpenseWithImage(pathA, deviceA).value!!
+
+        val result = expenseDatabaseSystem.declineExpenseImage(created, deviceA)
+
+        assertEquals(UpdateReturnStatus.NoChange, result.status)
+        assertEquals(pathA, reload(created).imagePathFor(deviceA))
+    }
+
+    @Test
+    fun declineExpenseImage_afterwards_theDeviceCanStillAddAnImage() = runBlocking {
+        val created = createExpenseWithImage(saveSampleImage(), deviceA).value!!
+        val declined = expenseDatabaseSystem.declineExpenseImage(created, deviceB).value!!
+
+        val pathB = saveSampleImage(8)
+        val result = expenseDatabaseSystem.updateExpenseImage(declined, deviceB, pathB)
+
+        assertEquals(UpdateReturnStatus.Succeeded, result.status)
+        assertEquals(pathB, reload(created).imagePathFor(deviceB))
+    }
+
+    @Test
+    fun declineExpenseImage_blankDeviceId_fails() = runBlocking {
+        val created = createExpenseWithImage(saveSampleImage(), deviceA).value!!
+        assertEquals(UpdateReturnStatus.Failed, expenseDatabaseSystem.declineExpenseImage(created, "").status)
+    }
+
+    @Test
+    fun declineExpenseImage_expenseDeleted_fails() = runBlocking {
+        val created = createExpenseWithImage(saveSampleImage(), deviceA).value!!
+        expenseDatabaseSystem.deleteExpense(created)
+        assertEquals(UpdateReturnStatus.Failed, expenseDatabaseSystem.declineExpenseImage(created, deviceB).status)
+    }
+
+    @Test
+    fun updateExpenseImage_aBlankPathIsStillRefused() = runBlocking {
+        val created = createExpenseWithImage(saveSampleImage(), deviceA).value!!
+        assertEquals(UpdateReturnStatus.Failed, expenseDatabaseSystem.updateExpenseImage(created, deviceB, "").status)
+    }
+
+    @Test
+    fun updateExpenseImage_theDeclinedMarkerIsRefused_onlyDecliningMayStoreIt() = runBlocking {
+        val created = createExpenseWithImage(saveSampleImage(), deviceA).value!!
+        assertEquals(UpdateReturnStatus.Failed, expenseDatabaseSystem.updateExpenseImage(created, deviceB, DeviceImages.DECLINED).status)
     }
 }

@@ -3,6 +3,7 @@ package com.example.mybudgettree.database.managers
 import com.example.mybudgettree.database.entries.User
 import com.example.mybudgettree.database.entries.Category
 import com.example.mybudgettree.database.entries.Expense
+import com.example.mybudgettree.database.entries.DeviceImages
 import com.example.mybudgettree.database.entries.Income
 import java.time.LocalDate
 import java.time.LocalTime
@@ -499,6 +500,44 @@ class IncomeDatabaseSystem(
             deviceId = deviceId,
             newPath = newImagePath,
             withPaths = { income.copy(imagePaths = it) }
+        )
+    }
+
+    /**
+     * Records that a device was asked whether it wants to add an image for the income and said no, so it isn't asked
+     * again. Other devices' images are left alone. The device can still add one later with [updateIncomeImage], which
+     * replaces the record. A device that already has an image of its own keeps it
+     *
+     * @param income The [Income] being updated
+     * @param deviceId The ID of the device that said no
+     * @return An [UpdateReturnInfo] indicating what happened with the update, [UpdateReturnStatus.NoChange] if the
+     * device had already said no or already has an image
+     */
+    suspend fun declineIncomeImage(income: Income, deviceId: String): UpdateReturnInfo<Income> {
+        val result = tryDeclineIncomeImage(income, deviceId)
+        logOutcome(
+            tag = TAG,
+            status = result.status,
+            messageDetails = "declined image for income '${income.id}'",
+            errMsg = result.errMsg
+        )
+        return result
+    }
+
+    private suspend fun tryDeclineIncomeImage(income: Income, deviceId: String): UpdateReturnInfo<Income> {
+        // Saying no must never throw away an image the device has
+        if (income.imagePathFor(deviceId) != null) return UpdateReturnInfo(status = UpdateReturnStatus.NoChange, value = income)
+        val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
+        return updateDeviceImagePath(
+            collection = incomes(uid),
+            entityTypeDisplayName = "Income",
+            entity = income,
+            id = income.id,
+            currentPaths = income.imagePaths,
+            deviceId = deviceId,
+            newPath = DeviceImages.DECLINED,
+            withPaths = { income.copy(imagePaths = it) },
+            allowDeclined = true
         )
     }
 

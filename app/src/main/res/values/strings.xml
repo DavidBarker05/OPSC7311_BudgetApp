@@ -373,4 +373,11 @@
     <string name="password_error_same">Choose a password different from your current one</string>
     <string name="password_error_mismatch">The passwords do not match</string>
     <string name="password_error_generic">Could not change your password, please try again</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="image_other_device_title">Image on another device</string>
+    <string name="image_other_device_income_message">An image was added for this income on another device. Images are stored locally on devices so we are unable to access it. Would you like to add an image for this device?</string>
+    <string name="image_other_device_expense_message">An image was added for this expense on another device. Images are stored locally on devices so we are unable to access it. Would you like to add an image for this device?</string>
+    <string name="image_added_for_this_device">Image added for this device</string>
+    <string name="image_add_failed">Could not save the image, press Update to try again</string>
 </resources>
