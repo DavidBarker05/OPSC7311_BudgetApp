@@ -514,4 +514,82 @@ class UserDatabaseSystemTest : DatabaseTestBase() {
 
         assertTrue(FirebaseEmulator.recordedCodes(email).isEmpty())
     }
+
+    // ---- changing the password or the email while confirming the current password
+
+    @Test
+    fun updatePassword_withTheCorrectCurrentPassword_succeeds_andOnlyTheNewPasswordWorks() = runBlocking {
+        val user = signUp().value!!
+
+        val result = userDatabaseSystem.updatePassword(user, "brandnewpass1", currentPassword = "password123")
+
+        assertEquals(UpdateReturnStatus.Succeeded, result.status)
+        userDatabaseSystem.logout()
+        assertFalse(userDatabaseSystem.login(user.email, "password123").wasSuccessful)
+        assertTrue(userDatabaseSystem.login(user.email, "brandnewpass1").wasSuccessful)
+    }
+
+    @Test
+    fun updatePassword_withAWrongCurrentPassword_fails_andTheOldPasswordStillWorks() = runBlocking {
+        val user = signUp().value!!
+
+        val result = userDatabaseSystem.updatePassword(user, "brandnewpass1", currentPassword = "not-the-password")
+
+        assertEquals(UpdateReturnStatus.Failed, result.status)
+        assertTrue(result.errMsg!!.contains("current password", ignoreCase = true))
+        userDatabaseSystem.logout()
+        assertTrue(userDatabaseSystem.login(user.email, "password123").wasSuccessful)
+        assertFalse(userDatabaseSystem.login(user.email, "brandnewpass1").wasSuccessful)
+    }
+
+    @Test
+    fun updatePassword_toTheSamePasswordAsTheCurrentOne_fails() = runBlocking {
+        val user = signUp().value!!
+        val result = userDatabaseSystem.updatePassword(user, "password123", currentPassword = "password123")
+        assertEquals(UpdateReturnStatus.Failed, result.status)
+    }
+
+    @Test
+    fun updatePassword_withTheCurrentPassword_keepsTheUserSignedIn() = runBlocking {
+        val user = signUp().value!!
+        userDatabaseSystem.updatePassword(user, "brandnewpass1", currentPassword = "password123")
+        assertEquals(user.uid, auth.currentUser?.uid)
+        assertEquals(user, userDatabaseSystem.getCurrentUser())
+    }
+
+    @Test
+    fun updatePassword_aWeakNewPassword_failsEvenWithTheRightCurrentPassword() = runBlocking {
+        val user = signUp().value!!
+        val result = userDatabaseSystem.updatePassword(user, "123", currentPassword = "password123")
+        assertEquals(UpdateReturnStatus.Failed, result.status)
+        userDatabaseSystem.logout()
+        assertTrue(userDatabaseSystem.login(user.email, "password123").wasSuccessful)
+    }
+
+    @Test
+    fun updateEmail_withTheCorrectPassword_isPendingVerification() = runBlocking {
+        val user = signUp().value!!
+        val result = userDatabaseSystem.updateEmail(user, FirebaseEmulator.uniqueEmail("new"), password = "password123")
+        assertEquals(UpdateReturnStatus.PendingVerification, result.status)
+    }
+
+    @Test
+    fun updateEmail_withAWrongPassword_fails_andSendsNothing() = runBlocking {
+        val user = signUp().value!!
+        val newEmail = FirebaseEmulator.uniqueEmail("new")
+
+        val result = userDatabaseSystem.updateEmail(user, newEmail, password = "not-the-password")
+
+        assertEquals(UpdateReturnStatus.Failed, result.status)
+        assertTrue(result.errMsg!!.contains("password", ignoreCase = true))
+    }
+
+    @Test
+    fun updateEmail_asksForTheChange_butTheAccountKeepsItsOldEmailAndStaysSignedIn() = runBlocking {
+        val user = signUp().value!!
+        userDatabaseSystem.updateEmail(user, FirebaseEmulator.uniqueEmail("new"), password = "password123")
+
+        assertEquals(user.email, auth.currentUser?.email)
+        assertEquals(user.uid, auth.currentUser?.uid)
+    }
 }

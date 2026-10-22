@@ -52,6 +52,11 @@
             android:theme="@style/Theme.MyBudgetTree.Auth"
             android:windowSoftInputMode="adjustResize" />
         <activity
+            android:name=".UpdateEmailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MyBudgetTree.Home"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".NewPasswordActivity"
             android:exported="false"
             android:theme="@style/Theme.MyBudgetTree.Auth"

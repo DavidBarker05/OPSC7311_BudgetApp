@@ -337,14 +337,20 @@ class UserDatabaseSystem(
      *
      * Firebase does not change the email straight away. It sends a verification link to the new address, and the
      * email only changes once the user clicks it, so this returns [UpdateReturnStatus.PendingVerification]
-     * with the unchanged user. The profile is brought up to date on the next [login]
+     * with the unchanged user. The user stays signed in meanwhile, and once they open the link Firebase signs them out
+     * everywhere, so they log in with the new email. The profile is brought up to date on that [login]
+     *
+     * Changing the email is sensitive, and Firebase refuses it when the last sign in was a while ago. Passing the
+     * user's [password] confirms it is really them first, which also avoids that refusal
      *
      * @param user The [User] being updated
      * @param newEmail The new email
+     * @param password The user's current password, to confirm it is really them. When null no check is made, and a
+     * session that is too old fails with a message to log in again
      * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updateEmail(user: User, newEmail: String): UpdateReturnInfo<User> {
-        val result = tryUpdateEmail(user, newEmail)
+    suspend fun updateEmail(user: User, newEmail: String, password: String? = null): UpdateReturnInfo<User> {
+        val result = tryUpdateEmail(user, newEmail, password)
         logOutcome(
             tag = TAG,
             status = result.status,
@@ -354,13 +360,16 @@ class UserDatabaseSystem(
         return result
     }
 
-    private suspend fun tryUpdateEmail(user: User, newEmail: String): UpdateReturnInfo<User> {
+    private suspend fun tryUpdateEmail(user: User, newEmail: String, password: String?): UpdateReturnInfo<User> {
         if (newEmail.isBlank()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New email is empty")
         if (user.email == newEmail) return UpdateReturnInfo(status = UpdateReturnStatus.NoChange, value = user)
         if (!Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Email is not a valid email address")
         val authUser = auth.currentUser
         if (authUser == null || authUser.uid != user.uid) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "User does not exist")
         return try {
+            if (password != null && !reauthenticate(authUser, password)) {
+                return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Password is incorrect")
+            }
             authUser.verifyBeforeUpdateEmail(newEmail).await()
             UpdateReturnInfo(status = UpdateReturnStatus.PendingVerification, value = user)
         } catch (_: FirebaseAuthUserCollisionException) {
@@ -379,16 +388,18 @@ class UserDatabaseSystem(
     /**
      * Updates the password for the user
      *
-     * Firebase asks for a recent sign in before it will change a password, so this fails with a message to log in
-     * again if the session is too old. Firebase never reveals the current password, so unlike before there is no
-     * "no change" result
+     * Firebase asks for a recent sign in before it will change a password. Passing the user's [currentPassword]
+     * confirms it is really them first, which also avoids that. Without it, a session that is too old fails with a
+     * message to log in again. Firebase never reveals the current password, so there is no "no change" result unless
+     * the new password is the same as [currentPassword]
      *
      * @param user The [User] being updated
      * @param newPassword The new password
+     * @param currentPassword The user's current password, to confirm it is really them. When null no check is made
      * @return An [UpdateReturnInfo] indicating what happened with the update
      */
-    suspend fun updatePassword(user: User, newPassword: String): UpdateReturnInfo<User> {
-        val result = tryUpdatePassword(user, newPassword)
+    suspend fun updatePassword(user: User, newPassword: String, currentPassword: String? = null): UpdateReturnInfo<User> {
+        val result = tryUpdatePassword(user, newPassword, currentPassword)
         logOutcome(
             tag = TAG,
             status = result.status,
@@ -398,11 +409,17 @@ class UserDatabaseSystem(
         return result
     }
 
-    private suspend fun tryUpdatePassword(user: User, newPassword: String): UpdateReturnInfo<User> {
+    private suspend fun tryUpdatePassword(user: User, newPassword: String, currentPassword: String?): UpdateReturnInfo<User> {
         if (newPassword.isBlank()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New password is empty")
+        if (currentPassword != null && currentPassword == newPassword) {
+            return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "New password must be different from the current one")
+        }
         val authUser = auth.currentUser
         if (authUser == null || authUser.uid != user.uid) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "User does not exist")
         return try {
+            if (currentPassword != null && !reauthenticate(authUser, currentPassword)) {
+                return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Current password is incorrect")
+            }
             authUser.updatePassword(newPassword).await()
             UpdateReturnInfo(status = UpdateReturnStatus.Succeeded, value = user)
         } catch (_: FirebaseAuthWeakPasswordException) {
@@ -635,6 +652,26 @@ class UserDatabaseSystem(
         }.await()
         authUser.delete().await()
         return DeleteReturnStatus.Deleted
+    }
+
+    /**
+     * Confirms the signed-in user's password, which also counts as a fresh sign in for the changes Firebase only
+     * allows after one
+     *
+     * @param authUser The signed-in Firebase user
+     * @param password The password to check
+     * @return True if the password is right, false if it is wrong. Other failures, like having no connection, are thrown
+     */
+    private suspend fun reauthenticate(authUser: FirebaseUser, password: String): Boolean {
+        val email = authUser.email ?: return false
+        return try {
+            authUser.reauthenticate(EmailAuthProvider.getCredential(email, password)).await()
+            true
+        } catch (_: FirebaseAuthInvalidCredentialsException) {
+            false
+        } catch (_: FirebaseAuthInvalidUserException) {
+            false
+        }
     }
 
     private suspend fun updateProfileField(user: User, field: String, value: Any?, updatedUser: User): UpdateReturnInfo<User> {
