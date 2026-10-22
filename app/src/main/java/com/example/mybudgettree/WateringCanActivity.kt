@@ -179,7 +179,7 @@ class WateringCanActivity : AppCompatActivity() {
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         val nameField = dialog.findViewById<EditText>(R.id.etNewGoalName)
         val targetField = dialog.findViewById<EditText>(R.id.etNewGoalTarget)
-        IconPicker.populate(dialog.findViewById(R.id.iconGrid), selectedIconKey) { key -> selectedIconKey = key }
+        IconPicker.populate(dialog.findViewById(R.id.iconGrid), selectedIconKey, rows = 2) { key -> selectedIconKey = key }
         dialog.findViewById<MaterialButton>(R.id.btnCancelGoal).setOnClickListener { dialog.dismiss() }
         dialog.findViewById<MaterialButton>(R.id.btnSaveGoal).setOnClickListener {
             val name = nameField.text?.toString()?.trim().orEmpty()

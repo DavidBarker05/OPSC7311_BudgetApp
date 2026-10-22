@@ -34,12 +34,18 @@
         android:textColorHint="@color/hint_text"
         android:textSize="15sp" />
 
-    <GridLayout
-        android:id="@+id/iconGrid"
+    <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:columnCount="4" />
+        android:scrollbars="none">
+
+        <GridLayout
+            android:id="@+id/iconGrid"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:columnCount="4" />
+    </HorizontalScrollView>
 
     <EditText
         android:id="@+id/etNewGoalTarget"
