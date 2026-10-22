@@ -2,18 +2,18 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/securityPinRoot"
+    android:id="@+id/recoverySentRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/sage_header"
-    tools:context=".SecurityPinActivity">
+    tools:context=".RecoverySentActivity">
 
     <TextView
         android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:text="@string/security_pin"
+        android:text="@string/email_sent"
         android:textColor="@color/title_on_sage"
         android:textSize="32sp"
         android:textStyle="bold"
@@ -68,46 +68,14 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/enter_security_pin"
+                android:text="@string/email_sent_detailed"
+                android:textAlignment="center"
                 android:textColor="@color/green_text"
                 android:textSize="22sp"
                 android:textStyle="bold" />
 
-            <LinearLayout
-                android:id="@+id/pinRow"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="28dp"
-                android:gravity="center"
-                android:orientation="horizontal">
-
-                <EditText
-                    android:id="@+id/etPin1"
-                    style="@style/Widget.MyBudgetTree.PinDigit" />
-
-                <EditText
-                    android:id="@+id/etPin2"
-                    style="@style/Widget.MyBudgetTree.PinDigit" />
-
-                <EditText
-                    android:id="@+id/etPin3"
-                    style="@style/Widget.MyBudgetTree.PinDigit" />
-
-                <EditText
-                    android:id="@+id/etPin4"
-                    style="@style/Widget.MyBudgetTree.PinDigit" />
-
-                <EditText
-                    android:id="@+id/etPin5"
-                    style="@style/Widget.MyBudgetTree.PinDigit" />
-
-                <EditText
-                    android:id="@+id/etPin6"
-                    style="@style/Widget.MyBudgetTree.PinDigit" />
-            </LinearLayout>
-
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnAccept"
+                android:id="@+id/btnDone"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
                 android:layout_marginStart="56dp"
@@ -115,7 +83,7 @@
                 android:layout_marginEnd="56dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                android:text="@string/accept"
+                android:text="@string/done"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
                 android:textSize="18sp"
