@@ -94,6 +94,11 @@
             android:name=".CategoryDetailActivity"
             android:exported="false"
             android:theme="@style/Theme.MyBudgetTree.Home" />
+        <!-- Declared by the cropper library too, the two are merged. Only the theme is added, so the screen has an action
+             bar to hold its "Use photo" button -->
+        <activity
+            android:name="com.canhub.cropper.CropImageActivity"
+            android:theme="@style/Theme.MyBudgetTree.Crop" />
         <activity
             android:name=".SpendingDashboardActivity"
             android:exported="false"
