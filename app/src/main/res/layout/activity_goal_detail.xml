@@ -233,6 +233,101 @@
                     </FrameLayout>
                 </LinearLayout>
 
+                <LinearLayout
+                    android:id="@+id/treeSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="16dp"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <com.example.mybudgettree.WateringCanView
+                        android:id="@+id/goalCanView"
+                        android:layout_width="match_parent"
+                        android:layout_height="180dp"
+                        android:contentDescription="@string/watering_can" />
+
+                    <TextView
+                        android:id="@+id/tvLastFilled"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textColor="@color/green_text"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        tools:text="Last filled: 14 Oct 2026" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_balance_card"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/growth_heading"
+                            android:textColor="@color/green_text"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvGrowthFeedback"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:lineSpacingExtra="2dp"
+                            android:textColor="@color/green_text"
+                            android:textSize="15sp"
+                            tools:text="R250.00 is in the Wedding can. Fill it to the goal target, then water your tree from Seed to Sprout." />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvTreeStage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:textColor="@color/green_text"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        tools:text="Your money tree · Seed · Level 1" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAddSavings"
+                        android:layout_width="200dp"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="8dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="48dp"
+                        android:text="@string/add_savings"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        android:textSize="16sp"
+                        app:backgroundTint="@color/sage_button"
+                        app:cornerRadius="24dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnWaterTree"
+                        android:layout_width="200dp"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="8dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="44dp"
+                        android:text="@string/water_tree"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        android:textSize="15sp"
+                        app:backgroundTint="@color/green_primary"
+                        app:cornerRadius="22dp" />
+                </LinearLayout>
+
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/goalProgressBar"
                     android:layout_width="match_parent"
@@ -307,115 +402,6 @@
                         android:textColor="@color/green_text"
                         android:textSize="15sp"
                         tools:text="30% Of Your Expenses, Looks Good." />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/treeSection"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginEnd="16dp"
-                    android:gravity="center_horizontal"
-                    android:orientation="vertical">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:background="@drawable/bg_balance_card"
-                        android:orientation="vertical"
-                        android:padding="14dp">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/growth_heading"
-                            android:textColor="@color/green_text"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/tvGrowthFeedback"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:lineSpacingExtra="2dp"
-                            android:textColor="@color/green_text"
-                            android:textSize="15sp"
-                            tools:text="R250.00 is waiting in the can. Water the tree to grow Wedding from Seed to Sprout." />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="120dp"
-                        android:gravity="center"
-                        android:orientation="horizontal">
-
-                        <com.example.mybudgettree.MoneyTreeView
-                            android:id="@+id/moneyTreeView"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:contentDescription="@string/money_tree" />
-
-                        <com.example.mybudgettree.WateringCanView
-                            android:id="@+id/goalCanView"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:contentDescription="@string/watering_can" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/tvTreeStage"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:textColor="@color/green_text"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        tools:text="Wedding · Seed · Level 1" />
-
-                    <TextView
-                        android:id="@+id/tvLastFilled"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:gravity="center"
-                        android:textColor="@color/green_text"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        tools:text="Last filled: 14 Oct 2026" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnAddSavings"
-                        android:layout_width="200dp"
-                        android:layout_height="48dp"
-                        android:layout_marginTop="8dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:minHeight="48dp"
-                        android:text="@string/add_savings"
-                        android:textAllCaps="false"
-                        android:textColor="@color/white"
-                        android:textSize="16sp"
-                        app:backgroundTint="@color/sage_button"
-                        app:cornerRadius="24dp" />
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnWaterTree"
-                        android:layout_width="200dp"
-                        android:layout_height="44dp"
-                        android:layout_marginTop="8dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:minHeight="44dp"
-                        android:text="@string/water_tree"
-                        android:textAllCaps="false"
-                        android:textColor="@color/white"
-                        android:textSize="15sp"
-                        app:backgroundTint="@color/green_primary"
-                        app:cornerRadius="22dp" />
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView

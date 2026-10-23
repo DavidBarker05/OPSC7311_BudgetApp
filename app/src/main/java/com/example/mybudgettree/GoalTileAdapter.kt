@@ -20,9 +20,12 @@ class GoalTileAdapter(
     private val onMore: () -> Unit
 ) : RecyclerView.Adapter<GoalTileAdapter.Holder>() {
     private val items = mutableListOf<GoalTile>()
+    private val cans = mutableMapOf<String, WateringCanState>()
 
-    fun submit(goals: List<SavingsGoal>) {
+    fun submit(goals: List<SavingsGoal>, cansByGoalId: Map<String, WateringCanState> = emptyMap()) {
         items.clear()
+        cans.clear()
+        cans.putAll(cansByGoalId)
         items.addAll(goals.map { GoalTile(it, isMore = false) })
         items += GoalTile(goal = null, isMore = true)
         notifyDataSetChanged()
@@ -57,7 +60,7 @@ class GoalTileAdapter(
                 val goal = tile.goal ?: return
                 name.text = goal.goalName
                 level.visibility = View.VISIBLE
-                level.text = itemView.context.getString(R.string.goal_tree_level, goal.treeLevel.coerceAtLeast(1))
+                level.text = GoalTreeUi.canLabel(itemView.context, cans[goal.id])
                 icon.setImageResource(IconCatalog.resFor(goal.iconKey))
                 background.setBackgroundResource(R.drawable.bg_category_tile)
                 icon.setColorFilter(ContextCompat.getColor(itemView.context, R.color.green_text))

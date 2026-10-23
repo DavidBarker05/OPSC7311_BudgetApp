@@ -23,6 +23,7 @@ import com.example.mybudgettree.database.managers.shared.UpdateReturnStatus
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
+import java.time.YearMonth
 
 class GoalDetailActivity : AppCompatActivity() {
     private val adapter = SavingsContributionAdapter(::removeContribution)
@@ -102,16 +103,21 @@ class GoalDetailActivity : AppCompatActivity() {
 
             val contributions = app.savingsContributionDatabaseSystem.retrieveAllContributionsForGoal(found).values.orEmpty()
             val can = GoalTreeGame.canState(found, contributions)
-            findViewById<MoneyTreeView>(R.id.moneyTreeView).setLevel(found.treeLevel)
+            val user = UserSession.currentUser
+            val level = if (user == null) {
+                1
+            } else {
+                app.userTreeDatabaseSystem.createOrGetUserTree(user, YearMonth.now()).value?.treeLevel ?: 1
+            }
             findViewById<WateringCanView>(R.id.goalCanView).setFillPercent(can.fillPercent)
             findViewById<TextView>(R.id.tvTreeStage).text =
-                GoalTreeUi.stageLine(this@GoalDetailActivity, found.goalName, found.treeLevel)
+                GoalTreeUi.stageLine(this@GoalDetailActivity, level)
             findViewById<TextView>(R.id.tvLastFilled).text =
                 GoalTreeUi.lastFilledLine(this@GoalDetailActivity, can.lastFilled)
             findViewById<TextView>(R.id.tvGrowthFeedback).text = GoalTreeUi.progressMessage(
                 this@GoalDetailActivity,
                 found.goalName,
-                found.treeLevel,
+                level,
                 can
             )
             val saved = contributions.sumOf { it.amount }
@@ -150,21 +156,20 @@ class GoalDetailActivity : AppCompatActivity() {
             button.isEnabled = true
             val grown = result.value
             if (result.status == UpdateReturnStatus.Succeeded && grown != null) {
-                android.util.Log.i("GoalDetailActivity", "Watered tree for goal '${current.goalName}' to level ${grown.treeLevel}")
+                android.util.Log.i("GoalDetailActivity", "Watered the shared tree with '${current.goalName}' to level ${grown.treeLevel}")
                 android.widget.Toast.makeText(
                     this@GoalDetailActivity,
-                    GoalTreeUi.grewMessage(this@GoalDetailActivity, current.goalName, grown.treeLevel),
+                    GoalTreeUi.grewMessage(this@GoalDetailActivity, grown.treeLevel),
                     android.widget.Toast.LENGTH_LONG
                 ).show()
                 loadGoal()
             } else {
-                android.util.Log.w("GoalDetailActivity", "Failed to water tree for goal '${current.goalName}': ${result.errMsg}")
-                val message = if (result.errMsg?.contains(GoalTreeGame.EMPTY_CAN_MESSAGE, ignoreCase = true) == true) {
-                    getString(R.string.can_empty)
-                } else {
-                    result.errMsg ?: getString(R.string.can_empty)
-                }
-                android.widget.Toast.makeText(this@GoalDetailActivity, message, android.widget.Toast.LENGTH_SHORT).show()
+                android.util.Log.w("GoalDetailActivity", "Failed to water the shared tree with '${current.goalName}': ${result.errMsg}")
+                android.widget.Toast.makeText(
+                    this@GoalDetailActivity,
+                    GoalTreeUi.waterFailureMessage(this@GoalDetailActivity, result.errMsg),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }

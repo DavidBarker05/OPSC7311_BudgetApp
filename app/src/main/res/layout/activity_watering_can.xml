@@ -26,7 +26,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="@string/my_watering_can"
+        android:text="@string/my_money_tree"
         android:textColor="@color/green_text"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -99,24 +99,32 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingTop="20dp">
+                android:paddingTop="12dp">
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvGoals"
+                <com.example.mybudgettree.MoneyTreeView
+                    android:id="@+id/moneyTreeView"
+                    android:layout_width="match_parent"
+                    android:layout_height="220dp"
+                    android:contentDescription="@string/money_tree" />
+
+                <TextView
+                    android:id="@+id/tvTreeStage"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:nestedScrollingEnabled="false"
-                    android:paddingStart="12dp"
-                    android:paddingEnd="12dp"
-                    tools:itemCount="3"
-                    tools:listitem="@layout/item_goal_tile" />
+                    android:gravity="center"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="24dp"
+                    android:textColor="@color/green_text"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="Your money tree · Seed · Level 1" />
 
                 <LinearLayout
                     android:id="@+id/growthCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="20dp"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="12dp"
                     android:layout_marginEnd="20dp"
                     android:background="@drawable/bg_balance_card"
                     android:orientation="vertical"
@@ -139,14 +147,30 @@
                         android:lineSpacingExtra="2dp"
                         android:textColor="@color/green_text"
                         android:textSize="15sp"
-                        tools:text="R250.00 is waiting in the can. Water the tree to grow Wedding from Seed to Sprout." />
+                        tools:text="R250.00 is in the Wedding can. Fill it to the goal target, then water your tree from Seed to Sprout." />
                 </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnWaterTree"
+                    android:layout_width="200dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="12dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:minHeight="48dp"
+                    android:text="@string/water_tree"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    app:backgroundTint="@color/green_primary"
+                    app:cornerRadius="24dp" />
 
                 <TextView
                     android:id="@+id/tvCanForGoal"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="28dp"
                     android:gravity="center"
                     android:paddingStart="24dp"
                     android:paddingEnd="24dp"
@@ -172,48 +196,12 @@
                     android:textStyle="bold"
                     tools:text="Last filled: 14 Oct 2026" />
 
-                <com.example.mybudgettree.MoneyTreeView
-                    android:id="@+id/moneyTreeView"
-                    android:layout_width="match_parent"
-                    android:layout_height="120dp"
-                    android:layout_marginTop="4dp"
-                    android:contentDescription="@string/money_tree" />
-
-                <TextView
-                    android:id="@+id/tvTreeStage"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:paddingStart="24dp"
-                    android:paddingEnd="24dp"
-                    android:textColor="@color/green_text"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    tools:text="Wedding · Seed · Level 1" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnWaterTree"
-                    android:layout_width="200dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="10dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    android:minHeight="48dp"
-                    android:text="@string/water_tree"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    android:textSize="16sp"
-                    app:backgroundTint="@color/green_primary"
-                    app:cornerRadius="24dp" />
-
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSaveMore"
                     android:layout_width="200dp"
                     android:layout_height="48dp"
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:minHeight="48dp"
@@ -223,6 +211,18 @@
                     android:textSize="16sp"
                     app:backgroundTint="@color/sage_button"
                     app:cornerRadius="24dp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvGoals"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:nestedScrollingEnabled="false"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="8dp"
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_goal_tile" />
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
     </androidx.constraintlayout.widget.ConstraintLayout>

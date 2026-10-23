@@ -9,7 +9,7 @@ import android.view.View
 import androidx.core.content.ContextCompat
 
 /**
- * Draws the money tree for one savings goal. The picture follows [GoalTreeGame.stageForLevel]
+ * Draws the user's one money tree. The picture follows [GoalTreeGame.stageForLevel]
  */
 class MoneyTreeView @JvmOverloads constructor(
     context: Context,

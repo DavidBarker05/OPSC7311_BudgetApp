@@ -15,8 +15,7 @@ class GoalTreeGameTest {
     private val goal = SavingsGoal(
         id = "goal-1",
         goalName = "Wedding",
-        targetAmount = 1000.0,
-        treeLevel = 1
+        targetAmount = 1000.0
     )
 
     @Test
@@ -37,6 +36,26 @@ class GoalTreeGameTest {
         assertEquals(25, can.fillPercent)
         assertEquals(250.0, can.unpouredAmount, 0.0)
         assertEquals(LocalDate.of(2026, 10, 14), can.lastFilled)
+        assertFalse(can.canWater)
+    }
+
+    @Test
+    fun savingUpToTheTarget_fillsTheCanSoItCanWaterTheTree() {
+        val can = GoalTreeGame.canState(
+            goal,
+            listOf(deposit(amount = 1000.0, on = LocalDate.of(2026, 10, 14), at = LocalDateTime.of(2026, 10, 14, 9, 0)))
+        )
+        assertEquals(100, can.fillPercent)
+        assertTrue(can.canWater)
+    }
+
+    @Test
+    fun savingPastTheTarget_stillCountsAsAFullCan() {
+        val can = GoalTreeGame.canState(
+            goal,
+            listOf(deposit(amount = 1200.0, on = LocalDate.of(2026, 10, 14), at = LocalDateTime.of(2026, 10, 14, 9, 0)))
+        )
+        assertEquals(100, can.fillPercent)
         assertTrue(can.canWater)
     }
 
@@ -78,7 +97,7 @@ class GoalTreeGameTest {
         assertEquals(10, can.fillPercent)
         assertEquals(100.0, can.unpouredAmount, 0.0)
         assertEquals(LocalDate.of(2026, 10, 15), can.lastFilled)
-        assertTrue(can.canWater)
+        assertFalse(can.canWater)
     }
 
     @Test
@@ -99,7 +118,7 @@ class GoalTreeGameTest {
             listOf(deposit(amount = 1.0, on = LocalDate.of(2026, 10, 14), at = LocalDateTime.of(2026, 10, 14, 9, 0)))
         )
         assertEquals(1, can.fillPercent)
-        assertTrue(can.canWater)
+        assertFalse(can.canWater)
     }
 
     @Test
@@ -115,16 +134,23 @@ class GoalTreeGameTest {
 
     @Test
     fun featuredGoal_isTheOneFilledMostRecently() {
-        val older = snapshot("Car", filledAt = LocalDateTime.of(2026, 10, 1, 8, 0), level = 4)
-        val newer = snapshot("Wedding", filledAt = LocalDateTime.of(2026, 10, 14, 8, 0), level = 1)
+        val older = snapshot("Car", filledAt = LocalDateTime.of(2026, 10, 1, 8, 0))
+        val newer = snapshot("Wedding", filledAt = LocalDateTime.of(2026, 10, 14, 8, 0))
         assertEquals("Wedding", GoalTreeGame.featured(listOf(older, newer))?.goal?.goalName)
     }
 
     @Test
-    fun featuredGoal_whenNothingHasBeenFilled_prefersTheTallerTree() {
-        val seed = snapshot("Wedding", filledAt = null, level = 1)
-        val sapling = snapshot("Car", filledAt = null, level = 3)
-        assertEquals("Car", GoalTreeGame.featured(listOf(seed, sapling))?.goal?.goalName)
+    fun featuredGoal_whenNothingHasBeenFilled_usesTheGoalName() {
+        val wedding = snapshot("Wedding", filledAt = null)
+        val car = snapshot("Car", filledAt = null)
+        assertEquals("Wedding", GoalTreeGame.featured(listOf(wedding, car))?.goal?.goalName)
+    }
+
+    @Test
+    fun featuredGoal_prefersAFullCanOverANewerPartialCan() {
+        val partial = snapshot("Wedding", filledAt = LocalDateTime.of(2026, 10, 14, 18, 0), amount = 10.0)
+        val full = snapshot("Car", filledAt = LocalDateTime.of(2026, 10, 1, 8, 0), amount = 100.0)
+        assertEquals("Car", GoalTreeGame.featured(listOf(partial, full))?.goal?.goalName)
     }
 
     private fun deposit(amount: Double, on: LocalDate, at: LocalDateTime) = SavingsContribution(
@@ -135,8 +161,8 @@ class GoalTreeGameTest {
         createdAt = at.toString()
     )
 
-    private fun snapshot(name: String, filledAt: LocalDateTime?, level: Int): GoalCanSnapshot {
-        val savingsGoal = SavingsGoal(id = name, goalName = name, targetAmount = 100.0, treeLevel = level)
+    private fun snapshot(name: String, filledAt: LocalDateTime?, amount: Double = 10.0): GoalCanSnapshot {
+        val savingsGoal = SavingsGoal(id = name, goalName = name, targetAmount = 100.0)
         val can = if (filledAt == null) {
             GoalTreeGame.canState(savingsGoal, emptyList())
         } else {
@@ -146,7 +172,7 @@ class GoalTreeGameTest {
                     SavingsContribution(
                         id = name,
                         goalId = name,
-                        amount = 10.0,
+                        amount = amount,
                         date = filledAt.toLocalDate().toString(),
                         createdAt = filledAt.toString()
                     )
