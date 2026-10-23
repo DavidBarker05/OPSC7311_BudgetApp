@@ -23,9 +23,9 @@ class WateringCanActivityUiTest : UiTestBase() {
         UserSession.login(createTestUser(username = "wateringuser"))
 
         ActivityScenario.launch(WateringCanActivity::class.java).use {
-            // the goals are loaded from Firestore asynchronously, so the grid is empty until they arrive
-            eventually { onView(withId(R.id.rvGoals)).check(matches(isDisplayed())) }
-            // the button sits below the tree and watering can, so on shorter screens it starts off-screen
+            // the tree is the first thing on the tab; the goals and save button are further down the page
+            eventually { onView(withId(R.id.moneyTreeView)).check(matches(isDisplayed())) }
+            onView(withId(R.id.rvGoals)).perform(scrollTo()).check(matches(isDisplayed()))
             onView(withId(R.id.btnSaveMore)).perform(scrollTo()).check(matches(isDisplayed()))
         }
     }
@@ -35,9 +35,9 @@ class WateringCanActivityUiTest : UiTestBase() {
         UserSession.login(createTestUser(username = "wateringuser2"))
 
         ActivityScenario.launch(WateringCanActivity::class.java).use {
-            // the "+" add-goal tile is the only item for a fresh user with no goals yet, and
-            // it only appears once the goals have been loaded from Room
-            waitForText(app.getString(R.string.more))
+            // the "+" add-goal tile is below the tree, so it can start off screen, and it only appears once the goals
+            // have loaded. Scrolling to it is retried until it is there, rather than waiting for it to already be visible
+            eventually { onView(withText(R.string.more)).perform(scrollTo()) }
             onView(withText(R.string.more)).perform(click())
 
             eventually { onView(withId(R.id.etNewGoalName)).check(matches(isDisplayed())) }

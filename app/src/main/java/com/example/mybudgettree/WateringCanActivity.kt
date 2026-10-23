@@ -104,15 +104,17 @@ class WateringCanActivity : AppCompatActivity() {
                 monthlyGoal?.maxGoal ?: 0.0,
                 monthlyGoal?.minGoal ?: 0.0
             )
-            adapter.submit(goals)
             val snapshots = goals.map { goal ->
                 val contributions = app.savingsContributionDatabaseSystem
                     .retrieveAllContributionsForGoal(goal).values.orEmpty()
                 GoalCanSnapshot(goal, GoalTreeGame.canState(goal, contributions))
             }
+            adapter.submit(goals, snapshots.associate { it.goal.id to it.can })
             val featured = GoalTreeGame.featured(snapshots)
             featuredGoal = featured?.goal
             val can = featured?.can
+            val tree = app.userTreeDatabaseSystem.createOrGetUserTree(user, currentMonth).value
+            val level = tree?.treeLevel ?: 1
             findViewById<TextView>(R.id.tvCanForGoal).text = if (featured == null) {
                 getString(R.string.tree_needs_goal)
             } else {
@@ -121,13 +123,9 @@ class WateringCanActivity : AppCompatActivity() {
             findViewById<WateringCanView>(R.id.wateringCanView).setFillPercent(can?.fillPercent ?: 0)
             findViewById<TextView>(R.id.tvLastFilled).text =
                 GoalTreeUi.lastFilledLine(this@WateringCanActivity, can?.lastFilled)
-            val level = featured?.goal?.treeLevel ?: 1
             findViewById<MoneyTreeView>(R.id.moneyTreeView).setLevel(level)
-            findViewById<TextView>(R.id.tvTreeStage).text = if (featured == null) {
-                ""
-            } else {
-                GoalTreeUi.stageLine(this@WateringCanActivity, featured.goal.goalName, level)
-            }
+            findViewById<TextView>(R.id.tvTreeStage).text =
+                GoalTreeUi.stageLine(this@WateringCanActivity, level)
             findViewById<TextView>(R.id.tvGrowthFeedback).text = GoalTreeUi.progressMessage(
                 this@WateringCanActivity,
                 featured?.goal?.goalName,
@@ -151,21 +149,20 @@ class WateringCanActivity : AppCompatActivity() {
             button.isEnabled = true
             val grown = result.value
             if (result.status == UpdateReturnStatus.Succeeded && grown != null) {
-                Log.i(TAG, "Watered tree for goal '${goal.goalName}' to level ${grown.treeLevel}")
+                Log.i(TAG, "Watered the shared tree with '${goal.goalName}' to level ${grown.treeLevel}")
                 Toast.makeText(
                     this@WateringCanActivity,
-                    GoalTreeUi.grewMessage(this@WateringCanActivity, goal.goalName, grown.treeLevel),
+                    GoalTreeUi.grewMessage(this@WateringCanActivity, grown.treeLevel),
                     Toast.LENGTH_LONG
                 ).show()
                 loadGoals()
             } else {
-                Log.w(TAG, "Failed to water tree for goal '${goal.goalName}': ${result.errMsg}")
-                val message = if (result.errMsg?.contains(GoalTreeGame.EMPTY_CAN_MESSAGE, ignoreCase = true) == true) {
-                    getString(R.string.can_empty)
-                } else {
-                    result.errMsg ?: getString(R.string.can_empty)
-                }
-                Toast.makeText(this@WateringCanActivity, message, Toast.LENGTH_SHORT).show()
+                Log.w(TAG, "Failed to water the shared tree with '${goal.goalName}': ${result.errMsg}")
+                Toast.makeText(
+                    this@WateringCanActivity,
+                    GoalTreeUi.waterFailureMessage(this@WateringCanActivity, result.errMsg),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }

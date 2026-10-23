@@ -37,7 +37,7 @@ class MainNavigationUiTest : UiTestBase() {
             eventually { onView(withId(R.id.rvCategories)).check(matches(isDisplayed())) }
 
             onView(withId(R.id.navGoals)).perform(click())
-            eventually { onView(withId(R.id.rvGoals)).check(matches(isDisplayed())) }
+            eventually { onView(withId(R.id.moneyTreeView)).check(matches(isDisplayed())) }
 
             onView(withId(R.id.navProfile)).perform(click())
             eventually { onView(withId(R.id.tvProfileName)).check(matches(isDisplayed())) }

@@ -4,6 +4,7 @@ import com.example.mybudgettree.GoalTreeGame
 import com.example.mybudgettree.database.entries.SavingsContribution
 import com.example.mybudgettree.database.entries.SavingsGoal
 import com.example.mybudgettree.database.entries.User
+import com.example.mybudgettree.database.entries.UserTree
 import com.example.mybudgettree.database.managers.shared.*
 import com.example.mybudgettree.database.managers.shared.firebase.*
 import com.google.firebase.auth.FirebaseAuth
@@ -12,6 +13,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import com.google.firebase.firestore.toObjects
 import java.time.LocalDateTime
+import java.time.YearMonth
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.tasks.await
 
@@ -273,48 +275,65 @@ class SavingsGoalDatabaseSystem(
     }
 
     /**
-     * Pours this goal's watering can onto its tree
+     * Pours this goal's watering can onto the user's one money tree
      *
-     * The tree grows by one level, and every deposit already in the can counts as poured, so the can
-     * stays empty until the user saves toward this goal again. The latest deposit date is left as it is,
-     * so the can can still show when it was last filled. The goal is updated in a transaction, so a second
-     * tap sees that the water was already poured and does not grow the tree again
+     * The can must be full: savings added since it was last poured have to reach the goal's target.
+     * The shared tree then grows by one level, and every deposit already in this can counts as poured,
+     * so the can stays empty until the user saves toward this goal again. Other goals' cans are left
+     * as they are. The latest deposit date is left as it is, so the can can still show when it was last
+     * filled. The can and the tree are updated in one transaction, so a second tap sees that the water
+     * was already poured and does not grow the tree again
      *
-     * @param goal The [SavingsGoal] whose tree is being watered
+     * @param goal The [SavingsGoal] whose can is being poured
      * @param wateredAt The moment the user poured the can
-     * @return An [UpdateReturnInfo] with the goal after it grows, or a failure when the can is empty or the goal is missing
+     * @return An [UpdateReturnInfo] with the shared tree after it grows, or a failure when the can is not full or the goal is missing
      */
-    suspend fun waterTree(goal: SavingsGoal, wateredAt: LocalDateTime): UpdateReturnInfo<SavingsGoal> {
+    suspend fun waterTree(goal: SavingsGoal, wateredAt: LocalDateTime): UpdateReturnInfo<UserTree> {
         val result = tryWaterTree(goal, wateredAt)
         logOutcome(
             tag = TAG,
             status = result.status,
-            messageDetails = "tree for goal '${goal.id}'",
+            messageDetails = "shared tree using the can for goal '${goal.id}'",
             errMsg = result.errMsg
         )
         return result
     }
 
-    private suspend fun tryWaterTree(goal: SavingsGoal, wateredAt: LocalDateTime): UpdateReturnInfo<SavingsGoal> {
+    private suspend fun tryWaterTree(goal: SavingsGoal, wateredAt: LocalDateTime): UpdateReturnInfo<UserTree> {
         if (goal.id.isBlank()) return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "Goal id is empty")
         val uid = auth.uid ?: return UpdateReturnInfo(status = UpdateReturnStatus.Failed, errMsg = "No user currently signed in")
         return try {
+            val userRef = db.collection("users").document(uid)
             val goalRef = goals(uid).document(goal.id)
-            val contributions = db.collection("users").document(uid)
-                .collection("savingsContributions")
+            val treeRef = userRef.collection("userTree").document(UserTree.DOCUMENT_ID)
+            val contributions = userRef.collection("savingsContributions")
                 .whereEqualTo("goalId", goal.id)
                 .get().await()
                 .toObjects<SavingsContribution>()
             val updated = db.runTransaction { tx ->
-                val current = tx.get(goalRef).toObject<SavingsGoal>()
+                val currentGoal = tx.get(goalRef).toObject<SavingsGoal>()
                     ?: throw IllegalStateException("Goal does not exist")
-                val can = GoalTreeGame.canState(current, contributions)
-                if (!can.canWater) throw IllegalStateException(GoalTreeGame.EMPTY_CAN_MESSAGE)
-                val newLevel = GoalTreeGame.nextLevel(current.treeLevel)
+                val treeSnap = tx.get(treeRef)
+                val currentTree = if (treeSnap.exists()) {
+                    treeSnap.toObject<UserTree>()
+                        ?: throw IllegalStateException("Document does not contain a valid tree")
+                } else {
+                    UserTree(yearMonth = YearMonth.now().toString())
+                }
+                val can = GoalTreeGame.canState(currentGoal, contributions)
+                if (can.unpouredAmount <= 0.0) throw IllegalStateException(GoalTreeGame.EMPTY_CAN_MESSAGE)
+                if (!can.canWater) throw IllegalStateException(GoalTreeGame.NOT_FULL_MESSAGE)
+                val newLevel = GoalTreeGame.nextLevel(currentTree.treeLevel)
                 val watered = wateredAt.toString()
-                tx.update(goalRef, "treeLevel", newLevel)
+                val grown = currentTree.copy(treeLevel = newLevel, lastWateringTime = watered)
+                if (treeSnap.exists()) {
+                    tx.update(treeRef, "treeLevel", newLevel)
+                    tx.update(treeRef, "lastWateringTime", watered)
+                } else {
+                    tx.set(treeRef, grown)
+                }
                 tx.update(goalRef, "lastWateredAt", watered)
-                current.copy(treeLevel = newLevel, lastWateredAt = watered)
+                grown
             }.await()
             UpdateReturnInfo(status = UpdateReturnStatus.Succeeded, value = updated)
         } catch (e: CancellationException) {
