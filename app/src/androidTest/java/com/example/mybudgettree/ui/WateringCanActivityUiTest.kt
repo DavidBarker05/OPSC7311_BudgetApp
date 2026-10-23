@@ -35,9 +35,10 @@ class WateringCanActivityUiTest : UiTestBase() {
         UserSession.login(createTestUser(username = "wateringuser2"))
 
         ActivityScenario.launch(WateringCanActivity::class.java).use {
-            // the "+" add-goal tile is below the tree, and it only appears once the goals have loaded
-            waitForText(app.getString(R.string.more))
-            onView(withText(R.string.more)).perform(scrollTo(), click())
+            // the "+" add-goal tile is below the tree, so it can start off screen, and it only appears once the goals
+            // have loaded. Scrolling to it is retried until it is there, rather than waiting for it to already be visible
+            eventually { onView(withText(R.string.more)).perform(scrollTo()) }
+            onView(withText(R.string.more)).perform(click())
 
             eventually { onView(withId(R.id.etNewGoalName)).check(matches(isDisplayed())) }
         }
