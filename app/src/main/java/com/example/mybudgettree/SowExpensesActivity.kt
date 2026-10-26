@@ -146,7 +146,8 @@ class SowExpensesActivity : AppCompatActivity() {
                         date = selectedDate,
                         startTime = selectedStartTime,
                         endTime = selectedEndTime,
-                        imagePath = receiptPath
+                        imagePath = receiptPath,
+                        deviceId = DeviceId.get(app)
                     )
                     if (result.wasSuccessful) {
                         Log.i(TAG, "Saved expense '$title' for category '${category.categoryName}'")

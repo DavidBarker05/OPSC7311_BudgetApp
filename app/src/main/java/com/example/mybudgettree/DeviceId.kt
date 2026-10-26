@@ -2,6 +2,7 @@ package com.example.mybudgettree
 
 import android.content.Context
 import java.util.UUID
+import androidx.core.content.edit
 
 /**
  * Identifies this install of the app, so each device can keep its own local image paths for the same expense or income
@@ -26,7 +27,7 @@ object DeviceId {
         val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         prefs.getString(KEY, null)?.let { return it }
         val id = UUID.randomUUID().toString()
-        prefs.edit().putString(KEY, id).apply()
+        prefs.edit { putString(KEY, id) }
         return id
     }
 }
