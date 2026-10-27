@@ -1,6 +1,8 @@
 # My Money Tree
 
-My Money Tree is an Android budgeting application for tracking expenses, income, categories, monthly spending goals and savings. It was built for the OPSC7311 Portfolio of Evidence. The interface uses a garden theme so that reviewing money feels closer to looking after something that grows than reading a bank statement.
+Welcome to your financial sanctuary.
+
+My Money Tree is an Android personal budgeting and financial management application developed as the Part 2 prototype for a BCIS Software Development and Design module. The project builds on the Part 1B Planning and Design work, where the application was framed as a Financial Sanctuary: a calmer space for monitoring spending, managing savings goals and building healthier money habits.
 
 This README documents the completed Part 3 application. It explains what the app does, how it is built, the two additional features developed for this submission, and how GitHub and GitHub Actions were used.
 
