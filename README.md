@@ -2,12 +2,15 @@
 
 My Money Tree is an Android budgeting application for tracking expenses, income, categories, monthly spending goals and savings. It was built for the OPSC7311 Portfolio of Evidence. The interface uses a garden theme so that reviewing money feels closer to looking after something that grows than reading a bank statement.
 
-This README documents the completed Part 3 application. It explains what the app does, how it is built, the two additional features developed for this submission, and how GitHub and GitHub Actions were used. The full written report follows in its own section, in the original wording.
+This README documents the completed Part 3 application. It explains what the app does, how it is built, the two additional features developed for this submission, and how GitHub and GitHub Actions were used.
+
+The full written report is here: [POE Part 3: Comprehensive Project Report](#poe-part-3-comprehensive-project-report).
 
 Repository: https://github.com/DavidBarker05/OPSC7311_BudgetApp
 
 ## Contents
 
+- [POE Part 3: Comprehensive Project Report](#poe-part-3-comprehensive-project-report)
 - [Earlier submission documents](#earlier-submission-documents)
 - [1. Introduction](#1-introduction)
 - [2. Design concept](#2-design-concept)
@@ -18,7 +21,8 @@ Repository: https://github.com/DavidBarker05/OPSC7311_BudgetApp
 - [How to run the application](#how-to-run-the-application)
 - [Scope and limitations](#scope-and-limitations)
 - [Authors and project information](#authors-and-project-information)
-- [POE Part 3: Comprehensive Project Report](#poe-part-3-comprehensive-project-report)
+
+The report is listed first so it is easy to open. Every link after it follows the order of this file.
 
 ## Earlier submission documents
 
@@ -295,40 +299,38 @@ The report below is the Part 3 write-up, included in full so it can be read in t
 
 **Table of Contents**
 
-- [Introduction](#report-introduction) 2
-- [Purpose](#report-purpose) 3
-- [Research foundation and design considerations](#report-research-foundation-and-design-considerations) 6
-  - [Findings from Part 1A](#report-findings-from-part-1a) 6
-  - [The Financial Sanctuary concept](#report-the-financial-sanctuary-concept) 7
-  - [User experience, accessibility and intended audience](#report-user-experience-accessibility-and-intended-audience) 9
-- [Application functionality and interface design](#report-application-functionality-and-interface-design) 10
-  - [Accounts and user-specific records](#report-accounts-and-user-specific-records) 10
-  - [Expense and income management](#report-expense-and-income-management) 12
-  - [Categories, budgets and spending goals](#report-categories-budgets-and-spending-goals) 14
-  - [Savings and financial progress](#report-savings-and-financial-progress) 17
-- [Two additional application features](#report-two-additional-application-features) 18
-  - [Additional Feature 1: Profile picture cropping](#report-additional-feature-1-profile-picture-cropping) 18
-    - [Purpose and Design Considerations](#report-purpose-and-design-considerations) 18
-    - [Image Selection and Cropping Implementation](#report-image-selection-and-cropping-implementation) 19
-    - [Third-Party Library Integration](#report-third-party-library-integration) 22
-    - [Image Compression and Validation](#report-image-compression-and-validation) 22
-    - [Cloud Firestore and Profile Integration](#report-cloud-firestore-and-profile-integration) 22
-    - [Error Handling and Testing](#report-error-handling-and-testing) 22
-  - [Additional Feature 2: Email-based password recovery](#report-additional-feature-2-email-based-password-recovery) 23
-    - [Purpose and Design Considerations](#report-purpose-and-design-considerations-2) 23
-    - [Password Recovery Process](#report-password-recovery-process) 23
-    - [Firebase Authentication Integration](#report-firebase-authentication-integration) 24
-    - [Input Validation and Security Considerations](#report-input-validation-and-security-considerations) 24
-    - [Application Implementation](#report-application-implementation) 24
-    - [Contribution to Application Usability and Security](#report-contribution-to-application-usability-and-security) 25
-- [Technical architecture and data management](#report-technical-architecture-and-data-management) 25
-- [Utilisation of GitHub: collaboration and version control](#report-utilisation-of-github-collaboration-and-version-control) 28
-- [Utilisation of GitHub Actions: automated build and testing](#report-utilisation-of-github-actions-automated-build-and-testing) 29
-- [Final demonstration video and project resources](#report-final-demonstration-video-and-project-resources) 30
-- [Conclusion](#report-conclusion) 30
-- [References](#report-references) 31
-
-**List of figures**
+- [Introduction](#report-introduction)
+- [Purpose](#report-purpose)
+- [Research foundation and design considerations](#report-research-foundation-and-design-considerations)
+  - [Findings from Part 1A](#report-findings-from-part-1a)
+  - [The Financial Sanctuary concept](#report-the-financial-sanctuary-concept)
+  - [User experience, accessibility and intended audience](#report-user-experience-accessibility-and-intended-audience)
+- [Application functionality and interface design](#report-application-functionality-and-interface-design)
+  - [Accounts and user-specific records](#report-accounts-and-user-specific-records)
+  - [Expense and income management](#report-expense-and-income-management)
+  - [Categories, budgets and spending goals](#report-categories-budgets-and-spending-goals)
+  - [Savings and financial progress](#report-savings-and-financial-progress)
+- [Two additional application features](#report-two-additional-application-features)
+  - [Additional Feature 1: Profile picture cropping](#report-additional-feature-1-profile-picture-cropping)
+    - [Purpose and Design Considerations](#report-purpose-and-design-considerations)
+    - [Image Selection and Cropping Implementation](#report-image-selection-and-cropping-implementation)
+    - [Third-Party Library Integration](#report-third-party-library-integration)
+    - [Image Compression and Validation](#report-image-compression-and-validation)
+    - [Cloud Firestore and Profile Integration](#report-cloud-firestore-and-profile-integration)
+    - [Error Handling and Testing](#report-error-handling-and-testing)
+  - [Additional Feature 2: Email-based password recovery](#report-additional-feature-2-email-based-password-recovery)
+    - [Purpose and Design Considerations](#report-purpose-and-design-considerations-2)
+    - [Password Recovery Process](#report-password-recovery-process)
+    - [Firebase Authentication Integration](#report-firebase-authentication-integration)
+    - [Input Validation and Security Considerations](#report-input-validation-and-security-considerations)
+    - [Application Implementation](#report-application-implementation)
+    - [Contribution to Application Usability and Security](#report-contribution-to-application-usability-and-security)
+- [Technical architecture and data management](#report-technical-architecture-and-data-management)
+- [Utilisation of GitHub: collaboration and version control](#report-utilisation-of-github-collaboration-and-version-control)
+- [Utilisation of GitHub Actions: automated build and testing](#report-utilisation-of-github-actions-automated-build-and-testing)
+- [Final demonstration video and project resources](#report-final-demonstration-video-and-project-resources)
+- [Conclusion](#report-conclusion)
+- [References](#report-references)**List of figures**
 
 *Figure 1. Screenshot of the application icon (Barker, Davies and Singh, 2026a).*
 
