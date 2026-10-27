@@ -161,7 +161,7 @@ Dates and times are stored as ISO-8601 strings. Schema changes are no longer han
 
 ## POE Part 3: Two Additional Features
 
-The brief asks for at least two features of our own, documented clearly enough that a lecturer knows what to look for. The two features are profile image cropping and email password recovery. Gamification, covered above, is a separate Part 3 requirement.
+ The two features are profile image cropping and email password recovery. Gamification, covered above, is a separate Part 3 requirement.
 
 The same two features are discussed again in the full report. This section is the short technical guide to the code that implements them.
 
@@ -330,7 +330,10 @@ The Harvard reference list for the written report is at the end of the next sect
 - [Utilisation of GitHub Actions: automated build and testing](#report-utilisation-of-github-actions-automated-build-and-testing)
 - [Final demonstration video and project resources](#report-final-demonstration-video-and-project-resources)
 - [Conclusion](#report-conclusion)
-- [References](#report-references)**List of figures**
+- [References](#report-references)
+-
+
+- **List of figures**
 
 *Figure 1. Screenshot of the application icon (Barker, Davies and Singh, 2026a).*
 
