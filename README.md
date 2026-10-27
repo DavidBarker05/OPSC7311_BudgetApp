@@ -297,8 +297,6 @@ The Harvard reference list for the written report is at the end of the next sect
 
 ## POE Part 3: Comprehensive Project Report
 
-The report below is the Part 3 write-up, included in full so it can be read in this README. Two points have been corrected so that they match the finished application: the profile photograph is stored in Cloud Firestore, and email password recovery is implemented. The remaining wording, order, tables, figures, captions and references are unchanged.
-
 **Table of Contents**
 
 - [Introduction](#report-introduction)
